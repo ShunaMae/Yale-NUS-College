@@ -1,0 +1,227 @@
+---
+title: "Lists and the map family"
+author: "Team D"
+date: "3/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+We will need the following packages for this exercise:
+```{r}
+library(tidyverse)
+library(ggrepel)
+```
+
+# (1) Relation between tibbles, data frames and lists
+(a) Create tibble `musicians_tbl`
+    ```{r}
+    names = c("Keith", "John", "Paul")
+    bands = c("Stones", "Beatles", "Beatles")
+    instruments = c("guitar", "guitar", "guitar")
+
+    musicians_tbl <- tibble(
+      name = names,
+      band = bands,
+      instrument = instruments
+    )
+
+    musicians_tbl
+```
+
+(b) Create data frame `musicians_dfr` that represents the same data as `musicians_tbl`
+    ```{r}
+    musicians_dfr <- data.frame(
+      name = names,
+      band = bands,
+      instrument = instruments
+    )
+
+    musicians_dfr
+    ```
+
+(c) Create variable `musicians_list`
+    ```{r}
+    musicians_list <- list(
+      name = names,
+      band = bands,
+      instruments = instruments
+    )
+
+    str(musicians_list)
+    ```
+(d) Apply the functions to `musicians_tbl`, `musicians_dfr` and `musicians_list`. Do you find any of the return values surprising?
+    ```{r}
+    class(musicians_tbl)
+    is_tibble(musicians_tbl)
+    is.data.frame(musicians_tbl)
+    is.list(musicians_tbl)
+    ```
+`musicians_tbl` is a tibble, dataframe, and list.
+
+    ```{r}
+    class(musicians_dfr)
+    is_tibble(musicians_dfr)
+    is.data.frame(musicians_dfr)
+    is.list(musicians_dfr)
+    ```
+`musicians_df` is a dataframe and list.
+
+    ```{r}
+    class(musicians_list)
+    is_tibble(musicians_list)
+    is.data.frame(musicians_list)
+    is.list(musicians_list)
+    ```
+`musicians_list` is only a list.
+
+(e) Compare the return values of `attributes()` when applied to `musicians_tbl`, `musicians_dfr` and `musicians_list`
+    ```{r}
+    attributes(musicians_tbl)
+    ```
+    ```{r}
+    attributes(musicians_dfr)
+    ```
+    ```{r}
+    attributes(musicians_list)
+    ```
+`musicians_tbl` and `musicians_dfr` have three attributes `class`, `row.names`, and `names`. Meanwhile, `musicians_list` has only one attribute: `name`.
+
+(f) Are there subsetting operations we can perform on `musicians_tbl` and `musicians_dfr`, but not on `musicians_list`?
+
+    ```{r}
+    musicians_dfr[1:2,]
+    # musicians_list[1:2,]
+    # Error in musicians_list[1:2, ] : incorrect number of dimensions
+    ```
+
+(g) Remove `class` and `row.names` attributes from `musicians_tbl` and `musicians_dfr`. Use `identical()` to compare.
+    ```{r}
+    class(musicians_tbl) <- NULL
+    row.names(musicians_tbl) <- NULL
+
+    class(musicians_dfr) <- NULL
+    row.names(musicians_dfr) <- NULL
+
+    identical(musicians_tbl, musicians_list)
+    identical(musicians_tbl, musicians_dfr)
+    identical(musicians_dfr, musicians_list)
+    ```
+Briefly include what you conclude from the result.
+
+
+# (2) Map-family of functions
+
+(a) Use map-family function to return the following information as vectors:
+
+(i) Mean of every column in `mtcars`
+```{r}
+map_dbl(mtcars, mean)
+```
+
+(ii) Type of each column in `nycflights13::flights`
+```{r}
+map_chr(nycflights13::flights, typeof)
+```
+
+(iii) Logical value to indicate whether a column in `forcats::gss_cat` is a factor
+```{r}
+map_lgl(forcats::gss_cat, is.factor)
+```
+
+(iv) Compute the number of unique values in each column of `iris`
+```{r}
+map_int(iris, ~ length(unique(.)))
+```
+
+(b) What does `pmap(list(10, 1:10, 2:11), runif)` do? Why?
+    ```{r, results = 'hide'}
+    pmap(list(10, 1:10, 2:11), runif)
+    ```
+    
+    `pmap()` iterates over multiple arguments simultaneously. In this case, `pmap()` takes three arguments, n, min, and max, and run `runif()` using these arguments. 
+
+    The `runif()` function generates random deviates of the uniform distribution. Using n, min, max, we can generate n number of random samples within the range that is defined by the min and max argument. 
+
+    In the actual code, the first 10 specifies the number of random deviates generated from the uniform distribution. The second 1:10 specifies the minimum of the deviates, and 2:11 specifies the maximum of the deviates. So the code generates 10 random samples for each min and max pair (10 times). 
+
+(c) Rewrite code chunk. Describe what it does.
+    ```{r}
+    map_dfr(
+      list(beaver1, beaver2),
+      ~ glm(activ ~ temp, data = ., family = binomial) |>
+        pluck(coef)
+      )
+    ```
+It applies the anonymous function to `beaver1` and `beaver2`. The anonymous function takes the dataframe, computes a linear model using the its `activ` and `temp` columns, and returns the model's coefficients.
+
+# (3) Tibbles with list columns
+
+(a) Write R code that returns the names of all list columns in `starwars` as a character vector
+    ```{r}
+    names(starwars[map_lgl(starwars, ~ is.list(.))])
+    ```
+(b) Write R code that returns the names of all movie characters that piloted the Millennium Falcon as a character vector
+    ```{r}
+    starwars |>
+      filter(map_lgl(starships, ~ "Millennium Falcon" %in% .)) |>
+      pull(name)
+    ```
+(c) Write R code that returns the unique names of all movies in the `films` column as a character vector
+    ```{r}
+    flatten_chr(starwars$films) |>
+      unique()
+    ```
+(d) Calculate the percentage of feminine characters by movie
+    ```{r}
+    feminine_perc <- starwars |>
+      unnest_longer(films) |>
+      group_by(films, gender) |>
+      summarize(total = n()) |>
+      mutate(percentage = total / sum(total)) |>
+      filter(gender == "feminine") |>
+      select(films, percentage) |>
+      print()
+    ```
+(e) Plot the percentage of feminine characters as a function of the movie's release year
+    ```{r, fig.height = 5, fig.width = 7, out.width = "60%", fig.align = "center"}
+    release <- tribble(
+     ~movie, ~year,
+     "A New Hope", 1977,
+     "The Empire Strikes Back", 1980,
+     "Return of the Jedi", 1983,
+     "The Phantom Menace", 1999,
+     "Attack of the Clones", 2002,
+     "Revenge of the Sith", 2005,
+     "The Force Awakens", 2015
+   )
+
+   perc_year <- left_join(feminine_perc, release, by = c("films" = "movie"))
+
+   ggplot(perc_year, aes(year, percentage)) +
+     geom_point() +
+     geom_smooth(
+       formula = y ~ x,
+       method = "lm"
+     ) +
+     labs(
+       title = "Gender Ratio of Characters in Star Wars Movies",
+       x = "Year",
+       y = "Feminine Characters",
+       caption = "Source: Star Wars API (https://swapi.dev/)"
+     ) +
+     geom_text_repel(
+       aes(label = films)
+     ) +
+     scale_y_continuous(
+       breaks = seq(0, 0.4, 0.1),
+       labels = scales::percent_format(accuracy = 5)
+     ) +
+     theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+(f) Briefly comment on the plot
+
+    We see the upward trend in the appearance of feminine characters in Starwars in recent years. Though the sample size is not great, we see that the movies produced before 2000 had less than 15% of the characters as feminine while those after 2000 had more than 15% of the characters as feminine. The gender ratio is still unbalanced as the highest is about 35%; however, we see an improvement in gender equality in this series. 

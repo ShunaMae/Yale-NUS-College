@@ -1,0 +1,87 @@
+---
+title: "Lecture11"
+output: html_document
+date: '2022-03-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Multiple linear regression
+
+```{r}
+dat = read.delim("iqsize.txt", stringsAsFactors = FALSE)
+
+t1 = lm(PIQ ~ Brain, data=dat)
+t2 = lm(PIQ ~ Height, data=dat)
+t3 = lm(PIQ ~ Weight, data=dat)
+
+summary(t1)
+summary(t2)
+summary(t3)
+
+cor(dat)
+pairs(dat)
+
+mlr = lm(PIQ ~ Brain + Height + Weight, data=dat)
+mlr_alt = lm(PIQ ~ Brain * Height * Weight, data = dat)
+
+summary(mlr)
+summary(mlr_alt)
+
+
+
+
+mlr = lm(PIQ ~ Brain + Height + Weight, data=dat)
+
+summary(mlr)
+
+mlr = lm(PIQ ~ Brain + Height, data=dat)
+
+summary(mlr)
+
+mlr = lm(PIQ ~ Brain + Weight, data=dat)
+
+summary(mlr)
+
+mlr = lm(PIQ ~ Brain, data=dat)
+
+summary(mlr)
+
+mlr = lm(PIQ ~ Brain + Height + Weight, data=dat)
+hist(mlr$residuals)
+
+```
+
+```{r}
+summary(t3)
+```
+
+
+### Categorical variables
+
+```{r}
+library(ggplot2)
+dat = read.delim("birthsmokers.txt")
+pairs(dat[,-3])
+
+ggplot(dat, aes(x=Wgt, y=Gest)) + geom_point() + theme_bw()
+ggplot(dat, aes(x=Wgt, y=Gest, colour=Smoke)) + geom_point() + theme_bw()
+
+dat$Smoke = ifelse(dat$Smoke == "Smoke", 1, 0)
+
+mlr = lm(Wgt ~ Gest + Smoke, data=dat)
+summary(mlr)
+
+plot(dat$Gest,dat$Wgt,xlab="Gest", ylab="Wgt",pch=19,col=ifelse(dat$Smoke==1, "blue", 'red'),cex=1.5)
+ abline(a=- 2389.573, b = 143, col="red")
+ abline(a= -  2634.117, b = 143, col="blue")
+```
+
+```{r}
+```
+
+```{r}
+sessionInfo()
+```

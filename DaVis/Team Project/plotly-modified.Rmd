@@ -1,0 +1,119 @@
+---
+title: "plotly"
+author: "Team Green"
+date: '2022-04-13'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{css, echo=FALSE}
+.center {
+  display: table;
+  margin-right: auto;
+  margin-left: auto;
+}
+```
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(plotly)
+library(styler)
+```
+
+```{r}
+data <- read_csv("life_quality.csv")
+
+# Assigning a "size" to each country proportional to their population, scaling population
+data <- mutate(data, size = sqrt(pop * 1e-03))
+
+# 5 colours for 5 continents
+colors <- c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00")
+
+plot_ly(data,
+  x = ~ gdp_per_capita,
+  y = ~life_expectancy,
+  # Cannot use population directly as difference is too big between countries, thus population has been scaled
+  size = ~size,
+  type = "scatter",
+  mode = "markers",
+  # Grouping by continent
+  color = ~continent,
+  # Assigning colours to each continent
+  colors = colors,
+  sizes = c(5, 80),
+  marker = list(
+    symbol = "circle",
+    sizemode = "diameter",
+    line = list(
+      width = 1,
+      color = "white"
+    )
+  ),
+  text = ~ paste(
+    # Labelling the labels in hovertext
+    "Country:", country_name,
+    "\nLife Expectancy:", life_expectancy,
+    "\nGDP:", gdp_per_capita,
+    "\nPop.:", pop
+  ),
+  fill = ~ ''
+) |>
+  layout(
+    title = "Wealth and Health by Country",
+    xaxis = list(
+      title = "GDP per capita (US$, PPP 2015)",
+      type = "log",
+      showgrid = TRUE,
+      gridcolor = "rgb(235, 235, 235)",
+      zerolinewidth = 1,
+      ticklen = 5,
+      gridwidth = 2,
+      tickmode = "linear",
+      ticktext = scales::dollar(c(1000, 10000, 100000)),
+      # Breaks
+      tickvals = list(3, 4, 5)
+    ),
+    yaxis = list(
+      title = "Life Expectancy (years)",
+      gridcolor = "rgb(235, 235, 235)",
+      zerolinewidth = 1,
+      ticklen = 5,
+      gridwith = 2
+    ),
+    paper_bgcolor = "rgb(255, 255, 255)",
+    plot_bgcolor = "rgb(255, 255, 255)",
+    legend = list(
+      itemsizing = "constant",
+      title = list(text = "<b> Continents <b>")
+    ),
+    annotations = list(
+      x = 1.2,
+      y = -0.1,
+      text = "Source: World Bank",
+      showarrow = FALSE,
+      xref = "paper",
+      yref = "paper",
+      xanchor = "right",
+      yanchor = "auto",
+      xshift = 0,
+      yshift = 0,
+      font = list(size = 12)
+    )
+  ) |>
+  animation_opts(
+    2000,
+    redraw = FALSE
+  )
+```

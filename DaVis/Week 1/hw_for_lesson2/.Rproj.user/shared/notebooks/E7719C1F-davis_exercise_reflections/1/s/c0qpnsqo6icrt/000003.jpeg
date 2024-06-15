@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="author" content="National University of Singapore Libraries">
+<meta name="description" content="NUS Libraries Digital Library">
+<meta name="keywords" content="digital library,proxy,remote access">
+
+<title>NUS: Libraries: Library Proxy: Login</title>
+
+<link href="../public/resources/style.css" type="text/css" rel="stylesheet">
+<script> if (top != self) top.location = location</script>
+</head>
+
+<body>
+
+<table style="width: 800px; height: 80px; border:0; background-color: #ff6600;">
+<tr>
+    <td rowspan="2" style="width: 150px; background-color: #ff6600;">
+        <a href="http://www.nus.edu.sg/"><img src="../public/resources/nuslogo.gif" style="width: 125px; height: 80px;"></a>
+    </td>
+    <td style="width: 650px; height: 53px;">
+        <img src="../public/resources/libheader.gif" style="width: 515px; height:56px;">
+    </td>
+</tr>
+</table>
+
+
+<table style="width: 799px; border: 0; border-collapse: collapse;">
+<tr>
+    <td style="width: 11px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 149px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 36px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 401px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 16px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 130px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 56px; height: 20px; margin: 0; padding: 0;">&nbsp;</td>
+</tr>
+<tr>
+    <td style="widt: 11px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 149px; margin: 0; padding: 2px; background-color: #ccccff;">
+        <div class="center_all" style="line-height: 16px;">
+            <span class="b">Unauthorized Access</span>
+            <br>
+            <span class="b">Is Monitored</span>
+        </div>
+    </td>
+    <td style="width: 36px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 401px; margin: 0; padding: 0;">
+        <h3>NUS Libraries E-Resources</h3>
+    </td>
+    <td style="width: 16px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 130px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 56px; margin: 0; padding: 0;">&nbsp;</td>
+</tr>
+<tr style="vertical-align: top;">
+    <td rowspan="3" style="width: 11px; margin: 0; padding: 0;">&nbsp;</td>
+    <td style="width: 149px; margin: 0; padding: 2px; background-color: #f7f3f7;">
+        <div class="center_all" style="color: #ff6600; line-height: 16px;">
+            <img style="width: 40px; height: 39px;" src="../public/resources/exclamation.gif">
+            <br><br>
+            <span class="b">STRICTLY NO</span>
+            <br>
+            use of robots, download managers, web crawlers, spiders
+            <br>
+            or intelligent
+            <br>
+            agents to access any electronic resources
+            <br>
+            <img src="../public/resources/sq_orange.gif" style="width: 12px; height: 12px; border: 0;">
+            <br>
+            <span class="b">NO</span> excessive
+            <br>
+            downloading
+            <br>
+            of data
+            <br><br>
+            &nbsp;
+        </div>
+    </td>
+    <td rowspan="3" style="width: 36px; margin: 0; padding: 0;">&nbsp;</td>
+    <td rowspan="3" colspan="3" style="width" 547px; margin: 0; padding: 0;">
+        <p class="b" style="color: #003399;">
+            Please note that this service will not be available between 5:00 AM to 5:30 AM (Singapore Time) daily for maintenance.
+        </p>
+        <p>
+            If you have any problems accessing this service, please refer to the
+            <a href="http://libfaq.nus.edu.sg/a.php?qid=127721">Frequently Asked Questions</a>
+            or contact
+            <a target="_blank" href="https://nusit.nus.edu.sg/itcare/">Helpdesk</a>.
+        </p>
+        <div class="center_all" style="padding: 30px 3px 30px 3px; border: 1px solid #111111;">
+            <p class="b">
+                If you have logged on to NUSNET
+                <br>
+                and using Microsoft Internet Explorer (IE),
+                <br>
+                login here:
+            </p>
+            <p>
+                <span class="b">(For NUS Users Only)</span>
+            </p>
+            <form name="frmSSO" action="../restricted/login_sso.asp" method="post">
+            <input type="hidden" name="url" value="https://www.science.org/cms/10.1126/science.aaw1313/asset/b9394c89-009a-4977-9ea7-73a83454210a/assets/graphic/366_120_f1.jpeg">
+            <input type="submit" value="Campus Login">
+            </form>
+        </div>
+        <div class="center_all" style="padding: 30px 3px 30px 3px; border: 1px solid #111111;">
+            <p class="b">
+                Login for Non-IE Users / Off-Campus Users:
+            </p>
+
+            <form name="frmLogin" action="../public/login_form.asp" method="post">
+
+            <table style="width: 100%; border: 0; text-align: left;">
+            <tr style="vertical-align: top;">
+                <td style="width: 300px; height: 30px;">Please select your Network Domain:</td>
+                <td style="height: 30px;">
+                    <select name="domain" style="width: 205px;">
+                    <option value="NUSSTF" selected>Staff - NUSSTF</option>
+                    <option value="NUSSTU">Student - NUSSTU</option>
+                    <option value="NUSEXT">Visitors - NUSEXT</option>
+                    <option value="NHG">NUHS</option>
+                    </select>
+                </td>
+            </tr>
+            <tr style="vertical-align: top;">
+                <td style="width: 300px; height: 30px;">
+                    Please enter your Userid without Domain:
+                    <br>
+                    (eg. nustan)
+                </td>
+                <td style="height: 30px;">
+                    <input type="text" name="user" style="width: 200px;">
+                </td>
+            </tr>
+            <tr style="vertical-align: top;">
+                <td style="width: 300px; height: 30px;">
+                    Please enter your Password:
+                    <br>
+                    (case-sensitive)
+                </td>
+                <td style="height: 30px;">
+                    <input type="password" name="pass" style="width: 200px;">
+                </td>
+            </tr>
+            </table>
+
+            <br>
+
+            <input type="hidden" name="url" value="https://www.science.org/cms/10.1126/science.aaw1313/asset/b9394c89-009a-4977-9ea7-73a83454210a/assets/graphic/366_120_f1.jpeg">
+            <input type="submit" value="Login">
+
+            </form>
+        </div>
+    </td>
+    <td rowspan="3" style="width: 56px; margin: 0; padding: 0;">&nbsp;</td>
+</tr>
+<tr>
+    <td style="width: 149px; margin: 0; padding: 2px; vertical-align: top; background-color: #ccccff;">
+        <div class="center_all" style="line-height: 16px;"><span class="b">ATTENTION</span></div>
+    </td>
+</tr>
+<tr>
+    <td style="width: 149px; margin: 0; padding: 2px; vertical-align: top; background-color: #f7f3f7;">
+        <div style="font-size: 10px; line-height: 16px;">
+            If you encounter another login screen, please enter your login information as follows:
+            <br><br>
+            <span style="color: #ff6600;"><span class="b">Username</span>:</span>
+            <br>
+            <span class="b">NUSSTF\NUSNET ID</span>
+            <br>
+            (for Staff)
+            <br>
+            <span class="b">NUSSTU\NUSNET ID</span>
+            <br>
+            (for Students)
+            <br>
+            <span class="b">NUSEXT\NUSNET ID</span>
+            <br>
+            (for Visitors)
+            <br><br>
+            <span style="color: #ff6600;"><span class="b">Password</span>:</span>
+            <br>
+            NUSNET Password
+            <br>
+            &nbsp;
+        </div>
+    </td>
+</tr>
+</table>
+
+<br>
+
+<script>
+
+var hash =  document.location.hash + '';
+if (hash > '')
+{
+    var f = document.forms;
+    if (f)
+    {
+        var j = f.length;
+        for (var i = 0; i < j; i++)
+        {
+            if (f[i].url)
+              f[i].url.value = f[i].url.value + hash;
+        }
+    }
+}
+
+</script>
+
+<script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-25270068-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+</script>
+
+
+<table style="width: 800px; border: 0;">
+<tr>
+    <td style="background-color: #636563; margin: 0; padding: 0;">
+        <img src="../public/resources/libfooter.gif" style="width: 640px; height: 19px; border: 0;" usemap="#MAP_FOOTER">
+        <map name="MAP_FOOTER">
+            <area href="http://www.nus.edu.sg/terms-of-use" shape="rect" coords="581, 0, 639, 18">
+            <area href="http://www.nus.edu.sg/" shape="rect" coords="28, 0, 89, 18">
+            <area href="http://libportal.nus.edu.sg/frontend/index" shape="rect" coords="91, 1, 198, 18">
+            <area href="http://libportal.nus.edu.sg/frontend/findmore/findmore" shape="rect" coords="202, 1, 306, 18">
+            <area href="http://libportal.nus.edu.sg/frontend/sitemap" shape="rect" coords="312, 0, 362, 18">
+        </map>
+    </td>
+</tr>
+</table>
+
+</body>
+
+</html>

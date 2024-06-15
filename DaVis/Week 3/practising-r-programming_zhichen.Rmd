@@ -1,0 +1,197 @@
+---
+title: "Practising R Programming"
+author: "Team D"
+date: "1/28/2022"
+output: html_document
+---
+
+``` {r setup, include=FALSE, echo=FALSE}
+library(dplyr)
+library(bsts)
+library(microbenchmark)
+```
+
+# Days of the week in Shire calendar
+
+```{r}
+# shire_day_from_georgian <- function(georgian) {
+#   dplyr::if_else()
+# }
+```
+
+```{r}
+shire_day_from_georgian <- function(g_day) {
+  dplyr::case_when(
+    g_day == "Monday" ~ "Sterday",
+    g_day == "Tuesday" ~ "Sunday",
+    g_day == "Wednesday" ~ "Monday",
+    g_day == "Thursday" ~ "Trewsday",
+    g_day == "Friday" ~ "Hevensday",
+    g_day == "Saturday" ~ "Mersday",
+    g_day == "Sunday" ~ "Highday",
+    TRUE ~ NA_character_
+  ) 
+}
+
+shire_day_from_georgian("Monday")
+shire_day_from_georgian("Tuesday")
+shire_day_from_georgian("Wednesday")
+shire_day_from_georgian("Thursday")
+shire_day_from_georgian("Friday")
+shire_day_from_georgian("Saturday")
+shire_day_from_georgian("Sunday")
+shire_day_from_georgian("Nonday")
+```
+
+```{r}
+georgian <- c(
+  "Monday", 
+  "Tuesday", 
+  "Wednesday", 
+  "Thursday", 
+  "Friday", 
+  "Saturday", 
+  "Sunday" 
+)
+
+shire <- c(
+  "Sterday",
+  "Sunday",
+  "Monday",
+  "Trewsday",
+  "Hevensday",
+  "Mersday",
+  "Highday"
+)
+
+shire_day_from_georgian <- function(g_day) {
+  dplyr::recode(g_day, georgian = shire, .default = NA_character_)
+}
+
+shire_day_from_georgian("Monday")
+```
+
+# Measuring run-times with the microbenchmark package
+
+```{r}
+abs_with_if_else <- function(x) { dplyr::if_else(x >= 0, x, -x) }
+
+abs_with_subsetting <- function(x) { 
+  neg <- (x < 0)
+       x[neg] <- -x[neg]
+  x }
+
+abs_with_data_type_conversion <- function(x)  { ((x > 0) - (x < 0)) * x }
+
+abs_with_for_loop <- function(x) { 
+  for (i in seq_along(x)) {
+    if (x[i] < 0) {
+      x[i] <- -x[i]
+    }
+  }
+  x 
+}
+
+nums <- rnorm(1e6)
+
+microbenchmark::microbenchmark(
+  abs(nums),
+  abs_with_if_else(nums),
+  abs_with_subsetting(nums),
+  abs_with_data_type_conversion(nums),
+  abs_with_for_loop(nums)
+)
+
+```
+
+# Comparing two functions for calulating Pythagorean sums
+
+```{r}
+pythag1 <- function(a, b) {
+  sqrt(a^2 + b^2)
+}
+
+pythag2 <- function(a, b) {
+  absa <- abs(a)
+  absb <- abs(b)
+  p <- pmax(absa, absb)
+  q <- pmin(absa, absb)
+  ratio <- q / p
+  ratio[is.nan(ratio)] <- 1
+  p * sqrt(1.0 + ratio^2)
+}
+```
+
+## What is the purpose of is.nan(ratio) in the second-to-last line of pythag2()’s function body?
+
+## Compare the run-times of pythag1() and pythag2() with the microbenchmark package. Use identical input consisting of long numeric vectors. Summarise your observation as a comment in the R script.
+
+```{r}
+a <- rnorm(1e5)
+b <- rnorm(1e5)
+
+microbenchmark::microbenchmark(
+  pythag1(a, b),
+  pythag2(a, b)
+)
+```
+
+## By performing numerical tests, find out under which conditions the functions numerically overflow. When do the functions underflow? Comment on the observed differences between pythag1() and pythag2().
+
+This will work:
+
+```{r}
+x_large <- 3e306
+y_large <- 4e306
+
+pythag1(x_large, y_large)
+pythag2(x_large, y_large)
+```
+
+But this will not:
+
+```{r}
+x_large <- 3e307
+y_large <- 4e307
+
+pythag1(x_large, y_large)
+pythag2(x_large, y_large)
+```
+
+Similarly, this will work:
+
+```{r}
+x_small <- 3e-324
+y_small <- 4e-324
+
+pythag1(x_small, y_small)
+pythag2(x_small, y_small)
+```
+
+But this will not:
+
+```{r}
+x_small <- 3e-325
+y_small <- 4e-325
+
+pythag1(x_small, y_small)
+pythag2(x_small, y_small)
+```
+
+## Is pythag1() or pythag2() better as a general-purpose method? There is no simple right-or-wrong answer. I am interested in your reasoning.
+
+
+
+# Floating-point accuracy
+
+```{r}
+0.1 + 0.2
+0.1 + 0.2 == 0.3
+round(0.1 + 0.2) == 0.3
+all.equal(0.1 + 0.2, 0.3)
+all.equal(0.1 + 0.2, 0.3, tolerance = .Machine$double.eps)
+all.equal(0.2, 0.3, tolerance = 0.2)
+all.equal(1.1, 10.1, tolerance = 20)
+```
+
+The default value of tolerance is close to 1.5e-8 (according to the help page). By modifying this value, we can have any two numbers considered equal. Thus, since (0.1 + 0.2) cannot be represented accurately in binary, all that all.equal does is compare the two values, and ensuring they are within the tolerance.

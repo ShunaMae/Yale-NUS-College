@@ -1,0 +1,34 @@
+---
+title: "random"
+author: "shuna"
+date: "1/26/2022"
+output: html_document
+---
+```{r}
+(seq (seq (empty) (seq (atom 1) (atom 2))) (seq (empty) (seq (atom 3) (atom 4))))
+```
+
+```{r}
+(seq (seq (seq (atom 1) (atom 2)) (atom 3)) (atom 4))
+```
+
+```{r}
+(seq (seq (seq (seq (empty) (atom 1)) (atom 2)) (atom 3)) (atom 4))
+```
+
+```{r}
+(seq (atom 1) (seq (atom 2) (seq (atom 3) (seq (atom 4) (empty)))))
+```
+
+```{r}
+(seq (atom 1) (seq (atom 2) (seq (atom 3) (atom 4))))
+```
+
+```{r}
+(seq (seq (seq (atom 1) (atom 2)) (atom 3)) (atom 4))
+```
+
+```{r}
+(seq (seq (atom 1) (atom 2)) (seq(atom 3) (atom 4)))
+```
+

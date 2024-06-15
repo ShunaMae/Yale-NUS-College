@@ -1,0 +1,369 @@
+---
+title: "Problem set2"
+author: "Shuna"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+library(tidyverse)
+```
+ 
+## Problem set 2 - hypothesis testing
+
+For all questions - assume a significance level of \alpha = 0.05. 
+
+### Question 1
+
+Patients diagnosed with pancreatic cancer are asked about whether they smoke. Patients without pancreatic carcinoma are also asked about if they smoke. 
+
+```{r}
+data = matrix(c(80, 40, 40, 50), ncol=2, nrow=2)
+colnames(data)= c(" cancer", "no cancer")
+row.names(data)= c("smoker", "non smoker")
+data
+```
+
+a) is having cancer dependent or independent from smoking status?
+
+```{r}
+chisq.test(data)$p.value
+```
+
+    Having p-value of 0.002, we reject the null hypothesis and conclude that there is enough evidence to support that having cancer is dependent on smoking status. 
+
+b) what is the odds of having cancer given that the patient smokes? 
+
+```{r}
+# (80/80+40) / 1- (80/80+40)
+80 / 40
+```
+
+c) what is the odds of having cancer given that the patient does not smoke? 
+
+```{r}
+# (40/40+50) / (1 - 40/40+50)
+40 / 50
+```
+
+d) what is the odds ratio of this? what does this represent / tell you about the relationship between smoking and cancer.   
+
+```{r}
+2.0 / 0.8
+```
+
+    This means that smokers are 2.5 times more likely to have a cancer. 
+
+
+### Question 2
+
+the file 'telomeres.txt' contains the estimated telomere lengths estimated from patients normal blood cells and tumour cells. Are telomeres significantly longer in tumours compared to the blood?
+
+
+```{r}
+telomeres <- read_table("telomeres.txt") |> 
+  pivot_wider(
+    names_from = sample, 
+    values_from = tel_content
+) 
+```
+
+    Since each patient has data on control and tumor, and the sample size is failry small, we carry out a paired wilcox test. 
+
+```{r}
+wilcox.test(
+  telomeres$control, 
+  telomeres$tumor, 
+  # control is less than tumor
+  alternative = "less",
+  paired = TRUE
+)
+```
+
+    The p-value of 0.03 suggests that telomeres significantly longer in tumours compared to the blood. 
+
+
+### Question 3
+
+
+Is there a significant difference in the median between x and y?
+
+```{r}
+x = c( 5,  6,  7,  9, 12, 8, 16, 9, 13, 14, 12, 11, 8, 10, 11, 6, 12,  7, 10, 5, 12, 11, 6, 6, 13)
+y = c( 16, 14, 10, 11, 12, 15, 16, 18, 11, 16, 14, 15, 23, 11, 17, 12, 12, 17, 14, 16,9, 18, 14,  4, 24)
+
+boxplot(x,y)
+```
+
+    Boxplot shows that there seems to be a difference between these two. 
+    
+    As we are looking into difference in median, not mean, we try permutation. 
+```{r}
+# calculate the test statistic 
+t_stat <- median(x) - median(y)
+# permutation 
+sample_q3 <- c()
+for (i in 1:1000){
+  # reorder the total population
+  shuffled <- sample(c(x,y))
+  # assign first 25 to the x
+  sample_x <- shuffled[1:25]
+  # assign last 25 to the y
+  sample_y <- shuffled[26:50]
+  # calculate the statistic 
+  m <- median(sample_x) - median(sample_y)
+  sample_q3 <- c(sample_q3, m)
+}
+
+hist(sample_q3)
+
+p_value <- sum(t_stat >= sample_q3) / length(sample_q3)
+p_value
+```
+
+    Yes, there is a significant difference in median between x and y (p-value of 0.003). 
+
+
+### Question 4
+
+The file 'qpcr.txt' contains the results from performing qPCR in two conditions on 10 different genes. 
+
+Which of the genes are significantly upregulated in treatment compared to control? 
+
+```{r}
+qpcr <- read_table2("qpcr.txt")
+```
+    
+     Since each gene has only 6 samples each (control and treatment), the sample size is failry small. As we are just interested in if there is a difference or not, we carry out a wilcox test. 
+    
+```{r}
+genes <- LETTERS[1:10]
+p_values <- c()
+for (g in genes){
+  data <- qpcr |>
+    filter(gene == g)
+  c <- filter(data, condition == "control")$expression
+  t <- filter(data, condition == "treatment")$expression
+  # control < treatment 
+  p <- wilcox.test(c,t, alternative = "less")$p.value
+  p_values[g] <- p
+}
+
+p_values
+# 0.05 / 10
+```
+
+     Since we did 10 different hypothesis testing, this will increase the type I error. We can adjust the p-value by dividing by 10 (the number of null hypothesis) and see if the p-value is less than 0.005. Then, only gene D is significant. Alternativly, we can also use `p.adjust()` function to confirm.  
+```{r}
+p.adjust(p_values)
+```
+
+    From the results above, we conclude that only gene D is upregulaterd significantly. 
+
+
+
+### Question 5
+
+The file pbc.tsv is a tsv file containing information from Mayo Clinic trial in primary biliary cirrhosis (PBC) of the liver conducted between 1974 and 1984. A total of 424 PBC patients over this interval met eligibility criteria for the randomized placebo controlled trial of the drug D-penicillamine
+
+var | description
+---- | ----
+age |	in years
+albumin |	serum albumin (g/dl)
+alk.phos |	alkaline phosphotase (U/liter)
+ascites |	presence of ascites
+ast | aspartate aminotransferase, once called SGOT (U/ml)
+bili | serum bilirunbin (mg/dl)
+chol |serum cholesterol (mg/dl)
+copper | urine copper (ug/day)
+edema | 0 no edema, 0.5 untreated or successfully treated, 1 edema despite diuretic therapy
+hepato |	presence of hepatomegaly or enlarged liver
+id | case number
+platelet | 	platelet count
+protime |	standardised blood clotting time
+sex |	m/f
+spiders |	blood vessel malformations in the skin
+stage |	histologic stage of disease (needs biopsy)
+status |	status at endpoint, 0/1/2 for censored, transplant, dead
+time |	number of days between registration and the earlier of death, transplantion, or study analysis in July, 1986
+trt |1/2/NA for D-penicillmain, placebo, not randomised
+trig | triglycerides (mg/dl)
+
+```{r}
+pbc <- read_table("E:/Academics/Stats/Problem Set 2/pbc.tsv")
+head(pbc)
+```
+
+a) Is there a significant difference in age between patients who are on D-penicillmain or are on placebo?
+```{r}
+pbc_a <- pbc |>
+  filter(!(is.na(trt) | is.na(age)))|>
+  select(age, trt)
+pbc_a |>
+  ggplot(aes(as.factor(trt), age)) + 
+  geom_violin() + 
+  scale_x_discrete(label = c("D-penicillmain", "placebo"))
+
+D <- filter(pbc_a, trt == 1)$age
+P <- filter(pbc_a, trt == 2)$age
+
+```
+
+    The plot does not show any obvious difference. And the data looks okay-ly normally distributed. We can do a t-test. 
+
+```{r}
+var.test(D,P)
+# no support that the variances are equal 
+```
+
+```{r}
+t.test(D,P, var.equal = FALSE)$p.value
+```
+
+    There is a significant difference in age between patients who are on D-penicillmain and are on placebo.  
+    
+b) Is being treated with D-penicillamine dependent or independent from sex?
+
+```{r}
+pbc_b <- pbc |>
+  filter(!is.na(trt)) |>
+  select(sex, trt) |>
+  mutate(trt = as.character(trt)) |>
+  group_by(sex, trt) |>
+  summarise(dp = n()) |>
+  ungroup() |>
+  pivot_wider(names_from = trt, values_from = dp) |>
+  as.data.frame() 
+
+chisq.test(pbc_b[-1])
+```
+
+    From the result, we conclude that being treated with D-pencillamine is independent from sex. 
+    
+    
+c) Is having spiders independent from disease stage? 
+
+```{r}
+pbc_c <- pbc |>
+  select(spiders, stage) |>
+  filter(!(is.na(spiders) | is.na(stage))) |>
+  group_by(stage, spiders) |>
+  summarise(sp = n()) |>
+  pivot_wider(names_from = spiders, values_from = sp) |>
+  as.data.frame() |>
+  print()
+
+chisq.test(pbc_c[-1], simulate.p.value = TRUE)
+```
+
+    As one of the values in the dataframe is quite small, chi-squared test may yield an inaccurate result. To avoid that, we set simulate.p.value = TRUE which computes p-values by Monte Carlo simulation. From the result, we conclude that having spiders is dependent on disease stage. 
+    
+    
+d) Is there a significant different in cholesterol levels between people with or without an enlarged liver (hepatomegaly)?
+
+```{r}
+pbc_d <- pbc |>
+  select(hepato, chol) |>
+  filter(!(is.na(hepato) | is.na(chol)))
+
+
+pbc_d |>
+  ggplot(aes(as.character(hepato), chol))+
+  geom_violin() + 
+  scale_x_discrete(label = c("without", "with")) +
+  labs(x = "enlarged liver")
+```
+
+    Well the data does not seem normally distributed, and as we are not so concerned with the difference in mean, we should consider wilcox test. 
+    
+```{r}
+wo <- filter(pbc_d, hepato == 0)$chol
+w <- filter(pbc_d, hepato == 1)$chol
+wilcox.test(wo,w)
+```
+
+    From the result, there is no significant difference in cholesterol levels between people with or without an enlarged liver, which is counter-intuitive. If we have used a t-test, we would have gotten a significant result. But since the distribution is not normal, we should stick to the original plan - not significant. 
+    
+    
+### Question 6
+
+A woman claims to be able to tell if tea is prepared with milk added to the cup first or added after the tea was poured. 
+
+She tastes 20 cups of tea (10 with the milk poured in first and 10 with the milk poured in after) ....  and correctly guesses that the milk has been poured first 8 times and that the milk has been poured in last 6 times. 
+
+What is the null and alternative hypothesis for this experiment? 
+
+    The null hypothesis: Her result is out of random choice and there is no relationship between her choice and actual order. 
+    The alternative hypothesis: She can correctly identify which is poured first. 
+
+Can she justify her claim to be able to do this ? 
+
+    No she cannot. We have set our signifncance level \alpha to be 0.05 for this problem set. Under this restraint, her trial of 20 times should yield at most one error to call it significant. Since she wrong-guessed 6 times, we fail to reject the null hypothesis. 
+
+
+### Question 7
+
+a) What is the relationship between power and type II errors? 
+
+    Power equals to 1 minus the probability of having type II errors. Power is the ability of a test to correctly reject false negatives. Type II errors are false negatives, i.e., when the alternative hypothesis is true but we fail to reject the null hypothesis. 
+
+b) How many replicates do I need to perform to achieve 80% power to detect a change in the mean between two conditions of 2? (assume the data is normally distributed so t-tests apply). I ran a pilot experiment and collected the following data.
+
+```{r}
+treatment = c( 7.835008, 12.887306, 10.427879,  8.749182, 10.075484)
+control = c(12.182948,  8.972897,  8.215060, 13.421730, 11.325449)
+boxplot(treatment, control)
+```
+
+```{r}
+t_sd <- sd(treatment)
+c_sd <- sd(control)
+```
+
+```{r}
+# prepare an empty vector for storing power
+power <- c()
+# check the sample size from 2 to 30 
+for(i in 2:30){
+  # prepare an empty vector for replication 
+  power_rep <- c()
+  # replicate for 100 times 
+  for (j in 1:100){
+    # prepare an empty vector to store simulation 
+    result <- c()
+    # simulation 
+    for (k in 1:1000){
+      # two samples, different standard deviation 
+      # difference in mean of 2
+      x <- rnorm(i, 2, t_sd)
+      y <- rnorm(i, 0, c_sd)
+      # p-value
+      result = c(result, t.test(x, y, var.equal = FALSE)$p.value)
+    }
+    # calculate false negatives
+    z <- 1 - sum(result > 0.05) / length(result)
+    # store power
+    power_rep <- c(power_rep, z)
+  }
+  # calculate the mean of power
+  m_power_rep <- mean(power_rep)
+  # append
+  power <- c(power, m_power_rep)
+}
+
+# plot
+plot(power, type = "lm", xlab = "sample size")
+abline(h = 0.8, col = "red")
+
+```
+
+```{r}
+power
+```
+
+    Under this scenario, sample size of 18 for each would be enough to have the 80% power to detect a difference of 2. Of course, power depends on many other things, such as standard deviation. In this scenatio, we used the pilot data to get a rougn estimate of the standard deviation of the mother population. 
+    
+    
+```{r}
+sessionInfo()
+```

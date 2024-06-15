@@ -1,0 +1,118 @@
+---
+title: "New York Mayoral Election 2017"
+author: "Team Spirit"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+library(kableExtra)
+library(scales)
+library(tidyverse)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+
+# Introduction
+
+In this document, we look at different ways to present data for the 2017
+election for Mayor of New York City.
+As Wikipedia[^wikipedia] notes,
+
+> 'Incumbent Democrat Bill de Blasio won reelection to a second term with
+  66.2% of the vote against Republican Nicole Malliotakis.'
+
+[^wikipedia]:
+  <https://edition.cnn.com/election/2017/results/new-york-city-mayor>,
+  accessed on 19 January 2022.
+  
+We consider the number of votes in each borough.
+
+
+# Data presented as a table
+
+```{r nyTable}
+library(kableExtra)
+library(tidyverse)
+ny_mayor <- read_csv("ny_mayor.csv")
+
+# I use bind_rows to add the total votes as bottom row of the table. The idea
+# is from
+# https://stackoverflow.com/questions/4946873/add-row-to-a-data-frame-with-total-sum-for-each-column
+# (accessed on 19 January 2022).
+# The idea for the solid horizontal line above the row for the total votes
+# is from
+# https://stackoverflow.com/questions/53655983/row-spec-function-from-kableextra-does-not-create-a-horizontal-line-in-html-ou
+# I make 'CNN' in the caption a clickable hyperlink.
+ny_mayor |>
+  bind_rows(summarise(
+    ny_mayor,
+    across(where(is.numeric), sum),
+    across(where(is.character), ~"Total")
+  )) |>
+  rename_with(str_to_title) |>
+  rename("de Blasio" = "De_blasio") |>
+  kbl(
+    format.args = list(big.mark = ","),
+    caption = "New York Mayoral Election 2017"
+  ) |>
+  kable_styling(
+    bootstrap_options = c("striped", "condensed"),
+    full_width = FALSE
+  ) |>
+  add_header_above(c(" " = 1, "Candidate" = 3)) |>
+  row_spec(nrow(ny_mayor), extra_css = "border-bottom: 1px solid") |>
+  footnote(
+    general = str_c(
+      "<small>Source: <a href=",
+      "https://edition.cnn.com/election/2017/results/new-york-city-mayor",
+      ">CNN</a></small>"
+    ),
+    escape = FALSE,
+    general_title = ""
+  )
+```
+
+
+# Data presented as a bar plot
+
+```{r nyBarPlot, fig.width=4, fig.height=3, fig.align='center', out.width='50%'}
+ny_mayor_long <- read_csv("ny_mayor.csv") |>
+  mutate(borough = str_replace(borough, " ", "\n")) |>
+  pivot_longer(-borough) |>
+  mutate(name = fct_rev(name))
+ggplot(ny_mayor_long, aes(borough, value, fill = name)) +
+  geom_col(position = "dodge") +
+  scale_x_discrete(limits = rev) +
+  coord_flip() +
+  scale_y_continuous(labels = label_comma()) +
+  scale_fill_manual(
+    labels = c("Other", "Malliotakis", "de Blasio"),
+    values = c("palegreen4", "firebrick2", "steelblue")
+  ) +
+  labs(
+    title = "New York Mayoral Election 2017",
+    caption = "Source: CNN",
+    x = "Borough",
+    y = "Votes",
+    fill = "Candidate"
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(legend.key.size = unit(1, "lines"))
+```
+
+
+# What is better: table or bar plot?
+
+The table contains the exact numbers of votes cast in each borough, whereas
+it is impossible to retrieve exact numbers from the bar plot.
+It would be possible to print the numbers inside the bars with the
+`geom_bar_text()` function from the __ggfittext__ package to overcome this
+disadvantage.
+
+The table has the disadvantage that reading numbers is a slower process than
+judging the lengths of bars in the bar plot.
+The table could be improved by adding bars under each number with the help of
+the __formattable__ package.

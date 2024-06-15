@@ -1,0 +1,379 @@
+---
+title: "Written Tutorial"
+author: "Team Blue"
+date: "4/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.align = "center",
+  cache = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+# 1 Introduction to gganimate
+
+So far in our course, we have looked extensively at the use of ggplot2. gganimate is a package that builds upon the skills we have learned in ggplot2 and takes it above and beyond to provide functions for animation.
+
+The way that gganimate works is very similar to ggplot2. In ggplot2, we have geom functions to help us build graphs. Similarly to geom, in gganimate we have transition functions to help us build animations.
+
+The key transition functions of gganimate, that you will also require in the exercise that we have provided, include:
+
+Main Function Groups
+
+* `transition_*()`: What variable controls change and how?
+* `view_*()`: Should the axes change with the data?
+* `enter/exit_*()`: How does new data get added to the plot? How does old data leave?
+* `shadow_*()`: Should previous data be “remembered” and shown with current data?
+* `ease_aes()`: How do you want to handle the pace of change between transition values?
+
+(Source: [gganimate](https://gganimate.com), [Karl Hailperin gganimate cheat sheet](https://ugoproto.github.io/ugo_r_doc/pdf/gganimate.pdf))
+
+For the purposes of the exercise, you will need to have the following packages installed and loaded:
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(transformr)
+library(gifski)
+library(gapminder)
+library(nycflights13)
+```
+
+# 2 Adding animation to plots using the `transition_*()` functions
+
+## 2a) `transition_time`
+
+`transition_time()` is often used with a continuous variable, such as year.
+When the gifski package is installed and loaded, `transition_time()` is able to break a static graph that has a continuous element, such as a time series graph, into very many pictures that together form a gif file. At any one time, only one year would be displayed, but the years would flicker through at a fast pace, enabling an animated projection of the original graph plotted through ggplot2.
+
+Let us visualize an example of this: make sure you are using the knitted html version to be able to see this plot. Also note that if you are running this code in r, allow some time (up to a minute) for your computer to generate the hundreds of photos that together make up the gif file for the animation to take place.
+
+(Source: [Alboukadel Kassambara on Datanovia](https://www.datanovia.com/en/blog/gganimate-how-to-create-plots-with-beautiful-animation-in-r/))
+
+```{r}
+ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent) +
+  # Here comes the gganimate specific bits
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'Life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+```
+
+{frame_time} works like a placeholder in the code, whereby in the knitted file what will be displayed is the year starting from the first time stamp to the last. For instance, for a ggplot2 graph ranging from year 1900 to year 1999, {frame_time} would be the years 1900 through 1999 and when put into gganimate, the years will be shown one-by-one
+
+## 2b) `transition_filter`
+
+`transition_filter ()` enables you to create gganimate transitions within a range of filtering conditions. The conditions are expressed as logical statements and rows in the data will be retained if the statement evaluates to TRUE. It is possible to keep filtered data on display by setting `keep = TRUE` which will let data be retained as the result of the exit function. Note that if data is kept, the enter function will have no effect.
+
+```
+transition_filter(
+  transition_length = 1,
+  filter_length = 1,
+  ...,
+  wrap = TRUE,
+  keep = FALSE
+)
+```
+
+Where the arguments are:
+
+* `transition_length`: The relative length of the transition. Will be recycled to match the number of states in the data
+* `filter_length`: The relative length of the pause at the states. Will be recycled to match the number of states in the data
+* `...`: A number of expressions to be evaluated in the context of the layer data, returning a logical vector. If the expressions are named, the name will be  available as a frame variable.
+* `wrap`: Should the animation wrap-around? If TRUE the last filter will be  transitioned into the first.
+* `keep`: Should rows that evaluate to FALSE be kept in the data after exit has been applied
+
+(Source: [gganimate](https://gganimate.com/reference/transition_filter.html))
+
+## 2c) `transition_reveal`
+
+`transition_reveal()` allows data visualisation to appear gradually on a given time dimension.
+
+Data in a static plot is visualised as a whole for the whole time dimension. Let us see how data visualisation across time looks like in a static plot. For this purpose, we will use the airquality dataset to plot temperatures by time for three different months. The line graph for each month will show how temperature changes as the days progress. 
+
+
+```{r, out.width = '70%'}
+p <- ggplot(
+  filter(airquality, Month %in% c(5, 6, 7)),
+  aes(Day, Temp, group = Month, color = factor(Month))
+) +
+  geom_line() +
+  scale_color_viridis_d() +
+  labs(x = "Day of Month", y = "Temperature") +
+  theme(legend.position = "top")
+p
+```
+
+Suppose we want a dynamic plot where we can see the gradual changes in the temperature as days progress for each month. For this purpose, we would use `transition_reveal()`. The argument we will cover for `transition_reveal()` is:
+
+`transition_reveal(along)`
+
+`along` gives the time dimension for which the data is to be plotted. 
+
+The following code chunk animates the static plot shown above such that the plot shows gradual changes across time dimensions. Specifically, `transition_reveal` adds data corresponding to time dimensions one after another to show how the data changes gradually as time passes.
+
+```{r, out.width = '70%'}
+p + transition_reveal(Day) 
+```
+
+We can also add points to show the individual data points.
+
+```{r, out.width = '70%'}
+p + geom_point(aes(group = seq_along(Day))) + transition_reveal(Day)
+```
+
+(Source: [Alboukadel Kassambara on Datanovia](https://www.datanovia.com/en/blog/gganimate-how-to-create-plots-with-beautiful-animation-in-r/))
+
+## 2d) `transition_states`
+
+Now, lets take a look at the `diamonds` dataset we have previously looked at during the semester. Earlier, if we wanted to understand how patterns change across color, we would have to do so using `facet_wrap()`. For example, 
+
+```{r}
+ggplot(diamonds, aes(carat, price)) +
+  geom_point() +
+  facet_wrap(~color)
+```
+
+But what if we want to understand this change, using just one graph? That's where `transition_states` comes in. The data points transition from one color to the next, pausing at each Specie for a while. 
+
+In the code below, `transition_states` takes 4 arguments:
+
+* `states`- which is the name of the column of the different categories of data we want to plot (in this case, its color)
+* `transition_length`- which is the length of the transition from one category to the next
+* `state_length`- which is the length of the pause at each state
+* `wrap`- whether or not the transition "wraps around" ie. does the last category transition to the first? (setting this as `TRUE` means it will) 
+
+The code below shows us how this is done: 
+
+```{r, out.width = '90%'}
+ggplot(diamonds, aes(carat, price)) +
+  geom_point() +
+  labs(title = "{closest_state}") +
+  transition_states(color, transition_length = 1, state_length = 3, wrap = FALSE)
+```
+
+The difference between transition_time and transition_states is that transition_time is used for numeric vectors, while transition_states are used for character strings. 
+
+(Source: [gganimate](https://gganimate.com/reference/transition_states.html))
+
+# 3 Some more `transition_*()` functions
+
+## 3a) `transition_manual`
+
+The command `transition_manual()` works similarly to  `transition_states()`. The only difference is that it shows the static plots of each state, without intermediary states. 
+
+```{r, out.width = '70%'}
+ggplot(diamonds, aes(carat, price)) +
+  geom_point() +
+  transition_manual(color)
+```
+
+## 3b) Transitioning between layers
+
+The command `transition_layers` adds new layers of information on a graph. This is exemplified in the graph below. 
+
+```{r, out.width = '70%'}
+ggplot(mtcars, aes(mpg, disp)) +
+  geom_point() +
+  geom_smooth(colour = 'grey', se = FALSE) +
+  geom_smooth(aes(colour = factor(gear))) +
+  transition_layers(layer_length = 1, transition_length = 2)
+```
+
+## 3c) `transition_events`
+
+What happens when we want to control each individual elements of a graph, and be able to move it in and out of the graph on its own? For this, we use `transition_events()`.
+
+Lets take the example of the `nycflights13` data that we viewed earlier in the semester. For the sake of convenience, let us only use the data of flights that departed on 1, January 2013, before 8am. 
+
+```{r, out.width = '70%'}
+flight <- flights %>%
+  filter(year == 2013 & month == 1 & day == 1 & dep_time < 800)
+```
+
+Suppose we want to plot the distance vs. scheduled departure time of the flight. In addition, we want each point to appear when the flight was en-route. This means that each data point should appear at its departure time, and disappear at its arrival time. The function `transition_events()` helps us do this.
+
+`transition_events()` takes 4 arguments-
+
+* `start`- which gives the start time of the event
+* `end`- which gives the end time of the event
+* `enter_length` and `exit_length`- which gives the length used for enter and exit of each event respectively (for this exercise, we will set these to `1`.)
+
+The code below shows how we can achieve this:
+
+```{r, out.width = '70%'}
+ggplot() +
+  geom_point(data = flight, 
+       aes(distance, sched_dep_time)) +
+  transition_events(start = dep_time, 
+                    end = arr_time,
+                    enter_length = as.integer(1),
+                    exit_length = as.integer(1))
+```
+
+Now, if we want to add a caption to our graph, to indicate the time of day, we can do this using `labs()`, as we did while using `ggplot()`. But here, our labels use animations too!
+
+```{r, out.width = '70%'}
+ ggplot() +
+  geom_point(data = flight, 
+       aes(distance, sched_dep_time)) +
+  transition_events(start = dep_time, 
+                    end = arr_time,
+                    enter_length = as.integer(1),
+                    exit_length = as.integer(1)) +
+  labs(caption = "Time of the day: {frame_time}")
+```
+
+(Source: [gganimate](https://gganimate.com/reference/transition_events.html) and [Alex Cookson](https://www.alexcookson.com/post/2020-10-18-building-an-animation-step-by-step-with-gganimate/))
+
+# 4 Animating the axis
+
+gganimate offers the ability to alter the coordinate axes as the aesthetics change. This is done using the set of `view_*()` functions.
+
+## 4a) Keeping the axes fixed
+
+When plotting a graph where the points move around, it is possible that the data may move outside our axes limits. To prevent this, we can use the `view_static()` function to choose a set of axes that encompasses all the data.
+
+## 4b) Following the data
+
+We can use the `view_follow()` function to change the axes across frames to always include all of the data presented in the frame. For example, look at the following plot of the `iris` dataset:
+
+```{r, out.width = '70%'}
+anim <- ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point() +
+  labs(title = "{closest_state}") +
+  transition_states(Species, transition_length = 4, state_length = 1)
+anim
+```
+
+Adding the `view_follow()` function, we can have the axes adjust with the data itself:
+
+```{r, out.width = '70%'}
+anim + view_follow()
+```
+
+`view_follow()` can take several arguments. Two important arguments are `fixed_x` and `fixed-y` which allows the user to fix the one or both of the axes. This argument either takes in a logical or a numeric vector. The numeric vector gives the lower and upper bounds of the axis and `NA`s can be used to set only one of these limits with the `NA` being replaced by the value calculated by the view.
+
+```{r, out.width = '70%'}
+anim + view_follow(fixed_x = TRUE)
+```
+
+```{r, out.width = '70%'}
+anim + view_follow(fixed_x = c(4, NA))
+```
+
+(Source: [gganimate](https://gganimate.com/reference/view_follow.html))
+
+## 4c) Moving in steps
+
+`view_follow()` constantly adjusts the axes as the data moves. We can also do this in steps using the `view_step()` function where the axes only moves after the data has reached their state and is static. As a result, `view_step()` is best used when working with `transition_states()`.
+
+```{r, out.width = '70%'}
+anim + view_step(pause_length = 2, step_length = 1, nsteps = 3)
+```
+
+The length of time for the pause and the axes transition is using the `pause_length` and `step_length` arguments to `view_step()`.
+
+(Source: [gganimate](https://gganimate.com/reference/view_step.html))
+
+## 4d) Panning and zooming smoothly
+
+`view_zoom()` is similar to `view_step()` in that it transitions to each state after the data is static. However, `view_zoom()` implements a different transition where there is a gradual zoom out first and then zooming in as the axes pan towards the new data. 
+
+```{r, out.width = '70%'}
+anim + view_zoom(pause_length = 1, step_length = 2, nsteps = 3)
+```
+
+(Source: [gganimate](https://gganimate.com/reference/view_zoom.html))
+
+# 5 Handling addition and removal of new and old data
+
+gganimate provides the `enter/exit_*()` and `shadow_*()` set of functions to define how to deal with  adding and removing data on the plot across frames.
+
+## 5a) Adding and removing data points
+
+Using the `enter/exit_*()` set of functions we can define how new data enter the plot and how old data leaves. Every `enter_*()` function has its corresponding `exit_*()` function. Some examples of `enter/exit_*()` functions are:
+
+* `enter/exit_fade()`: Points fade in and fade out of the plot.
+* `enter_grow()`/`exit_shrink()`: New points grow to their final size and points to be removed shrink in size.
+* `enter/exit_fly()`: Points fly in or fly out of the plot from or to a specified location.
+
+The `enter/exit_*()` can be used in combination to produce an animation with multiple effects on the points. Below is an example of using the `enter_fade()` and `exit_fly()` functions together:
+
+```{r, out.width = '70%'}
+ggplot(mtcars, aes(factor(gear), mpg)) +
+  geom_boxplot() +
+  transition_states(gear, 2, 1) +
+  enter_fade() +
+  exit_fly(x_loc = 7, y_loc = 40)
+```
+
+(Source: [gganimate](https://gganimate.com/reference/enter_exit.html))
+
+## 5b) Showing data from previous frames
+
+The `shadow_*()` set of functions allow us to define how data from previous frames are viewed in the current frame. One of these functions is the `shadow_wake()` function. This shows a "small wake after the date by showing the latest frames up to the current" ([gganimate](https://gganimate.com/reference/shadow_wake.html), n.d.) The user can define if the shadow will shrink in size and/or opacity. Let us use the `iris` dataset to see the effect.
+
+```{r, out.width = '70%'}
+ggplot(iris, aes(Petal.Length, Sepal.Length)) +
+  geom_point() +
+  labs(title = "{closest_state}") +
+  transition_states(Species, transition_length = 4, state_length = 1) +
+  shadow_wake(wake_length = 0.05)
+```
+
+The `wake_length` argument is a value between 0 and 1 and gives the proportion of the total length of each animation to include in the shadow. We can also use the `size`, `alpha`, `colour`, and `fill` arguments to alter the the shadow's visual characteristics. 
+
+Other `shadow_*()` functions include `shadow_mark()`, `shadow_trail()`, and `shadow_null()`.
+
+(Source: [gganimate](https://gganimate.com/reference/shadow_wake.html))
+
+# 6 Label variables
+
+When using gganimate, we transition through frames and various states. It is useful to include information about the current frame or state in the title or other labels. The `transition_*()` functions create label variables that can be used for this purpose. The label variables also differ between the transitions. Two variables relevant for our case are the `{closest_state}` and `{frame_time}` variables. The `{closest_state}` variable equals the state the current frame is closest to, and is used when using the command `transition_state`. The `{frame_time}` variable equals the time of the current frame, and is used when using the command `transition_time`. Below we have an example of `{closest_state}` in use:
+
+```{r, out.width = '70%'}
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
+  geom_point() +
+  labs(title = "{closest_state}") +
+  transition_states(Species, transition_length = 4, state_length = 1)
+```
+
+(Source: [gganimate](https://gganimate.com/reference/view_follow.html))
+
+# Conclusions
+
+gganimate is a useful addition to ggplot, but only in specific situations. There are two situations when gganimate can be useful:
+
+1. When it helps convey some added nuance to the viewer.
+2. When it can make data visualisation more interesting and engaging.
+
+The first point is particularly important. For example, as displayed in the example for `transition_states` in 2d, it may be a bit difficult for the viewer to see how the plot changes with different colors. The added animation using allows the viewer to grasp and remember these differences. The viewer can then look at the faceted plot again with a more informed eye, which can aid in their understanding.
+
+The second point can help in certain settings. For example, presenters like teachers or consultants can keep their audience more engaged by adding some animation in their presentations. Such animations, if used sparingly, can help retain attention, especially when the presenter has many visualisations to present.
+
+Lastly, gganimate should be used sparingly. Too much usage can have the opposite effect as visualisations can become difficult to understand. We also recommend accompanying a static plot with the animated one in order to allow for more careful observation.
+
+# References
+
+Cookson, A. (2022) *Building an animation step-by-step with gganimate*. Retrieved 10 April 2022, from https://www.alexcookson.com/post/2020-10-18-building-an-animation-step-by-step-with-gganimate/.
+
+Hailperin, K. (2022). *gganimate Cheat Sheet*. Retrieved 10 April 2022, from https://ugoproto.github.io/ugo_r_doc/pdf/gganimate.pdf.
+
+Kassambara, Alboukadel. gganimate: *How to create plots with beautiful animation in R*. Retrieved April 11, 2022, from https://www.datanovia.com/en/blog/gganimate-how-to-create-plots-with-beautiful-animation-in-r/
+
+Pedersen, T. L.; Robinson, D. (n.d.). *A grammar of Animated Graphics*. Retrieved April 10, 2022, from https://gganimate.com/ 
+
+

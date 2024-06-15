@@ -1,0 +1,210 @@
+---
+title: "lec09_exercises"
+author: "shuna"
+date: "2/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, fig.align = 'center')
+```
+
+```{r}
+library(tidyverse)
+
+titanic <- read.csv("titanic.csv")
+```
+
+
+# 1. Categorical Data 
+
+(a) Download the CSV file and import the data as a tibble. Remove all rows except class and survived. Give the resulting tibble the name titanic_1
+
+```{r}
+# download the csv file
+titanic <- read.csv("titanic.csv")
+# remove unnecesssary columns 
+titanic_1 <- as_tibble(titanic |> 
+  select(class, survived))
+```
+
+
+(b) Make a bar plot of passengers by class (1st, 2nd, 3rd and crew). Use labs() to add a plot title, customise axis labels and add a caption with an attribution to the source (Encyclopedia Titanica).
+
+```{r,fig.height=3, fig.width=4}
+ggplot(data = titanic_1, aes(class))+
+  # bar plot 
+  geom_bar()+
+  # add labels 
+  labs(x = "Passengers",
+       y = "Number")+
+  # add titles 
+  ggtitle(label = "Passengers by class",
+          subtitle = "Encyclopedia Titanica")+
+  # adjust titles 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+
+```
+
+
+(c) How can you visualise the dependence of the number of survivors on their class? Include such a plot in your solution. (Plots that show the relation between two categorical variable were not directly in the preparation material for today, so you may need to search the worldwide web.)
+
+```{r,fig.height=3, fig.width=4}
+ggplot(data = titanic_1, aes(class, fill = survived))+
+  # make a stack bar plot 
+  geom_bar(position="stack")+
+  # add labels 
+  labs(x = "Passengers",
+       y = "Number")+
+  # add title
+  ggtitle(label = "Passengers by class",
+          subtitle = "Encyclopedia Titanica")+
+  # adjust titles 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  # edit legends 
+  scale_fill_discrete(name = NULL, labels = c("Died", "Survived"))
+```
+
+(d)  R contains a built-in data set Titanic (starting with an upper-case letter). It is not a data frame but an array. Here is how we turn the data about class and survival into a tibble. (You do not need to memorise this code chunk.)
+
+```{r}
+titanic_2 <-
+  apply(Titanic, c(1, 4), sum) |>
+  as_tibble(rownames = "class") |>
+  rename(died = "No", survived = "Yes")
+```
+
+The number of passengers in each category differ between titanic_1 and titanic_2 because the
+built-in data set Titanic is based on older, less accurate data. Apart from this numeric difference, briefly describe the structural differences between titanic_1 and titanic_2.
+
+titanic_1 describes each passenger and his/her characters (age, sex, etc), so each row corresponds to a passenger. titanic_2 is a more summarized data and only has columns for survival. Each row represents a class.  
+
+
+(e) Add a column to titanic_2 with the total number of passengers in each class.
+
+```{r}
+titanic_2 <- titanic_2 |> 
+  # add survived and died 
+  # to calculate total number of passengers in each class 
+  mutate(total_number = survived + died)
+```
+
+(f) Redo the plot you made in (b), but use titanic_2 instead of titanic_1 as data argument of ggplot(). As pointed out in (d), the numbers are not exactly the same. However, please make the plots similar in all other respects. Point out where the difference is between the code of (b) and (f)
+
+
+```{r,fig.height=3, fig.width=4}
+# there's a better way to do this 
+titanic_2_changed <- 
+  pivot_longer(titanic_2, 
+               survived:died,
+               names_to = "State", 
+               values_to = "num")
+
+titanic_2_changed |> 
+  group_by(class) |> 
+  ggplot(aes(class, total_number, fill = State))+
+  geom_col() + 
+  labs(x = "Passengers",
+       y = "Number")+
+  ggtitle(label = "Passengers by class")+
+  theme(plot.title = element_text(hjust = 0.5))
+  
+```
+
+# 2. Distributions of quantitative data 
+
+(a) Change the columns to be a factor 
+```{r}
+morley <- morley |>
+  mutate(Expt = as.factor(Expt))
+```
+
+(b) Make a scatterplot of Speed versus Experiment number 
+```{r, fig.width=4, fig.height=3}
+ggplot(data = morley, aes(Expt, Speed))+
+  # scatterplot with point size 1 
+  geom_point(size = 1)+
+  # add a title 
+  labs(title = "Speed vs experiment number",
+       x = "Experiment")+
+  # adjust title 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+(c) use geom_jitter() to make another scatter plot 
+```{r, fig.width=4,fig.height=3}
+ggplot(data = morley, aes(Expt, Speed))+
+  # jittered plot 
+  geom_jitter(width = 0.1, height = 0, size = 1)+
+  # titles 
+  labs(title = "Speed vs experiment number",
+       x = "Experiment")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+The height and width in geom_jitter is adjusted. 
+1. Height : since the values in y-axis are continuous and the points should not be jittered, we set the height = 0 
+2. width : in the default setting, the point are jittered so widely that there is no distinction between experiment numbers. To avoid such a case, we reduce the width to 0.1. 
+
+\
+
+(d) Describe what boxplot shows in general 
+
+
+
+(e) 
+
+```{r, fig.width=4, fig.height=3}
+ggplot(morley, aes(Expt, Speed))+
+  # box plot 
+  geom_boxplot()+
+  # titles 
+  labs(title = "Speed vs experiment number",
+       x = "Experiment")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+(f)
+```{r,fig.width=4, fig.height=3}
+ggplot(morley, aes(Expt, Speed))+
+  # violin plot 
+  geom_violin()+
+  # titles 
+  labs(title = "Speed vs experiment number",
+       x = "Experiment")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+(g) What is the advantage of a violin plot compared to a box plot? What is the disadvantage? 
+
+Advantage 
+- Violin plot allows us to see the probability density at different experiment numbers. 
+
+Disadvantage
+- Boxplot shows a summary statistics (quantiles, for example). 
+
+
+(h) Make a faceted plot with one histogram for each experiment's speed distribution. 
+
+```{r, fig.width=5, fig.height=3.5}
+ggplot(morley, aes(Speed))+
+  geom_histogram(binwidth = 100)+
+  facet_wrap(~Expt)
+```
+
+(i) Show the speed distribution of each experiment as a frequency polygon.
+
+```{r, fig.width=5, fig.height=3}
+ggplot(morley, aes(Speed,color=Expt))+
+  geom_freqpoly(binwidth = 100)
+```
+(j) What is the advantage of using non-faceted frequency polygons compared to faceted histograms? What is the disadvantage? 
+
+Advantage 
+- easy to make comparisons 
+- easier to see the difference in peaks 
+
+Disadvantage 
+- difficult to see the individual distribution, especially when two distributions are similar and overlapping.

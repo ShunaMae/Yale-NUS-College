@@ -1,0 +1,175 @@
+---
+title: "spots cycles"
+author: "Kelly Ng"
+date: "3/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  fig.align = "center")
+```
+
+I need the following packages for these exercises: 
+```{r, warning = FALSE}
+library(lubridate)
+library(tidyverse)
+```
+### 1.  Import the data
+```{r}
+spots <- read_delim("SN_d_tot_V2.0.csv",
+  delim = ";",
+  escape_double = FALSE,
+  col_names = c(
+    "year",
+    "month",
+    "day",
+    "year_fraction",
+    "ss_number",
+    "sd",
+    "n_obs",
+    "definitive"
+  ),
+  na = c("-1", "-1.0"),
+  trim_ws = TRUE
+)
+```
+
+The missing sunspot numbers are encoded as either `-1` or `-1.0`. 
+
+### 2. Add a new column to the tibble
+```{r}
+spots <- spots |>
+  mutate(date = make_date(year, month, day))
+```
+
+
+### 3. Which is the latest date that has a missing sunspot number? 
+```{r}
+D <- spots |>
+  filter(is.na(ss_number)) |>
+  slice_tail() |>
+  pull(date)
+
+stamp("Tuesday, 3 December, 2019")(D) 
+```
+
+
+### 4. Are all dates in the sunspot data set consecutive? 
+```{r}
+spots$nextday <- spots$date + 1
+all(lead(spots$date) == spots$nextday, na.rm = TRUE)
+```
+Yes, all the dates are consecutive.
+
+### 5. Tranform the tibble so that it contains the start date of the month and the mean daily sunspot number. 
+```{r}
+spots <-
+  spots |>
+  filter(year >= 1975) |>
+  timetk::summarise_by_time(
+    date,
+    .by = "month",
+    mean_daily_ss_number = mean(ss_number, na.rm = TRUE)
+  )
+```
+
+### 6. Import solar cycles tibble:
+```{r}
+solar_cycles <- read_csv("solar_cycles.csv")
+
+solar_cycles <- solar_cycles |>
+  
+  mutate(
+    `Start (Minimum)` = ym(`Start (Minimum)`),
+    Maximum = ym(Maximum))
+```
+
+### 7. Is `Time of Rise (years)` equal to the time that elapsed between `Start (Minimum)` and `Maximum`?
+```{r}
+time_elapsed <- round(
+  time_length(
+    difftime(
+      solar_cycles$Maximum,
+      solar_cycles$`Start (Minimum)`
+    ),
+    "years"
+  ), 
+  1
+)
+
+# Not all are TRUE 
+all(solar_cycles$`Time of Rise (years)` == time_elapsed)
+```
+Yes, the time that elapsed between `Start (Minimum)` and `Maximum` is the same as the values in `Time of Rise (years)`
+
+
+### 8. Remove all rows from `solar_cycles` before 1975. 
+```{r}
+solar_cycles <- solar_cycles |>
+  filter(`Start (Minimum)` >= ymd("1975-01-01"))
+```
+
+### 9. Add a column `mid_date`. 
+```{r}
+solar_cycles <- solar_cycles |>
+  mutate(
+    mid_date = (
+      lead(`Start (Minimum)`) - `Start (Minimum)`
+    )
+    / 2 + `Start (Minimum)`
+  )
+```
+
+
+### 10. Make a plot of the sun spot time series:
+```{r, fig.width = 7, fig.height = 6, out.width = '80%'}
+
+# clean data 
+solar_cycles <- solar_cycles |>
+  # extract numbers from `Solar Cycle`
+  mutate(
+    cycle = as.numeric(
+      gsub("Solar cycle ", "", `Solar Cycle`)
+    )
+  ) |>
+  select(cycle, mid_date) |>
+  head(-1) 
+
+
+p <- ggplot(spots, aes(date, mean_daily_ss_number)) + 
+  geom_point(alpha = 0.5, color = "deepskyblue4") +
+  geom_smooth(
+    formula = y ~ x, 
+    method = "loess",
+    span = 0.1, 
+    color = "black", 
+    size = 1.2, 
+    se = FALSE,
+    show.legend = TRUE) +
+  labs(
+    title = "Solar Activity",
+    subtitle = "Sunspot number averaged by month",
+    x = "Year", 
+    y = "Mean daily sunspot number", 
+    caption = "Source: Royal Observatory of Belgium"
+  ) +
+  theme(
+    legend.position = c(0.9, 0.8), 
+    legend.justification = c(1,1)
+  ) 
+
+# add labels 
+p + geom_label(
+  data = solar_cycles,
+  aes(x = mid_date, y = 0, label = cycle),
+  size = 5,
+  show.legend = TRUE
+)
+#UNFINISHED
+```
+
+### 11. What does the plot reeval about the data? 
+
+The plot reveals that around the mid-date of every solar cycle, there will be a peak in the number of mean daily sunspots. Since the peaks of every solar cycle decreases every time, this implies that the overall number of sunspots decreases across time. Since sunspots are a measure for solar activity, this may mean that solar activity has significantly decreased since the 1970s.

@@ -1,0 +1,128 @@
+---
+title: "Lecture17"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+p = 5/8
+
+(1 - (1-p)^3) / (1-p)^3
+```
+
+
+```{r}
+
+set.seed(123)
+winner = c()
+for(i in 1:50000){
+  # randomly roll the ball 
+  p = runif(1, 0,1)
+  # sample either Ajay or Nathan 
+  tmp = sample(c("A", "N"), 8, replace=TRUE, prob=c(p, 1-p))
+  if(sum(tmp=="A")==5){
+    # Ajay won 5 so far 
+    a = 5; n = 3 
+    while(TRUE){
+      tmp = sample(c("A", "N"), 1, prob=c(p, 1-p))
+      #tmps = c(tmps, tmp)
+      # loop 
+      if(tmp =="A"){ a = a + 1 }
+      if(tmp =="N"){ n = n + 1 }
+      # until either reaches 6 
+      if(n == 6 || a == 6){
+        break
+      }
+    }
+    if( a == 6 ){
+      winner = c(winner, "A")
+    }
+    if( n == 6 ){
+      winner = c(winner, "N")
+    }
+  }
+}
+
+```
+
+```{r}
+table(winner)
+```
+
+```{r}
+get_prior = function(vals){
+  valspmin = pmin(vals, 1-vals)
+  prior = valspmin / sum(valspmin)
+  return(data.frame(theta=vals, prior=prior))
+}
+
+
+get_likelihood = function(thetas, successes, failures){
+  lvals = dbinom(successes, successes+failures, thetas)
+  
+  return(data.frame(theta = thetas, likelihood = lvals))
+  
+}
+
+get_posterior = function(likelihood, prior){
+  
+  likelihood$likelihood * prior_distribution$prior
+  
+  marginal_likelihood = sum(likelihood$likelihood * prior_distribution$prior)
+  
+  posterior = (likelihood$likelihood * prior_distribution$prior) / marginal_likelihood
+  
+  posterior = data.frame(theta=likelihood$theta, posterior=posterior)
+  return(posterior)
+}
+```
+
+```{r}
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_prior(thetas)
+likelihood = get_likelihood(thetas, 1 , 0)
+posterior = get_posterior(likelihood, prior_distribution)
+
+
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_prior(thetas)
+likelihood = get_likelihood(thetas, 83 , 17)
+posterior = get_posterior(likelihood, prior_distribution)
+
+plot(prior_distribution$theta, prior_distribution$prior)
+plot(likelihood$theta, likelihood$likelihood)
+plot(posterior$theta, posterior$posterior)
+```
+
+
+```{r}
+
+get_biased_prior = function(vals){
+  return(data.frame(theta=vals, prior=c(0.05, 0.15, 0.125,
+                                        0.08, 0.07, 0.05, 
+                                        0.07, 0.08, 0.125, 
+                                        0.15, 0.05)))
+}
+
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_biased_prior(thetas)
+likelihood = get_likelihood(thetas, 1 , 0)
+posterior = get_posterior(likelihood, prior_distribution)
+
+plot(prior_distribution$theta, prior_distribution$prior)
+plot(likelihood$theta, likelihood$likelihood)
+plot(posterior$theta, posterior$posterior)
+
+
+```
+
+
+
+```{r}
+sessionInfo()
+
+```

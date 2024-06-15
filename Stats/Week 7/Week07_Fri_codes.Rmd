@@ -1,0 +1,150 @@
+---
+title: "week07_stats_fri"
+author: "shuna"
+date: "3/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+mother_pop <- rnorm(n = 100, mean = 0, sd = 1)
+another_pop <- rnorm(n = 100, mean = 0, sd = 1)
+t.test(mother_pop, another_pop)$p.value
+```
+
+```{r}
+# uniform distribution
+c <- c()
+for (i in 1:2000){
+  mo_pop <- rnorm(n = 100, mean = 0, sd = 1)
+  fa_pop <- rnorm(n = 100, mean = 0, sd = 1)
+  x <- t.test(mo_pop, fa_pop)$p.value
+  c[i] <- x
+}
+hist(c)
+```
+
+```{r}
+# the probability of making the type I error 
+# false positives 
+sum(c < 0.05)/ length(c)
+
+# we make tyoe I error at the same rate of alpha, the significance level 
+```
+this means that the expected number of false positives are $\alpha\times N$. 
+
+```{r}
+ans <- c()
+for (i in 1:1000){
+  c <- c()
+  for (j in 1:i){
+    mo_pop <- rnorm(n = 100, mean = 0, sd = 1)
+    fa_pop <- rnorm(n = 100, mean = 0, sd = 1)
+    x <- t.test(mo_pop, fa_pop)$p.value
+    c[j] <- x
+  }
+  ans[i] <- 1 - (1-0.05)^i
+}
+
+hist(ans)
+```
+
+```{r}
+alpha <- 0.05
+plot(1:2000, 1 - (1-alpha)^seq(1:2000), type = "l", xlab = "m0", ylab = "")
+```
+
+Bonferroni correction 
+
+```{r}
+alpha <- 0.05
+m <- seq(1:20000)
+plot(1:20000, 1 - (1-alpha/m)^m, type = "l", xlab = "m", ylab = "")
+```
+
+```{r}
+?p.adjust
+```
+
+```{r}
+c <- c()
+for (i in 1:10000){
+  mo_pop <- rnorm(n = 10, mean = 0, sd = 1)
+  fa_pop <- rnorm(n = 10, mean = 2, sd = 1)
+  x <- t.test(mo_pop, fa_pop)$p.value
+  c[i] <- x
+}
+hist(c)
+sum(c >= 0.05)/length(c)
+```
+
+```{r}
+effect <- seq(0.1,2,by = 0.1)
+power <- c()
+for (effectsize in effect){
+  c = c()
+  for (i in 1:1000){
+    mo_pop <- rnorm(n = 10, mean = 0, sd = 1)
+    al_pop <- rnorm(n = 10, mean = effectsize, sd = 1)
+    x <- t.test(mo_pop, al_pop)$p.value
+    c[i] <- x
+  }
+  a <- 1 - (sum(c>0.05)/length(c))
+  power[effectsize*10] <- a
+}
+power <- cbind(effect, power)
+plot(power)
+```
+statistical power 
+
+```{r}
+c <- c()
+for (i in 1:10000){
+  mo_pop <- rnorm(n = 10, mean = 0, sd = 0.5)
+  fa_pop <- rnorm(n = 10, mean = 1.5, sd = 0.5)
+  x <- t.test(mo_pop, fa_pop)$p.value
+  c[i] <- x
+}
+hist(c)
+1 - sum(c >= 0.05)/length(c)
+```
+
+```{r}
+sd <- seq(1, 5, by = 1)
+power <- c()
+for (dev in sd){
+  c = c()
+  for (i in 1:1000){
+    mo_pop <- rnorm(n = 10, mean = 0, sd = 1)
+    al_pop <- rnorm(n = 10, mean = 1.5, sd = dev)
+    x <- t.test(mo_pop, al_pop)$p.value
+    c[i] <- x
+  }
+  a <- 1 - (sum(c>0.05)/length(c))
+  power[dev] <- a
+}
+power <- cbind(sd, power)
+plot(power, type = "l")
+```
+
+```{r}
+size <- seq(10, 200, by = 10)
+power <- c()
+for (samplesize in size){
+  c = c()
+  for (i in 1:1000){
+    mo_pop <- rnorm(n = samplesize, mean = 0, sd = 1)
+    al_pop <- rnorm(n = samplesize, mean = 0.5, sd = 1)
+    x <- t.test(mo_pop, al_pop)$p.value
+    c[i] <- x
+  }
+  a <- 1 - (sum(c>0.05)/length(c))
+  power[samplesize/10] <- a
+}
+power <- cbind(size, power)
+plot(power, type = "l")
+```
+

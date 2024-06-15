@@ -1,0 +1,304 @@
+---
+title: "final_exam_shuna"
+author: "shuna"
+date: "5/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, fig.align = "center")
+```
+
+```{r, warning = FALSE}
+library(hms)
+library(lubridate)
+library(readxl)
+library(sf)
+library(tidyverse)
+library(tmap)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+```
+
+# Problem 1
+
+## a 
+```{r}
+mc <- read_csv("mc_donalds.csv")
+head(mc)
+```
+
+## b
+
+
+
+```{r}
+for_b <- mc |>
+  mutate(date_time = ymd_hms(date_time)) |>
+  mutate(
+    hours = hour(date_time),
+    minutes = minute(date_time),
+    time= make_datetime(
+      year = 2021,
+      month = 1, 
+      day = 1,
+      hour = hours,
+      min = minutes
+    )
+  ) 
+
+for_b |>
+  group_by(time) |>
+  summarise(mean_trade = mean(volume)) |>
+  ggplot(aes(time, mean_trade)) +
+  geom_line()
+```
+
+```{r}
+utc <- mc |> mutate(date_time = ymd_hms(date_time))
+ny_time <- with_tz(utc, tzone = "America/New_York")
+ny <- tibble(ny_time) |> 
+  select(-volume) |>
+  dplyr::rename(ny = date_time)
+```
+
+```{r}
+# https://r4ds.had.co.nz/dates-and-times.html
+adjusted_time <- mc |>
+  mutate(date_time = ymd_hms(date_time, tz = "UTC"))
+adjusted_time <- cbind(adjusted_time, ny) |> 
+  select(-date_time)
+```
+
+
+```{r}
+for_e <- adjusted_time |>
+  mutate(
+    hours = hour(ny),
+    minutes = minute(ny),
+    time = paste0(hours, ":", minutes),
+    time = hm(time)
+  ) |>
+  group_by(time) |>
+  summarise(mean_trade = mean(volume)) |>
+  distinct() |>
+  print()
+
+for_e |> 
+  ggplot(aes(time, mean_trade)) +
+  geom_point()
+
+```
+
+
+## d
+
+## e
+
+I did not manage to make the plot, but I can tell from the example plot that there are peaks at 0930 and 1600. This is probably because it its the time they open and close, so the tradings are made at that timings. 
+
+
+
+# Problem 2
+
+```{r}
+bitcoin_edges <- read_csv("bitcoin_edges.csv") |>
+  mutate(
+    from = as.character(from),
+    to = as.character(to)
+  )
+head(bitcoin_edges)
+```
+
+## b
+```{r}
+from_node <- bitcoin_edges$from
+to_node <- bitcoin_edges$to
+
+node <- c(from_node, to_node)
+node <- unique(node)
+bitcoin_nodes <- tibble(id = node) |>
+  arrange(id) |>
+  mutate(id = as.character(id)) 
+```
+
+
+## c
+```{r}
+bitcoin_netw <- tbl_graph(
+  edges = bitcoin_edges,
+  nodes = bitcoin_nodes,
+  directed = TRUE
+)
+```
+
+## d
+```{r}
+is_simple(bitcoin_netw)
+```
+
+```{r}
+is_directed(bitcoin_netw)
+```
+
+## e
+
+```{r}
+pos <- bitcoin_edges |>
+  filter(rating > 0) |>
+  nrow() |>
+  print()
+```
+
+```{r}
+bitcoin_edges |>
+  filter(rating == 0) |>
+  nrow()
+```
+
+```{r}
+neg <- bitcoin_edges |>
+  filter(rating < 0) |>
+  nrow() |>
+  print()
+```
+
+## f 
+```{r}
+all_edges <- nrow(bitcoin_edges)
+p_trust <- (pos / all_edges) * (pos-1) / (all_edges-1)
+p_distrust <- (neg / all_edges) * (neg-1) / (all_edges-1)
+
+num_pairs <- dyad_census(bitcoin_netw)$mut
+expected_trust <- p_trust * num_pairs
+expected_distrust <- p_distrust * num_pairs
+
+expected_trust
+expected_distrust
+```
+
+
+## g
+```{r}
+
+```
+
+## *h
+
+From question f, I can say that the positive mutuality is very common, followed by the negative mutuality. 
+
+# Problem 3 
+
+```{r}
+countries <- read_excel(
+  "API_SP.POP.TOTL_DS2_en_excel_v2_4019847.xls",
+  skip = 2
+) |>
+  dplyr::select(
+    "Country Name",
+    "Country Code",
+    pop = "2020"
+  ) |>
+  print()
+```
+
+## b
+```{r}
+medals <- read_csv("medals.csv") |> print()
+```
+
+```{r}
+data <- medals |>
+  left_join(countries, by = c("code" = "Country Code")) |>
+  dplyr::select(-"Country Name") |>
+  mutate(medal_per_million = medals / pop * 1000000) |>
+  select(-medals, -pop) |>
+  print()
+```
+
+## c
+
+```{r}
+medal_vector <- medals$medals
+pop_vector <- countries$pop
+median(pop_vector, na.rm = TRUE)
+mean(medal_vector)
+```
+
+Firstly, the population in the countries are heavily skewed to the right. Therefore, we can take a look at the median population of a country. The median of 10 million people in a country and the mean of 5 medals per country means that, on average, 5 medals are won per 10 million people. At this point, I would go for medals per 10 million, but I suppose 1 million is also suitable as the mean would be 0.5 medals per 1 million. 
+
+## d
+```{r}
+import_and_simplify <- function(zip_file) {
+  zip_file |>
+    unzip() |>
+    str_subset(".shp$") |>
+    read_sf() |>
+    rmapshaper::ms_simplify()
+  }
+
+country_borders <- import_and_simplify("wb_countries_admin0_10m.zip")
+land <- import_and_simplify("wb_land_10m.zip")
+```
+
+## e
+```{r}
+# from prof's solution 
+country_borders <-
+  country_borders |>
+  mutate(ISO_A3 = case_when(
+    NAME_EN == "Norway" ~ "NOR",
+    NAME_EN == "France" ~ "FRA",
+    TRUE ~ ISO_A3
+  ))
+```
+
+## f
+
+```{r}
+to_map <- country_borders |>
+  left_join(data, by = c("ISO_A3" = "code")) |>
+  dplyr::select(
+    code = "ISO_A3",
+    num_medal = "medal_per_million",
+    geometry
+  )
+```
+
+## g 
+
+```{r, fig.height = 6, fig.width=8, out.width="70%"}
+choropleth <- tm_shape(land, projection = "+proj=eck4") +
+  tm_polygons(col = "grey") +
+  tm_shape(to_map) +
+  tm_polygons(
+    "num_medal",
+    border.col = "black",
+    palette = "BuGn",
+    breaks = c(-Inf, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, Inf),
+    colorNA = "grey",
+    title = "Medals per 1 million",
+    lwd = 0.5
+  ) +
+  tm_text("code", size = "AREA", col = "black") +
+  tm_credits(
+    c("Sources: World Bank and Wikipedia"),
+    position = c("left", "bottom"),
+    size = 0.5
+  ) +
+  tm_layout(
+    bg.color = "lightblue",
+    frame = FALSE,
+    inner.margins = c(0.00, 0.15, 0.01, 0.01),
+    earth.boundary = TRUE,
+    space.color = "white",
+    main.title = "Medals in the 2020 Olympics per 1 million inhabitants",
+    main.title.size = 1.2,
+    legend.position = c("left", "top"),
+    legend.title.size = 0.8,
+    legend.text.size = 0.6,
+  )
+choropleth
+```
+

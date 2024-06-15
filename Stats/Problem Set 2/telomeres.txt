@@ -1,0 +1,17 @@
+PID	sample	tel_content
+A	control	448.150985
+A	tumor	758.036783
+C	control	560.788568
+C	tumor	682.036242
+D	control	422.680432
+D	tumor	1149.916994
+E	control	494.810761
+E	tumor	538.599779
+F	control	568.323885
+F	tumor	143.538043
+G	control	481.369297
+G	tumor	1672.197666
+J	control	514.007161
+J	tumor	1483.062025
+H	control	498.344564
+H	tumor	528.261512

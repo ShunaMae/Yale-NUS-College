@@ -1,0 +1,33 @@
+Wgt	Gest	Smoke
+2940	38	Smoke
+3130	38	Not Smoke
+2420	36	Smoke
+2450	34	Not Smoke
+2760	39	Smoke
+2440	35	Smoke
+3226	40	Not Smoke
+3301	42	Smoke
+2729	37	Not Smoke
+3410	40	Not Smoke
+2715	36	Smoke
+3095	39	Not Smoke
+3130	39	Smoke
+3244	39	Not Smoke
+2520	35	Not Smoke
+2928	39	Smoke
+3523	41	Not Smoke
+3446	42	Smoke
+2920	38	Not Smoke
+2957	39	Smoke
+3530	42	Not Smoke
+2580	38	Smoke
+3040	37	Not Smoke
+3500	42	Smoke
+3200	41	Smoke
+3322	39	Not Smoke
+3459	40	Not Smoke
+3346	42	Smoke
+2619	35	Not Smoke
+3175	41	Smoke
+2740	38	Smoke
+2841	36	Not Smoke

@@ -1,0 +1,112 @@
+---
+title: "Week09_fri_Davis"
+author: "shuna"
+date: "3/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+I need the following packages in this exercise 
+```{r}
+library(tidygraph)
+library(ggraph)
+library(tidyverse)
+library(igraph)
+```
+
+```{r}
+edges <- read_table("email-Eu-core.txt.gz",
+  col_names = FALSE
+) |>
+  mutate(
+    from = X1 + 1,
+    to = X2 + 1
+  ) |>
+  select(-X1, -X2)
+nodes <- read_table("email-Eu-core-department-labels.txt.gz",
+  col_names = FALSE
+) |>
+  mutate(
+    person = X1 + 1,
+    department = X2
+  ) |>
+  select(-X1, -X2)
+nodes
+edges
+```
+ #### 3. Assemble a tbl_graph called eu_netw from the tibbles
+```{r}
+eu_netw <- tbl_graph(nodes = nodes, edges = edges) |> print()
+# for adding one to every person, we could do eu_netw + 1.
+# for clarity, I did it in the chunk above. 
+```
+#### 4. Let us plot the complete network with ggraph.
+
+```{r, cache=TRUE}
+ggraph(eu_netw, layout = "kk") +
+  geom_edge_bend(
+    alpha = 0.1,
+    arrow = arrow(length = unit(2, "mm"))
+  ) +
+  geom_node_point(colour = "brown", alpha = 0.5)
+```
+
+Cool 
+["https://www.data-imaginist.com/2017/ggraph-introduction-layouts/"]
+
+
+```{r}
+contracted_eu_igraph <-
+  eu_netw |>
+  as.igraph() |>
+  # contract multiple vertices into 1 
+  contract(nodes$department + 1)
+vertex_attr(contracted_eu_igraph, "dept") <-
+  0:(gorder(contracted_eu_igraph) - 1)
+contracted_directed_netw <-
+  as_tbl_graph(contracted_eu_igraph) |>
+  convert(to_simple) |>
+  activate(edges) |>
+  mutate(weight = lengths(.tidygraph_edge_index)) |>
+  print()
+```
+
+```{r, cache=TRUE}
+ggraph(contracted_directed_netw, layout = "stress") +
+  geom_edge_fan(
+    aes(colour = weight, end_cap = label_rect(node2.dept)),
+    alpha = 0.5,
+    arrow = arrow(length = unit(0.2, "cm"))
+  ) +
+  geom_node_label(aes(label = dept), colour = "brown") +
+  theme(legend.position = c(1, 1), legend.justification = c(1, 1))
+```
+
+#### 7. In this and the next step, we write code for an alternative visualisation of the data: a dendrogram that shows how close relations between departments are (figure 1). We can think of the dendrogram as a ‘family tree’ with the ‘root’ on the right. In this metaphor, departments that exchange more emails with each other are more closely related. The dendrogram reveals, for example, that department 33 is only distantly related to all other departments. It also shows that departments 0 and 7 are closely related. As preparation for the dendrogram, create an undirected version of contracted_directed_netw from task (5). Then turn the undirected network into a simple network. Append a column called weight to each undirected edge x↔ythat is equal to the sum of the weights on the directed edges x→yand y→x.
+
+```{r}
+undirected_simple_netw <- 
+  contracted_directed_netw |>
+  convert(to_undirected) |>
+  convert(to_simple) |>
+  activate(edges) |>
+  mutate(weight = map_dbl(.orig_data, ~ sum(pull(., weight)))) |> 
+  print()
+```
+
+```{r}
+hierarchy <-
+  undirected_simple_netw |>
+  convert(to_hierarchical_clusters, weights = weight)
+```
+
+```{r}
+layout <- create_layout(hierarchy, "dendrogram")
+
+ggraph(layout) +
+  geom_edge_elbow() 
+```
+

@@ -1,0 +1,200 @@
+---
+title: "Lecture7data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+t-test
+```{r}
+old = c(20.8, 2.8, 50.0, 33.3, 29.4, 38.9, 29.4, 52.6, 14.3)
+young = c(45.5, 55.0, 60.7, 61.5, 61.1, 65.5, 42.9, 37.5)
+```
+
+
+```{r}
+mean(young)
+mean(old)
+```
+
+```{r}
+?t.test
+```
+
+```{r}
+t.test(young, old, var.equal = TRUE)
+# see that the condifence interval does not contain 0 
+```
+
+```{r}
+# test if the two samples ha ve equal standard deviation
+var.test(young, old)
+```
+
+```{r}
+(mean(young) - mean(old)) / ( sd(young) * (sqrt(1/length(young) + 1/length(old))))
+```
+
+paired t-test
+```{r}
+data = data.frame(crossfertilized = 
+                    c(23.5, 12, 21, 22, 19.125, 21.5, 22.125,
+                      20.375, 18.250, 21.625, 23.25, 21.0, 
+                      22.125, 23.0, 12.0),
+           selffertilized = 
+             c(17.375, 20.375, 20.0, 20.0, 18.375, 18.625, 
+               18.625, 15.25, 16.5, 18.0, 16.25, 18.0, 12.75, 15.5, 18.0))
+```
+
+```{r}
+var.test(data$crossfertilized, data$selffertilized)
+```
+
+```{r}
+t.test(data$crossfertilized, data$selffertilized, paired = TRUE, var.equal = FALSE)
+```
+
+lots of data in biology is non-normal 
+small sample sizes (problem whtehr you use parametric or non-parametric)
+non-parametric makes no assumption about the underlying distribution 
+
+- we dont test the number as data themselves. 
+- we calculate the rank 
+- get the sum of the ranks by class 
+- calculates the difference in sums 
+
+non-parametric
+```{r}
+old = c(3, 1, 11, 6, 4.5, 8, 4.5, 12, 2)
+young = c(10, 13, 14, 6, 15, 17, 9, 7)
+```
+
+```{r}
+?wilcox.test
+```
+
+```{r}
+wilcox.test(young, old, alternative = 'greater')
+```
+
+```{r}
+foo <- data.frame(condition = c(rep("Old", length(old)),
+                                rep("Young", length(young))),
+                                data = c(old,young))
+foo$rank <- rank(foo$data)
+foo
+```
+
+```{r}
+stripchart(rank ~ condition, data = foo, vertical = TRUE)
+```
+
+```{r}
+sum(subset(foo, condition == "Old")$rank)
+sum(subset(foo, condition == "Young")$rank)
+```
+```{r}
+# test statistic 
+sum(subset(foo, condition == "Young")$rank) - sum(subset(foo, condition == "Old")$rank)
+```
+# if we wanna see if the test statistics are significant, we can do the permutation by mixing the labels 
+
+```{r}
+foo
+```
+
+```{r}
+test_statistics = c()
+for (i in 1:1000){
+  foo_sample = sample(1:17, 17, replace = FALSE)
+  old_sample = foo$rank[foo_sample[which(foo$condition == "Old")]]
+  young_sample = foo$rank[foo_sample[which(foo$condition == "Young")]]
+  old_sum = sum(old_sample)
+  young_sum = sum(young_sample)
+  test_statistics[i] <- young_sum - old_sum
+}
+```
+
+```{r}
+hist(test_statistics)
+```
+
+```{r}
+sum(test_statistics >= 42) / length(test_statistics)
+```
+# lets try with the mean 
+```{r}
+ts = mean(foo$data[foo$condition == "Young"]) - mean(foo$data[foo$condition == "Old"])
+ts
+```
+
+```{r}
+test_stats_mean = c()
+for (i in 1:1000){
+  foo_sample = sample(1:17, 17, replace = FALSE)
+  old_sample = foo$data[foo_sample[which(foo$condition == "Old")]]
+  young_sample = foo$data[foo_sample[which(foo$condition == "Young")]]
+  old_mean = mean(old_sample)
+  young_mean = mean(young_sample)
+  test_stats_mean[i] <- young_mean - old_mean
+}
+```
+
+```{r}
+hist(test_stats_mean)
+```
+```{r}
+sum(test_stats_mean >=  ts) / length(test_stats_mean)
+```
+```{r}
+40/120 * 55/120 * 120
+```
+
+```{r}
+insects = data.frame(
+  spray = c(15,35,5),
+  non_spray = c(25,25,15)
+)
+
+insects
+```
+```{r}
+qchisq(0.95, 2)
+```
+
+```{r}
+chisq.test(insects)
+```
+```{r}
+0.8^2 + 0.32 + 0.04
+```
+
+```{r}
+chisq.test(c(77,38,10), p = c(0.64, 0.32, 0.04))
+```
+
+```{r}
+mut <- data.frame(
+  normal = c(7,1),
+  weird = c(2,5)
+)
+mut
+```
+
+```{r}
+chisq.test(mut)
+```
+
+```{r}
+chisq.test(mut)$expected
+```
+
+the warning comes when the expected frequencies at least one entry is less than 5
+
+```{r}
+fisher.test(mut)
+```
+

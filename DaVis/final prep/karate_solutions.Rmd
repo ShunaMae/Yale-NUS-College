@@ -1,0 +1,287 @@
+---
+title: "Solutions: Zachary's karate-club network"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+    number_sections: false
+urlcolor: blue
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: karate.bib
+biblio-style: natbib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for these exercises.
+
+```{r}
+library(ggforce)
+library(ggraph)
+library(igraph)
+library(tidygraph)
+library(tidyverse)
+```
+
+(1)
+
+    ```{r}
+    karate_edges <- read_table(
+      "data/soc-karate.zip",
+      col_names = c("from", "to"),
+      col_types =  list(.default = col_integer()),
+      skip = 24
+    )
+    ```
+    
+    I assume that all nodes in the network appear at least once in the edge
+    list.
+    
+    ```{r}
+    karate_nodes <-
+      tibble(node = unique(flatten_int(karate_edges))) |>
+      arrange(node)
+    karate_netw <- tbl_graph(
+      nodes = karate_nodes,
+      edges = karate_edges,
+      directed = FALSE
+    )
+    ```
+
+(2)
+
+    ```{r}
+    gorder(karate_netw)
+    gsize(karate_netw)
+    ```
+
+    In conclusion, there are `r gorder(karate_netw)` nodes and
+    `r gsize(karate_netw)` edges.
+(3) 
+
+    ```{r}
+    is_simple(karate_netw)
+    ```
+
+    The network is simple.
+    Thus, there are no parallel edges or loops.
+(4)
+
+    ```{r}
+    instructor_id <- 1
+    president_id <- 34
+    karate_netw <-
+      karate_netw |>
+      activate(nodes) |>
+      mutate(role = case_when(
+        node == instructor_id ~ "Instructor",
+        node == president_id ~ "President",
+        TRUE ~ "Other"
+      ))
+    ```
+
+(5)
+
+    ```{r}
+    top_2_degree <-
+      karate_netw |>
+      activate(nodes) |>
+      mutate(degree = centrality_degree()) |>
+      as_tibble() |>
+      slice_max(degree, n = 2) |>
+      print()
+    ```
+
+    The next code chunk answers the question: Are the two nodes with the
+    highest degree the president and the instructor?
+    
+    ```{r}
+    setequal(top_2_degree$role, c("President", "Instructor"))
+    ```
+
+(6)
+
+    ```{r}
+    asp <-
+      all_shortest_paths(karate_netw, instructor_id, president_id)$res |>
+      print()
+    ```
+
+    The distance between president and instructor
+    is `r distances(karate_netw, president_id, instructor_id)`.
+    The shortest paths from president and instructor go through one of the
+    following intermediate nodes:
+    
+    ```{r}
+    sort(map_int(asp, 2))
+    ```
+    
+(7)
+
+    ```{r}
+    karate_netw |>
+      activate(nodes) |>
+      mutate(cluster_coef = local_transitivity()) |>
+      filter(role %in% c("Instructor", "President")) |>
+      as_tibble()
+    ```
+   
+    The instructor has a higher clustering coefficient than the president.
+    Therefore, two nodes adjacent to the instructor are more likely to be
+    adjacent themselves than two nodes adjacent to the president.
+    This fact can be interpreted as a sign that the instructor participates in
+    more tightly knit relations. 
+(8)
+
+    ```{r}
+    largest_cliques(karate_netw)
+    ```
+
+    Hence, there two cliques of size `r clique_num(karate_netw)` with the
+    following nodes:
+    
+    - `r largest_cliques(karate_netw)[[1]] |> sort()`
+    - `r largest_cliques(karate_netw)[[2]] |> sort()`
+(9)
+
+    ```{r}
+    is_connected(karate_netw)
+    ```
+
+(10) The next two code chunks demonstrate two different options to calculate
+     communities with the Louvain algorithm.
+
+     - The first option is based on `group_louvain()` in the **tidygraph**
+       package.
+       At the end of the first pipeline, I add identifiers for the
+       communities, which I need when I plot the network.
+       
+       ```{r}
+       karate_netw <-
+         karate_netw |>
+         activate(nodes) |>
+         mutate(community_id = group_louvain())
+       karate_netw |>
+         as_tibble() |>
+         group_by(community_id) |>
+         group_split() |>
+         map(pluck("node"))
+       ```
+       
+     - The second option uses `cluster_louvain()` in the **igraph** package.
+     
+       ```{r}
+       karate_netw |>
+         cluster_louvain() |>
+         membership() |>
+         tibble() |>
+         mutate(node = row_number()) |>
+         group_by(across(1)) |>
+         group_split() |>
+         map(pluck("node"))
+       ```
+       
+       ```{r, include=FALSE}
+       comm <-
+         karate_netw |>
+         as_tibble() |>
+         group_by(community_id) |>
+         group_split() |>
+         map(pluck("node"))
+       ```
+       
+     In conclusion, the Louvain algorithm identifies `r length(comm)`
+     communities with the following nodes:
+     
+     - `r comm[[1]]`
+     - `r comm[[2]]`
+     - `r comm[[3]]`
+     - `r comm[[4]]`
+(11) First, I create the network layout.
+
+     ```{r}
+     karate_layout <- create_layout(karate_netw, layout = "stress")
+     layout_attributes <- attributes(karate_layout)
+     node_positions <- read_csv("karate_node_positions.csv")
+     karate_layout <-
+       karate_layout |>
+       select(-x, -y) |>
+       left_join(node_positions, by = "node") |>
+       select(x, y, everything())
+     attributes(karate_layout) <- layout_attributes
+     ```
+
+     Then, I create the Bezier curve.
+     
+     ```{r}
+     bezier <- tribble(
+       ~x, ~y,
+       0.2, 1.3,
+       -1.6, 0.0,
+       0.7, -0.6
+     )
+     ```
+     
+     Finally, I make the plot.
+     
+     ```{r, fig.width = 7.5, fig.height = 6.7}
+     ggraph(karate_layout) +
+       geom_mark_hull(
+         aes(
+           x,
+           y,
+           fill = as.factor(community_id),
+           label = str_c("Community ", community_id)
+         ),
+         colour = NA,
+         con.colour = "grey",
+         show.legend = FALSE
+       ) +
+       geom_edge_link(colour = "grey50") +
+       geom_node_point(
+         aes(colour = role, shape = role),
+         size = 8,
+         fill = "white",
+         stroke = 2
+       ) +
+       geom_node_text(aes(label = node)) +
+       geom_bezier(aes(x = x, y = y), data = bezier, size = 2) +
+       annotate(
+         "text",
+         x = 0.1,
+         y = 1.4,
+         label = "Observed split",
+         fontface = "bold"
+       ) +
+       labs(
+         title = "Zachary's Karate Club",
+         subtitle = "Communities assigned by Louvain algorithm",
+         caption = "Source: https://networkrepository.com"
+       ) +
+       scale_y_continuous(expand = expansion(mult = c(0.1, 0.06))) +
+       scale_colour_brewer(name = "Role", palette = "Dark2") +
+       scale_shape_manual(
+         name = "Role",
+         values = 23:21,
+         guide = guide_legend(override.aes = list(size = 7))
+       ) +
+       theme(
+         legend.key.height = unit(9, "mm"),
+         legend.key.width = unit(9, "mm"),
+         legend.position = c(1, 1),
+         legend.justification = c(1, 1)
+       )
+     ggsave("karate_community_split.pdf", width = 7.5, height = 6.7)
+     ```
+
+(12) The Louvain algorithm is agnostic about which nodes ended up on which
+     side when the conflict arose in the karate club.
+     Still, there appears to be a relation between the communities detected by
+     the Louvain algorithm and the empirically observed split of the club.
+     With only one swap (nodes 9 and 10), the observed split almost perfectly
+     follows the division between communities 1 and 4 on the one hand, and
+     communities 2 and 3 on the other hand.

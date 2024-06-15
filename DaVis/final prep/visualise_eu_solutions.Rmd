@@ -1,0 +1,257 @@
+---
+title: "Solutions: Emails at a large European research institution"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+urlcolor: blue
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: eu.bib
+biblio-style: natbib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+I need the following packages for these exercises:
+
+```{r}
+library(ggraph)
+library(igraph)
+library(tidygraph)
+library(tidyverse)
+```
+
+
+(1) I import node data and edge data as tibbles.
+    The function `read_table()` can import gzipped text files; thus, there is
+    no need to explicitly unzip them.
+
+    ```{r}
+    eu_nodes <-
+      read_table(
+        "email-Eu-core-department-labels.txt.gz",
+        col_names = c("person", "dept")
+      ) |>
+      print()
+    eu_edges <-
+      read_table(
+        "email-Eu-core.txt.gz",
+        col_names = c("from", "to")
+      ) |>
+      print()
+    ```
+
+(2) I add 1 to all person identifiers.
+
+    ```{r}
+    eu_nodes <-
+      eu_nodes |>
+      mutate(person = person + 1) |>
+      print()
+    eu_edges <-
+      eu_edges |>
+      mutate(across(.fns = ~ . + 1)) |>
+      print()
+    ```
+
+
+(3) I combine the node and edge information into a `tbl_graph`.
+
+    ```{r}
+    eu_netw <-
+      tbl_graph(nodes = eu_nodes, edges = eu_edges) |>
+      print()
+    ```
+
+(4)
+
+    ```{r cache=TRUE}
+    ggraph(eu_netw, layout = "kk") +
+      geom_edge_bend(
+        alpha = 0.1,
+        arrow = arrow(length = unit(2, "mm"))
+      ) +
+      geom_node_point(colour = "brown", alpha = 0.5)
+    ```
+
+    There are so many nodes and edges that it is difficult to extract
+    information from this 'hairball' plot.
+    There is no space for labels, and, even when representing the edges as
+    semitransparent lines, there is no way to tell who is sending emails to
+    whom.
+    Changing the layout does not help much.
+    In similar situations, a hive plot may be more useful
+    (<https://datavizproject.com/data-type/hive-plot/>).
+    However, a hive plot requires that the set of nodes can be split into a
+    small number of groups (ideally only two or three).
+    Such a split is not evident from the description of EU-email data.
+(5) Contract the network by department.
+
+    ```{r}
+    contracted_igraph <-
+      eu_netw |>
+      contract(eu_nodes$dept + 1)
+    vertex_attr(contracted_igraph, "dept") <-
+      0:(gorder(contracted_igraph) - 1)
+    contracted_directed_netw <-
+      contracted_igraph |>
+      as_tbl_graph() |>
+      convert(to_simple) |>
+      activate(edges) |>
+      mutate(weight = lengths(.tidygraph_edge_index)) |>
+      print()
+    ```
+
+(6) I terminate the arrow head just outside the label with the `end_cap`
+    aesthetic.
+
+    ```{r cache=TRUE}
+    ggraph(contracted_directed_netw, layout = "stress") +
+      geom_edge_fan(
+        aes(colour = weight, end_cap = label_rect(node2.dept)),
+        alpha = 0.5,
+        arrow = arrow(length = unit(0.2, "cm"))
+      ) +
+      geom_node_label(aes(label = dept), colour = "brown") +
+      theme(legend.position = c(1, 1), legend.justification = c(1, 1))
+    ```
+
+    The nodes can be easily identified from this plot, but there are too many
+    edges to see clearly which departments are connected to each other.
+(7)
+
+    ```{r}
+    undirected_simple_netw <-
+      contracted_directed_netw |>
+      convert(to_undirected) |>
+      convert(to_simple) |>
+      activate(edges) |>
+      mutate(weight = map_int(.orig_data, ~sum(.$weight))) |>
+      print()
+    ```
+    
+(8)
+
+    ```{r}
+    hierarchy <-
+      undirected_simple_netw |>
+      convert(to_hierarchical_clusters, weights = weight) |>
+      print()
+    ```
+
+(9)
+
+    ```{r fig.width=4, fig.height=8, fig.align='center', out.width='0.5\\linewidth'}
+    layout <- create_layout(hierarchy, "dendrogram")
+    g_hierarchy <- ggraph(layout) +
+      geom_edge_elbow() +
+      geom_node_text(
+        aes(label = dept, filter = leaf),
+        nudge_y = 0.8,
+        hjust = 1
+      ) +
+      coord_flip() +
+      scale_x_continuous(expand = c(0.01, 0.01)) +
+      scale_y_reverse(breaks = 0:max(layout$y)) +
+      ggtitle("Department hierarchy") +
+      theme(
+        panel.background = element_rect(fill = "grey90"),
+        panel.grid.major.x = element_line(colour = "white"),
+        plot.background = element_rect(fill = "grey90")
+      )
+    g_hierarchy
+    ggsave("hierarchy.pdf", g_hierarchy, width = 4, height = 8)
+    ```
+
+(10)
+    The dendrogram is more legible than the hairball plot in problem 5.
+    Consequently, it is easier to identify connectivity from the dendrogram.
+    A disadvantage of the dendrogram is that the lines cannot be interpreted
+    as edges in the original network; thus, the dendrogram needs more
+    explanation.
+    Another disadvantage is that different clustering algorithms may generate
+    substantially different dendrograms.
+    Therefore, one should not overinterpret details of the dendrogram.
+(11)
+    The heat map shows a lot more detailed information than the dendrogram.
+    In principle, the heat map contains similar information as the
+    network plot in (6), but is not as cluttered as our earlier plot.
+    A disadvantage compared to the dendrogram is that that the heat map does
+    not immediately reveal whether there is a hierarchical structure among
+    the departments.
+    The numerical alignment of the departments along the axes is also less
+    meaningful than the alingment in the dendrogram, where nearby departments
+    tend to be more closely connected.
+
+    For documentation, here is how I made the heat map.
+    I deliberately did not use any **tidygraph** functions so that I can check
+    whether my previous results are plausible.
+    
+    ```{r, fig.width=7, fig.height=6}
+    departments_with_self_edges <-
+      eu_edges |>
+      left_join(eu_nodes, by = c("from" = "person")) |>
+      left_join(eu_nodes, by = c("to" = "person")) |>
+      select(dept_from = dept.x, dept_to = dept.y) |>
+      count(dept_from, dept_to, name = "weight")
+    g_heatmap <-
+      ggplot(
+        departments_with_self_edges,
+        aes(x = dept_from, y = dept_to, fill = weight)
+      ) +
+      geom_tile(width = 0.9, height = 0.9) +
+      geom_hline(
+        aes(yintercept = pos),
+        data = tibble(pos = seq(0.5, 41.5, by = 1)),
+        size = 0.5,
+        colour = "grey90"
+      ) +
+      geom_vline(
+        aes(xintercept = pos),
+        data = tibble(pos = seq(0.5, 41.5, by = 1)),
+        size = 0.5,
+        colour = "grey90"
+      ) +
+      geom_hline(
+        aes(yintercept = pos),
+        data = tibble(pos = seq(9.5, 39.5, by = 10)),
+        size = 1,
+        colour = "grey70"
+      ) +
+      geom_vline(
+        aes(xintercept = pos),
+        data = tibble(pos = seq(9.5, 39.5, by = 10)),
+        size = 1,
+        colour = "grey70"
+      ) +
+      coord_equal() +
+      labs(
+        title = "Number of People Exchanging Emails between Departments",
+        caption = "Source: Yin et al. (2017)",
+        x = "Sending Department",
+        y = "Receiving Department"
+      ) +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      scale_fill_distiller(
+        name = "Number of people\nsending emails",
+        trans = "log10",
+        palette = "Reds",
+        direction = 1
+      ) +
+      guides(fill = guide_colourbar(
+        frame.colour = "black",
+        ticks.colour = "black"
+      )) +
+      theme(
+        legend.background = element_rect(fill = "grey90"),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_rect(fill = "grey90")
+      )
+    g_heatmap
+    ggsave("heatmap.pdf", g_heatmap, width = 7, height = 6)
+    ```

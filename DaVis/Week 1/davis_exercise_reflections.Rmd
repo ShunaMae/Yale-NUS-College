@@ -1,0 +1,70 @@
+---
+title: "Reflections on Data Visualisation"
+author: "Shuna"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center")
+```
+
+
+# Task 1
+
+**Find an example of (good or bad) data visualisation in the media.**
+
+STUDENTS: EDIT THE FOLLOWING TEXT. ALSO CHANGE YOUR NAMES ON LINE 3 OF THIS
+FILE.
+
+We find the following figure an outstanding example of data visualisation.
+The figure is from <https://michaelgastner.com/DAVisR_data/davis_logo.png>,
+a timeless masterpiece of web design.
+Although scholars are uncertain about the nature of the data represented, the
+figure has become a classic example of abstract data visualisation.
+
+STUDENTS: ON THE NEXT LINE, YOU MAY NEED TO ADJUST `out.width`.
+
+```{r example_of_visualisation, out.width='40%'}
+knitr::include_graphics("https://michaelgastner.com/DAVisR_data/davis_logo.png")
+```
+
+
+# Task 2
+
+**Explain what you like or dislike about the figure.**
+
+STUDENTS: GIVE YOUR ANSWERS IN THE FORM OF A BULLETED LIST FOLLOWING THE
+EXAMPLE BELOW.
+
+We like the following features of the figure:
+
+- Data are represented as colourful bars with letters virtually dancing on
+  top of each bar.
+- The uneven lengths of the bars give this figure a dynamic, joyful
+  appearance.
+- Nobody in their right mind can look at this image without being instantly
+  struck by intense optimism and cheerfulness.
+
+What is there to dislike?
+
+- Nothing
+- Nichts
+- Nada
+
+
+# Task 3
+
+**How would you improve the presentation of the data?**
+
+Narrow-minded critics have raised concerns about the stark colour contrasts
+between the bars.
+We could not disagree more.
+Upon careful inspection, colours were thoughtfully chosen to follow
+the print-friendly quantitative palette Set1 from <https://colorbrewer2.org/>.
+
+Our only minor suggestion to the graphic designer pertains to the pattern of
+light gray rectangles in the background, which give the image the slightly
+sterile atmosphere of bathroom tiles in a hospital.
+Replacing the rectangular white lines by wavy lines would more effectively
+communicate that DAVis will be a joyous ride for all students enrolled.

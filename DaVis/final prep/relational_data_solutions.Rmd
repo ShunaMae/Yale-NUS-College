@@ -1,0 +1,291 @@
+---
+title: "Solutions: Relational data for country-level statistics"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: preston.bib
+biblio-style: natbib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for this exercise.
+
+```{r}
+library(countrycode)
+library(gapminder)
+library(Hmisc)
+library(readxl)
+library(rlang)
+library(tidyverse)
+```
+
+(1) I import the data with `read_excel()`.
+    In each input file, the first three lines contain metadata and must be
+    skipped.
+
+    ```{r}
+    gdp_per_cap <- read_excel(
+      "data/API_NY.GDP.PCAP.KD_DS2_en_excel_v2_3731742.xls",
+      skip = 3
+    )
+    life_exp <- read_excel(
+      "data/API_SP.DYN.LE00.IN_DS2_en_excel_v2_3731513.xls",
+      skip = 3
+    )
+    pop <- read_excel(
+      "data/API_SP.POP.TOTL_DS2_en_excel_v2_3759026.xls",
+      skip = 3
+    )
+    ```
+
+(2) The next command answers the question: are the '`Country Code`' columns in
+    all three spreadsheets identical?
+
+    ```{r}
+    all(
+      gdp_per_cap$`Country Code` == life_exp$`Country Code`,
+      gdp_per_cap$`Country Code` == pop$`Country Code`
+    )
+    ```
+    
+(3) First, I write a utility function `pivot_longer_wb()` that pivots any of
+    the World Bank tibbles (passed as variable `tb`) into long format.
+
+    ```{r}
+    pivot_longer_wb <- function(tb, name) {
+      tb |>
+        select(-starts_with("Indicator")) |>
+        pivot_longer(
+          matches("^\\d{4}$"), # String with exactly 4 digits
+          names_to = "year",
+          values_to = {{ name }},
+          names_transform = list(year = as.integer)
+        )
+    }
+    ```
+
+    Next, I pivot all three World Bank tibbles into long format.
+    The function `llist()` from the **Hmisc** package creates a list
+    in which the elements acquire the names of the arguments.
+    Then, I use `imap()` so that both the list elements and their names are
+    passed as arguments to `pivot_longer_wb()`.
+    Finally, I use `reduce()` from the **purrr** package to iteratively apply
+    `left_join()`.
+    
+    ```{r}
+    wb <-
+      llist(pop, life_exp, gdp_per_cap) |>
+      imap(pivot_longer_wb) |>
+      reduce(left_join, by = c("Country Name", "Country Code", "year"))
+    ```
+    
+    ```{r, include=FALSE}
+    n_initial_rows_in_wb <- nrow(wb)
+    ```
+    
+    There are `r n_initial_rows_in_wb` rows in `wb`.
+    
+    ```{r}
+    nrow(wb)
+    ```
+    
+    Here are the first few rows of `wb`:
+    
+    ```{r}
+    wb
+    ```
+    
+    By looking at the last few rows, it becomes clear that not all elements
+    in the column `gdp_per_cap` are `NA`:
+    
+    ```{r}
+    tail(wb)
+    ```
+
+(4) Here are all countries that cannot be matched with an ISO 3166-1 alpha-3
+    code.
+
+    ```{r}
+    anti_join(wb, codelist, by = c("Country Code" = "iso3c")) |>
+      pull(`Country Name`) |>
+      unique()
+    ```
+
+    Most country codes that cannot be matched represent groups of countries
+    instead of individual countries.
+    The exceptions are:
+    
+    - *Channel Islands*: they are part of the British crown but have some
+      rights to establish direct relations with foreign governments because
+      they are not part of the United Kingdom.
+    - *Kosovo*: Kosovo's status as an independent country is disputed.
+      Thus, it is to be expected that some data bases (such as R's
+      **countrycode** package) do not include it.
+(5)
+
+    ```{r}
+    wb <- semi_join(wb, codelist, by = c("Country Code" = "iso3c"))
+    ```
+    
+    The number of rows decreased from `r n_initial_rows_in_wb`
+    to `r nrow(wb)`.
+    
+    ```{r}
+    nrow(wb)
+    ```
+    
+(6)
+
+    ```{r}
+    missing_values <-
+      wb |>
+      filter(is.na(gdp_per_cap) | is.na(life_exp) | is.na(pop)) |>
+      group_by(year) |>
+      count()
+    missing_values
+    ```
+
+(7)
+
+    ```{r fig.width=5, fig.height=3.5, fig.align='center', out.width='70%'}
+    ggplot(missing_values, aes(year, n)) +
+      geom_point() +
+      geom_line() +
+      labs(
+        x = "Year",
+        y = "Number of countries",
+        title = "Countries with Missing Information in World Bank Data",
+        caption = "Source: World Bank"
+      )
+    ```
+
+    The number of missing countries decreased slowly from
+    `r missing_values$na_countries[1]` in (`r missing_values$year[1]`) to
+    $\approx$ 25 countries since the start of the millenium
+    In 2019 and 2020, the number suddenly jumps to much higher values because
+    none of the data are known yet.
+    Presumably, it takes a few years for the World Bank to collate the data.
+
+    A closer look at the data reveals that many of the missing entries in the
+    first few years come from countries that did not exist at that time.
+    For example, Ukraine only gained independence in 1991, and the World Bank
+    apparently did not want to speculate how much of the Soviet Union's GDP
+    can be attributed to the Ukraine prior to 1987.
+    
+(8)
+
+    ```{r}
+    gap <-
+      gapminder_unfiltered |>
+      filter(country != "Netherlands Antilles") |>
+      mutate(country_code = countrycode(country, "country.name", "iso3c"))
+    ```
+    
+    The next code answers the question: are there countries in `gap` without a
+    country code?
+    
+    ```{r}
+    anyNA(gap$country_code)
+    ```
+    
+    Finally, I check whether there are countries with the same country code.
+    
+    ```{r}
+    gap |>
+      group_by(country_code) |>
+      summarise(n_countries = n_distinct(country)) |>
+      transmute(code_is_duplicated = (n_countries > 1)) |>
+      any()
+    ```
+    
+(9) Here are all countries in `gap` that are not in `wb`.
+
+    ```{r}
+    gap |>
+      anti_join(wb, by = c("country_code" = "Country Code")) |>
+      pull(country) |>
+      unique()
+    ```
+
+    French Guiana, Guadeloupe, Martinique and La Réunion are French overseas
+    departments.
+    Presumably, the World Bank lumps these data together with the rest of
+    France.
+    Taiwan is not recognised as an independent country by the World Bank.
+    
+    Next, I determine all countries in `wb` that are not in `gap`.
+    
+    ```{r}
+    wb |>
+      anti_join(gap, by = c("Country Code" = "country_code")) |>
+      pull(`Country Name`) |>
+      unique()
+    ```
+    
+    Most countries missing from `gap` are small except South Sudan, which only
+    gained independence in 2011.
+(10)
+    I merge the GDP data for 2007 in the World Bank data set and in
+    Gapminder.
+    
+    ```{r}
+    wb_2007 <-
+      wb |>
+      filter(year == 2007) |>
+      select("Country Code", "Country Name", gdp_wb = gdp_per_cap)
+    gap_2007 <-
+      gap |>
+      filter(year == 2007) |>
+      select(country_code, gdp_gap = gdpPercap)
+    wb_gap <-
+      inner_join(
+        wb_2007,
+        gap_2007,
+        by = c("Country Code" = "country_code")
+      ) |>
+      print()
+    ```
+
+    Here are the countries in `wb_2007` that are not in `wb_gap`:
+    
+    ```{r}
+    wb_2007 |>
+      anti_join(wb_gap, by = "Country Code") |>
+      pull(`Country Name`)
+    ```
+    
+    In addition to the countries that I found to be generally absent from the
+    Gapminder data in (9), Gapminder does not have data for Luxembourg in 2007
+    either.
+(11)
+    I add a row that contains the percentage difference.
+
+    ```{r}
+    wb_gap <-
+      wb_gap |>
+      mutate(pct_diff = 100*gdp_gap/gdp_wb - 100) |>
+      print()
+    ```
+
+(12)
+    Here are the 5 largest values in `pct_diff`.
+    
+    ```{r}
+    slice_max(wb_gap, pct_diff, n = 5)
+    ```
+    
+    Here are the 5 smallest values.
+    
+    ```{r}
+    slice_min(wb_gap, pct_diff, n = 5)
+    ```
+
+    The differences between the two data sets are substantial, for some
+    countries more than a factor 2.

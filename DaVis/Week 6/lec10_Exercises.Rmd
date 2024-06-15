@@ -1,0 +1,78 @@
+---
+title: "lec10_exercises"
+author: "shuna"
+date: "2/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+```
+
+```{r}
+life_quality <- read_csv("life_quality.csv")
+life_quality
+```
+```{r}
+long_lived <- life_quality |>
+  slice_max(life_expectancy, n = 5)
+short_lived <- life_quality |>
+  slice_min(life_expectancy, n = 5)
+wealthiest <- life_quality |> 
+  slice_max(gdp_per_capita, n = 5)
+poorest <- life_quality |> 
+  slice_min(gdp_per_capita, n = 5)
+fertile <- life_quality |>
+  slice_max(pop, n = 5)
+
+life_quality_selected <- rbind(long_lived,
+                               short_lived,
+                               wealthiest,
+                               poorest,
+                               fertile)
+distinct(life_quality_selected)
+```
+
+
+```{r}
+ggplot(data = life_quality, 
+       aes(x = gdp_per_capita, 
+           y = life_expectancy))+
+  geom_point(alpha = 0.5, 
+             aes(size = pop, 
+                 colour = continent))+
+  scale_x_continuous(trans='log10',
+                     breaks = c(1000,10000, 100000),
+                     labels = c("$1,000", "$10,000", "$100,000"),
+                     minor_breaks = c(seq(0,1000, 100),
+                                      seq(1000, 10000, 1000), 
+                                      seq(10000, 100000, 10000)))+
+  labs(x = "GDP per capita (US$, PPP 2015)",
+       y = "Life expectancy (years)",
+       title = "Wealth and Health by Country in 2015",
+       caption = "Source : World Bank") + 
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_size(range = c(1,15), 
+             name = "Population",
+             breaks = c(100000, 10000000, 10000000, 1000000000),
+             labels = c("1 million", "10 million", "100 million", "1 billion"))+
+  scale_colour_brewer(palette = "Set1") + 
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3)))+
+  geom_smooth(method = "loess")+
+  geom_text_repel(data = life_quality_selected, 
+                  aes(label = country_name, color = continent), 
+                  size = 2,
+                  force = 100,
+                  max.overlaps = 30)
+
+```
+
+```{r}
+?geom_text_repel
+```
+

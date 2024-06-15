@@ -1,0 +1,162 @@
+---
+title: "Practising R Programming"
+author: "Zhang Zichen"
+date: "1/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(bsts)
+library(microbenchmark)
+```
+
+## 1 Days of the week in the Shire calendar
+
+#### Write a function shire_day_from_gregorian() that converts a Gregorian day 
+#### of the week into the name of the corresponding Shire day using
+
+##### (1) if_else()
+
+```{r}
+gregorian <- c(
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday"
+)
+shire <- c(
+  "Sterday",
+  "Sunday",
+  "Monday",
+  "Trewsday",
+  "Hevensday",
+  "Mersday",
+  "Highday"
+)
+
+shire_day_from_gregorian <- function(day) {
+  if (day %in% gregorian) {
+    shire[match(day, gregorian)]
+  } else {
+    "Day is not valid!"
+  }
+}
+```
+
+##### (2) case_when()
+
+```{r}
+
+```
+
+##### (3) recode()
+
+
+#### (b) The bsts package contains a vector called weekday.names. Install the 
+#### package and test whether shire_day_from_gregorian(weekday.names) returns 
+#### the correct result.
+
+```{r}
+shire_day_from_gregorian(weekday.names)
+```
+
+## 2 Measuring run-times with the microbenchmark package
+
+```{r}
+abs_with_if_else <- function(x) {
+  dplyr::if_else(x >= 0, x, -x)
+}
+
+
+abs_with_subsetting <- function(x) {
+  neg <- (x < 0)
+  x[neg] <- -x[neg]
+  x
+}
+
+
+abs_with_data_type_conversion <- function(x) {
+  ((x > 0) - (x < 0)) * x
+}
+
+
+abs_with_for_loop <- function(x) {
+  for (i in seq_along(x)) {
+    if (x[i] < 0) {
+      x[i] <- -x[i]
+    }
+  }
+  x
+}
+```
+
+
+#### (a) Load the microbenchmark library. Look through the documentation of the microbenchmark() function. You may want to test a few examples in the documentation and, if necessary, search the World Wide web for more information.
+
+```{r}
+test_nums <- rnorm(1e5)
+
+microbenchmark(
+  abs(test_nums),
+  abs_with_if_else(test_nums),
+  abs_with_for_loop(test_nums),
+  abs_with_subsetting(test_nums),
+  abs_with_data_type_conversion(test_nums)
+)
+```
+
+The final representation of the number 0.1 is :
+
+Similarly, 0.2 would be represented as:
+
+Adding the two after making the exponents same for both would give us:
+
+When represented in floating point, this becomes:
+
+This is represented by 0.1 + 0.2.
+That is precisely the reason behind getting 0.1 + 0.2 = 0.30000000000000004.
+
+
+
+
+
+
+
+```{r}
+pythag_1 <- function(a, b) {
+  sqrt(a^2 + b^2)
+}
+
+
+pythag_2 <- function(a, b) {
+  absa <- abs(a)
+  absb <- abs(b)
+  p <- pmax(absa, absb)
+  q <- pmin(absa, absb)
+  ratio <- q / p
+  ratio[is.nan(ratio)] <- 1
+  print(ratio)
+  p * sqrt(1.0 + ratio^2)
+}
+
+pythag_2(0, 0)
+
+
+test_nums1 <- rnorm(1e5)
+test_nums2 <- rnorm(1e5)
+microbenchmark(pythag_1(test_nums1, test_nums2), pythag_2(test_nums1, test_nums2))
+```
+
+
+```{r}
+pythag_1(1, 0)
+pythag_2(1e23, 1e23)
+is.nan(0/0)
+0/0
+```
+

@@ -1,0 +1,258 @@
+---
+title: "General Social Survey, Team A"
+author: "Team A"
+date: "2/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+We have loaded the following packages for this exercise.
+
+```{r}
+library(forcats)
+library(tidyverse)
+library(dplyr)
+library(kableExtra)
+library(formattable)
+```
+
+## Exercise 1
+
+(a)
+    ```{r}
+    levels(gss_cat$race)
+    ```
+
+(b)
+    ```{r}
+    table(gss_cat$race)
+    ```
+
+(c)
+    ```{r}
+    table(gss_cat$race) |>
+      as.data.frame() |>
+      mutate(Freq = color_bar("lightgreen")(Freq)) |>
+      kbl(
+        col.names = c("Race", "Frequency"),
+        align = c("l", "r"),
+        escape = FALSE
+      ) |>
+      kable_styling(c("striped", "condensed"),
+        full_width = FALSE
+      )
+    
+        nice_table <- function(column, name) {
+      table(column) |>
+        as.data.frame() |>
+        mutate(Freq = color_bar("lightgreen")(Freq)) |>
+        kbl(
+          col.names = c(name, "Frequency"),
+          align = c("l", "r"),
+          escape = FALSE
+        ) |>
+        kable_styling(c("striped", "condensed"),
+          full_width = FALSE
+        )
+    }
+
+    nice_table(gss_cat$race, "Race")
+    ```
+
+(d)
+    ```{r}
+    gss_cat$race_drop_unused <- fct_drop(gss_cat$race)
+    nlevels(gss_cat$race_drop_unused)
+    ```
+
+(e)
+    ```{r}
+    nice_table(gss_cat$race_drop_unused, "Race")
+    ```
+
+(f)
+    ```{r}
+    race_sorted <- fct_infreq(gss_cat$race_drop_unused)
+    levels(race_sorted)
+    nice_table(race_sorted, "Race")
+    ```
+
+## Exercise 2
+
+(a)
+    ```{r}
+    levels(gss_cat$rincome)
+    ```
+
+(b)
+    ```{r}
+    nice_table(gss_cat$rincome, "Income levels") 
+    ```
+This table would not be suited to be a published report because of 
+several important reasons:
+
+1. Majority of the data are in the "$25000 or more" or "Not applicable" 
+categories, and are not clearly represented. Instead, smaller categories 
+could be created to break up the "$25000 or more" category to give viewers
+more insight.
+
+2. The "income levels" column lacks comma separators in the numbers
+(e.g. $5000 than $5,000).
+
+3. The income labels are inconsistent. Some use "to" and some use "-" 
+to indicate a range. For example, one label is "$15000 - $19999", while
+another is "$7000 to $7999" which is inconsistent.
+
+4. The range sizes are inconsistent. For example, one range is, 
+"$1000 to $2999". This range size is $1999, while another range 
+"$7000 to $7999" has a range size of $999. Similar inconsistencies
+are present between other levels, and does not provide a legitimate
+base for comparison.
+
+5. The income level "Lt $1000" has "Lt", which means "lower than" but 
+this is not a widely known abbreviation and may be confusing to readers.
+Instead, it should just say "$1000 or lower".
+
+6. "No answer", "Don't know", "Not applicable" and "Refused" can be 
+subsumed together into one level, because each one does not provide any 
+important information individually.
+
+(c)
+    ```{r}
+    levels(gss_cat$rincome)
+    
+    # Fixing ranges, standaridisng labels, adding commas
+    gss_cat_rincome_recode <-
+      fct_recode(gss_cat$rincome,
+        "$0 to 4,999" = "Lt $1000",
+        "$0 to 4,999" = "$1000 to 2999",
+        "$0 to 4,999" = "$3000 to 3999",
+        "$0 to 4,999" = "$4000 to 4999",
+        "$5,000 to 9,999" = "$5000 to 5999",
+        "$5,000 to 9,999" = "$6000 to 6999",
+        "$5,000 to 9,999" = "$7000 to 7999",
+        "$5,000 to 9,999" = "$8000 to 9999",
+        "$10,000 to 14,999" = "$10000 - 14999",
+        "$15,000 to 19,999" = "$15000 - 19999",
+        "$20,000 to 24,999" = "$20000 - 24999",
+        "$25,000 or more" = "$25000 or more",
+        Missing = "No answer",
+        Missing = "Don't know",
+        Missing = "Refused"
+      )
+    
+    # Ordering properly
+    gss_cat_rincome_recode <-
+      fct_relevel(
+        gss_cat_rincome_recode,
+        c(
+          "$25,000 or more",
+          "$20,000 to 24,999",
+          "$15,000 to 19,999",
+          "$10,000 to 14,999",
+          "$5,000 to 9,999",
+          "$0 to 4,999",
+          "Missing"
+        )
+      )
+    
+    levels(gss_cat_rincome_recode)
+    
+    nice_table(gss_cat_rincome_recode, "Income")
+    ```
+Even though we have improved it, most of the information is still concentrated
+in the "$25000 or more" category, and the "Missing" category. It would be better
+if we could have more categories that break up the "$25000 or more" category. 
+
+## Exercise 3
+
+(a)
+    ```{r}
+    levels(gss_cat$partyid)
+    ```
+
+(b)
+    ```{r}
+    gss_cat$partyid_aggregated <- fct_collapse(
+      gss_cat$partyid,
+      Republican = c(
+        "Strong republican",
+        "Not str republican"
+      ),
+      Independent = c(
+        "Ind,near rep", "Independent",
+        "Ind,near dem"
+      ),
+      Democrat = c(
+        "Not str democrat",
+        "Strong democrat"
+      ),
+      Other = c("Other party"),
+      Missing = c("No answer", "Don't know")
+    )
+    
+    # Ordering properly
+    gss_cat$partyid_aggregated <-
+      fct_relevel(
+        gss_cat$partyid_aggregated,
+        c(
+          "Republican",
+          "Independent",
+          "Democrat",
+          "Other",
+          "Missing"
+        )
+      )
+    ```
+
+(c)
+    ```{r}
+    nice_table(gss_cat$partyid_aggregated, "Party Affiliation")
+    ```
+    
+## Exercise 4
+
+(a)
+    ```{r}
+    gss_cat$is_protestant <- fct_other(gss_cat$relig, keep = c("Protestant"))
+    nice_table(gss_cat$is_protestant, "Religion")
+    ```
+
+(b)
+    ```{r}
+    gss_cat$has_denom <- fct_other(gss_cat$denom,
+      keep = c(
+        "No denomination",
+        "Not applicable",
+        "No answer",
+        "Don't know"
+      )
+    )
+    levels(gss_cat$has_denom) <- c(
+      "Has a denomination", "No denomination",
+      "Not applicable", "No answer", "Don't know"
+    )
+
+    # Ordering correctly
+    gss_cat$has_denom <- fct_relevel(gss_cat$has_denom,
+      c(
+        "Has a denomination", "No denomination", "Not applicable",
+        "Don't know", "No answer"
+      ),
+      after = 0L
+    )
+
+    nice_table(gss_cat$has_denom, "Denomination")
+    ```
+
+(c)
+    ```{r}
+    kbl(table(gss_cat$has_denom, gss_cat$is_protestant)) |>
+      kable_styling(
+        bootstrap_options = "striped", full_width = F, position =
+          "left"
+      )
+    ```

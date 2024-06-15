@@ -1,0 +1,91 @@
+---
+title: "Lecture12"
+output: html_document
+date: '2022-03-15'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+one-way anova
+
+```{r}
+data = data.frame(height = c(82, 93, 61, 74, 69, 70, 53,
+                            71, 62, 85, 94, 78, 66, 71, 
+                            64, 73, 87, 91, 56, 78, 87),
+                  genotype = c(rep("AA", 7), rep("Aa", 7), rep("aa", 7)))
+
+data
+```
+
+```{r}
+library(tidyverse)
+data |>
+  group_by(genotype) |>
+  summarise(sumofsquare = ((height - mean(height))^2*n()))
+```
+```{r}
+sum((data$height - mean(data$height))^2)
+```
+```{r}
+m <- mean(data$height)
+data |>
+  group_by(genotype) |>
+  summarise(ss = sum((mean(height) - m)^2)*n()) |>
+  summarise(sum(ss))
+```
+```{r}
+data |>
+  group_by(genotype) |>
+  summarise(variance = sum((height - mean(height))^2)) |>
+  summarise(sum(variance))
+```
+```{r}
+nr <- nrow(data)
+fstat <- (88.6667 / 2) / ((2812.571)/(nr - 3))
+```
+```{r}
+summary(aov(height~genotype, data=data))
+```
+```{r}
+var(data$height) * (nr-1)
+total_ss = sum((data$height - m)^2)
+total_ss
+```
+
+
+
+two-way anova without replication
+
+```{r}
+
+data = data.frame(proteina = c(75, 70, 50, 65, 80, 65,
+                            75, 70, 55, 60, 65, 65, 
+                            90, 70, 75, 85, 80, 65),
+                  treatment = c(rep("drug a", 6), rep("drug b", 6), rep("dmso", 6)),
+                  batch = rep(c("1", "2", "3",
+                                  "4", "5", "6"),3)
+                  
+                  )
+data
+
+```
+
+```{r}
+summary(aov(proteina ~ treatment + batch, data = data))
+```
+
+```{r}
+summary(aov(proteina ~ treatment, data = data))
+```
+
+
+```{r}
+(1-0.95^3)
+```
+
+
+```{r}
+sessionInfo()
+```

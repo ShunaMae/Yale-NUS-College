@@ -1,0 +1,108 @@
+---
+title: "Lec11_DAVis codes"
+author: "shuna"
+date: "3/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+sg <- readxl::read_excel("outputFile.xlsx", sheet = "T2", skip = 10, na = "na") %>%
+  slice(27:50, 52:75)
+```
+
+```{r}
+sg <- sg %>%
+  #select(age = "Data Series", as.character(seq(1960, 2020, 10)))
+  select(age = "Data Series", ends_with("0"))
+sg
+```
+
+```{r}
+sg <- sg %>%
+  mutate(
+    age = str_replace(age,"(.*) Years & Over$", ">\\1") %>%
+      str_remove(" Years") %>%
+      (\(x){
+        factor(x, levels = unique(x))
+      }
+  )()
+)
+sg
+```
+
+```{r}
+sg <- sg %>% 
+  mutate(sex = rep(c("male", "female"), each = nrow(sg)/2))
+sg
+```
+
+
+```{r}
+sg[18, "1990"] <- sg[23, "1990"]
+sg[18, "1980"] <- sg[23, "1980"]
+sg[17, "1970"] <- sg[22, "1970"]
+sg[15, "1960"] <- sg[20, "1960"]
+
+sg[42, "1990"] <- sg[47, "1990"]
+sg[42, "1980"] <- sg[47, "1980"]
+sg[41, "1970"] <- sg[46, "1970"]
+sg[39, "1960"] <- sg[44, "1960"]
+```
+
+```{r}
+# improve this! 
+sg <- sg %>%
+  slice(1:18, 24:42, 48)
+```
+
+```{r}
+# age, sex, year, pop
+sg <- sg %>% 
+  pivot_longer(ends_with("0"), names_to = "year", values_to = "pop")
+```
+
+```{r, fig.height=6, fig.width=8, out.width = "95%"}
+library(lemon)
+# https://stackoverflow.com/questions/37949473/how-do-you-make-ggplot-labels-use-both-labels-abs-and-labels-comma
+abs_comma <- function(x) {
+  format(abs(x), big.mark = ",", scientific = FALSE, trim = TRUE)
+}
+
+sg[is.na(sg)] <- 0
+g <- sg %>% ggplot(aes(x = age, y = pop, fill = sex)) +
+  geom_histogram(
+    data = subset(sg, sex == "female"), 
+    stat = "identity",
+    na.rm = TRUE
+  ) +
+  geom_histogram(
+    data = subset(sg, sex == "male"), 
+    stat = "identity", 
+    aes(y = pop * (-1)), 
+    na.rm = TRUE
+  ) +
+  coord_flip() +
+  scale_y_continuous(labels = abs_comma) + 
+  scale_fill_manual(values = c("dodgerblue3", "firebrick3")) + 
+  facet_wrap(~year, ncol = 4, nrow = 2) +
+  labs(
+    x = "Age (years)",
+    y = "Population",
+    title = "Singapore Resident Population between 1960 and 2020",
+    caption = "Source: Department of Statistics Singapore",
+    fill = "Sex"
+  ) + 
+  theme(plot.title = element_text(hjust = 0.5))
+reposition_legend(g, 'right bottom', panel='panel-4-2')
+```
+
+

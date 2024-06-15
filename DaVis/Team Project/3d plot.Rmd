@@ -1,0 +1,65 @@
+---
+title: "plotly writing"
+author: "shuna"
+date: "4/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(plotly)
+```
+
+
+# 3D plots 
+
+Interactivity comes in really useful when you have more variables to plot. Adding the third axis is very straightforward, you may simply add a `z` attribute to `plot_ly()`. In the plot below, you can clearly see three clusters of iris species. 
+
+```{r}
+p <- iris |>
+  plot_ly(
+    x = ~Sepal.Length,
+    y = ~Petal.Length,
+    z = ~Petal.Width,
+    marker = list(size = 5)
+  ) |>
+  add_markers(color = ~Species)
+
+p
+```
+
+**Plotly** enables us to rotate, zoom in/out, and check the coordinates of datapoints. This is something two dimensional non-interactive plots cannot do, and thus **Ploly** stands as one of the best options when it comes to three dimensional plots. 
+
+For other types of 3d plots, you may refer to the Plotly Graphing library[^10]
+and look for the appropriate trace functions. 
+
+[^10]: <https://plotly.com/python/3d-charts/> Accessed on 8/4/2022
+
+### Axes 
+
+In 3d plots, axes are embedded in the `scene` object, but still inside the `layout` function. So directly putting `xaxis = list(title = "x")` does not yield the desired output. Below is an example of how to use the `scene` object. Note that the title and legend are outside of the `scene` object. 
+
+```{r}
+p |>
+  layout(
+    # main title 
+    title = "Iris Species",
+    # legend 
+    legend = list(
+      title = list(text = "<b> Species <b>"),
+      itemsizing = "constant"
+    ),
+    # add titles for three axes
+    scene = list(
+      xaxis = list(title = "Sepal Length (cm)"),
+      yaxis = list(title = "Petal Length (cm)"),
+      zaxis = list(title = "Petal Width (cm)")
+      )
+  )
+```
+
+

@@ -1,0 +1,89 @@
+---
+title: "lec11_exercises"
+author: "shuna"
+date: "2/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = TRUE, 
+                      fig.align = "center", 
+                      fig.height = 4, 
+                      fig.width = 5)
+```
+
+
+```{r}
+library(tidyverse)
+```
+
+# Import the datav 
+```{r}
+meseals <- as_tibble(read.csv("measles_for_ggplot2.csv"))
+meseals
+```
+
+```{r}
+v1 <- ggplot(data = meseals, aes(x = year, y = state, fill = incidence + 1/10000, colour = "grey")) + 
+  geom_tile()
+v1
+```
+(4)
+```{r}
+ex04 <- v1 + 
+  labs(x = "Year",
+       y = "States", 
+       title = "Meseals Incident Cases by Years",
+       caption = "Project Tycho (2019)") + 
+  theme(plot.title = element_text(hjust = 0.6))
+
+ex04
+```
+
+(5)
+```{r}
+ex05 <- ex04 +
+  scale_x_continuous(breaks = seq(1930,2000, 10),
+                     expand = expansion(0))
+
+ex05
+```
+
+(6)
+```{r}
+ex06 <- ex05 + 
+  scale_y_discrete(limits=rev)
+
+ex06
+```
+
+(7)
+```{r}
+ex07 <- ex06 +
+  scale_fill_distiller(
+    palette = "Purples",
+    breaks = 10^(-2:3),
+    limits = c(2e-3, NA),
+    direction = 1,
+    labels = prettyNum,
+    trans = "log10",
+    guide = guide_colourbar(
+      frame.colour = "black",
+      ticks.colour = "black"
+    ),
+    name = "Incidents",
+    oob = scales::squish,
+    na.value = "grey"
+  )
+ex07
+```
+
+(8)
+
+```{r}
+ex08 <- ex07 + 
+  scale_colour_manual(values=NA) +
+  guides(colour=guide_legend(NA, override.aes=list(colour="black")))
+ex08
+```
+

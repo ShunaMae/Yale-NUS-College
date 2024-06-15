@@ -1,0 +1,206 @@
+---
+title: "relational data_D"
+author: "Team D"
+date: '2022-03-11'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(readxl)
+library(countrycode)
+library(gapminder)
+```
+
+#### (1) Import the World Bank data for GDP per capita, life expectancy and population.
+```{r}
+gdp <- read_excel("API_NY.GDP.PCAP.KD_DS2_en_excel_v2_3731742.xls",
+  skip = 3,
+  sheet = "Data"
+)
+le <- read_excel("API_SP.DYN.LE00.IN_DS2_en_excel_v2_3731513.xls",
+  skip = 3,
+  sheet = "Data"
+)
+pop <- read_excel("API_SP.POP.TOTL_DS2_en_excel_v2_3759026.xls",
+  skip = 3,
+  sheet = "Data"
+)
+
+```
+
+#### (2) Is the column with three-letter country codes (second column from the left) the same in all three spreadsheets?
+```{r}
+all(gdp$"Country Code" == le$"Country Code")
+all(pop$"Country Code" == le$"Country Code")
+all(gdp$"Country Code" == pop$"Country Code")
+```
+They are all the same.
+
+#### (3) Merge three spreadsheets into a single tibble `wb`
+```{r}
+gdp_n <- gdp |>
+  pivot_longer(
+    c("1960":"2020"),
+    names_to = "year",
+    values_to = "gdp"
+  ) |>
+  select("Country Name", "Country Code", "year", "gdp")
+
+le_n <- le |>
+  pivot_longer(
+    c("1960":"2020"),
+    names_to = "year",
+    values_to = "le"
+  ) |>
+  select("Country Name", "Country Code", "year", "le")
+
+pop_n <- pop |>
+  pivot_longer(
+    c("1960":"2020"),
+    names_to = "year",
+    values_to = "pop"
+  ) |>
+  select("Country Name", "Country Code", "year", "pop")
+
+
+wb <- left_join(gdp_n, le_n) |>
+  left_join(pop_n)
+
+glimpse(wb)
+```
+
+#### (4) Perform an anti-join to find out which three-letter country codes in the World Bank spreadsheets do not have a matching code in `codelist`. What are the corresponding ‘country names’?
+
+```{r}
+wb |>
+  anti_join(codelist, by = c("Country Code" = "iso3c")) |>
+  select("Country Code", "Country Name") |>
+  distinct()
+```
+Do the results make sense?
+Yes, the results make sense because the country names showed are not actually names of countries. They are names of groups of countries and these names correspond to many ways of grouping a set of countries like geographical location (i.e. North America, Asia) and income (i.e. High Income, Low Income). Since these are not country names, it makes sense that they do not have a matching code in `codelist`.
+
+#### (5) Use a `dplyr` ‘join’ function to remove all rows from `wb` that do not match any country code in `codelist`.
+```{r}
+wb <- wb |>
+  semi_join(codelist, by = c("Country Code" = "iso3c"))
+```
+
+#### (6) Summarise the number of countries per year that cannot be plotted on the basis of the World Bank data. 
+```{r}
+missing_values <- wb |>
+  filter(is.na(gdp) | is.na(le) | is.na(pop)) |>
+  group_by(year) |>
+  count()
+
+missing_values
+```
+
+#### (7) Plot the number of missing countries per year.
+```{r, fig.width=10, fig.height=6, out.width="70%"}
+m_pl <- missing_values |>
+  ggplot(aes(as.integer(year), n)) +
+  geom_point() +
+  geom_line() +
+  theme(axis.text.x = element_text(vjust = 0.5)) +
+  labs(
+    title = "Number of countries w/ missing GDP, Population and/or Life expectancy",
+    x = "Year",
+    y = "Number of missing data",
+    caption = "Source: World Bank"
+  ) +
+  scale_x_continuous(
+    breaks = seq(1960, 2020, 10),
+    limits = c(1960, 2020),
+  ) +
+  scale_y_continuous(
+    limits = c(0, 250),
+    expand = expansion(0)
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    plot.caption = element_text(size = 12)
+  )
+m_pl
+```
+Comment on the result.
+From the graph above, the general trend observed is that the number of countries with missing data decreased over time, with exception of Year 2020. This trend is indicative of the increased ability and capacity of countries to collect census data as they become more developed. Additionally, we observe that there seems to be a periodic cycle between Year 1977 and Year 2003, where the number of missing values decrease before slightly increasing, followed by a decrease again. This might be due to some indicators being derived from sporadic surveys and are only available every few years.[^our_first_footnote]
+
+[^our_first_footnote]: <https://datahelpdesk.worldbank.org/knowledgebase/articles/191133-why-are-some-data-not-available>. Accessed 16th March 2022.
+
+#### (8) Are there countries in `gap` without a country code? Are there countries that share the same country code?
+```{r}
+gap <-
+  gapminder_unfiltered |>
+  filter(country != "Netherlands Antilles") |>
+  mutate(country_code = countrycode(country, "country.name", "iso3c"))
+
+#Countries without a country code
+sum(is.na(gap$country_code))
+
+# Obtaining distinct combinations of country name and code
+# Then grouping rows by country code and filter out country codes with more 
+# than one corresponding country name to identify countries with the same code
+gap |>
+  distinct(country, country_code) |>
+  group_by(country_code) |>
+  filter(n() > 1) |>
+  nrow()
+```
+There is no country in `gap` without a country code. There are no countries in `gap` that share the same country code.
+
+#### (9) Compare data between `gap` and `wb`.
+```{r}
+# countries in gap but not in wb
+anti_join(gap, wb, by = c("country" = "Country Name")) |>
+  distinct(country)
+
+# countries in wb but not in gap
+anti_join(wb, gap, by = c("Country Name" = "country")) |>
+  distinct(`Country Name`)
+```
+
+#### (10) Compare GDP data in `wb` and `gap` for the year 2007.  Merge the information from `wb` and `gap` into a tibble `wb_gap` such that only those countries are included that appear in both tibbles.
+```{r}
+wb_2007 <- wb |>
+  filter(year == "2007") |>
+  select("Country Name", "Country Code", "gdp") |>
+  drop_na()
+
+gap_2007 <- gap |>
+  filter(year == 2007) |>
+  select(country, gdpPercap, country_code) |>
+  drop_na()
+
+wb_gap <- inner_join(
+  wb_2007, 
+  gap_2007, 
+  by = c("Country Name" = "country", "Country Code" = "country_code")
+  )
+
+wb_gap
+```
+
+#### (11) Append a column to `wb_gap` that shows the percentage difference of Gapminder’s GDP estimate compared to the World Bank estimate. 
+```{r}
+wb_gap <- wb_gap |>
+  mutate(perc_change = (gdpPercap - gdp) / gdp * 100)
+```
+
+#### (12) For which five countries is the percentage difference largest? For which five countries is it smallest (i.e. most strongly negative).
+```{r}
+slice_max(wb_gap, perc_change, n = 5)
+slice_min(wb_gap, perc_change, n = 5)
+```
+The five countries with the greatest percentage difference (in descending order) are: Chad, Ukraine, Bhutan, Afghanistan and Timor-Leste. \
+The five countries with the most strongly negative percentage difference (in increasing order) are: Zimbabwe, Switzerland, Maldives, Norway and Denmark.

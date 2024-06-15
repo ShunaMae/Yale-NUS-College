@@ -1,0 +1,296 @@
+---
+title: "plotly Exercise"
+author: "Team Red"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+```{r, include = FALSE}
+library(tidyverse)
+library(plotly)
+lq <- read_csv("life_quality.csv")
+```
+
+Your goal is to create this plot using **plotly**. 
+```{r, echo = FALSE, fig.width = 6, fig.height=4 , fig.align='center'}
+colors <- c("#e41a1c", '#377eb8', '#4daf4a', '#984ea3', '#ff7f00')
+
+lq <- mutate(lq, size = sqrt(pop * 1e-03))
+
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter",
+    color = ~continent,
+    colors = colors,
+    fill = ~"",
+    size = ~size,
+    marker = list(
+      sizemode = "diameter",
+      opacity = 0.6,
+      sizes = c(5, 30), 
+      line = list(
+        width = 1,
+        color = "white"
+      )
+    ),
+    hoverinfo = "text",
+    text = ~ paste(
+      "Country:", country_name,
+      "<br>GDP per capita:", paste0("$", round(gdp_per_capita, digit = 2)),
+      "<br>Life Expectancy:", paste(round(life_expectancy, digits = 2), "years"),
+      "<br>Population:", pop
+    )
+  ) |>
+  layout(
+    title = "Wealth and Health by Country in 2015",
+    legend = list(
+      title = list(text = "<b> Continent <b>"),
+      itemsizing = "constant"
+    ),
+    xaxis = list(
+      title = "GDP per capita (USD, PPP2015)",
+      type = "log",
+      showgrid = TRUE,
+      tickmode = "linear"
+    ),
+    yaxis = list(
+      title = "Life Expectancy (years)"
+    ),
+    annotations = list(
+      x = 1.2, 
+      y = -0.1,
+      text = "Source: World Bank",
+      showarrow = F, 
+      xref = "paper", 
+      yref = "paper",
+      xanchor = "right", 
+      yanchor = "auto", 
+      xshift = 0, 
+      yshift = 0,
+      font = list(size = 12)
+    ) 
+  ) 
+```
+(0) Download https://michaelgastner.com/DAVisR_data/life_quality.csv.
+
+(1) Make a scatterplot where: 
+
+- The x-coordinate is the GDP per capita.
+- The y-coordinate is the life expectancy. 
+- `mode = "markers"`
+
+```{r}
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter"
+  )
+```
+
+
+(2) Set the colors of each point to indicate which continent it belongs to.
+
+- Make sure you have two separate parameters `color` and `colors`:
+    - `color` should specify which column or variable to map to the color of each point.
+    - `colors` should specify which colors or palette to use.
+- You may use this palette for coloring continents: 
+    ```{r}
+    colors <- c("#e41a1c", '#377eb8', '#4daf4a', '#984ea3', '#ff7f00')
+    ```
+
+```{r}
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter",
+    color = ~continent,
+    colors = colors
+    ) 
+```
+
+
+(3) Set the size of each bubble to indicate the population.
+- You will see the following warning `Warning: line.width does not currently support multiple values`.
+- You may consider using `fill = ~''` in plot_ly(); this code assigns an empty string to `fill`. 
+
+```{r}
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter",
+    color = ~continent,
+    colors = colors,
+    fill = ~"",
+    size = ~pop,
+    # adjusts the range of sizes used 
+    marker = list(
+      sizemode = "diameter",
+      opacity = 0.6,
+      sizes = c(10, 50)) # choosing the range of the bubble sizes
+  )
+```
+
+
+- Unfortunately, as of today, **plotly** does not support the size legend. However, some people seem to have found a way around by creating a new plot just for legend and combine it with the original bubble chart using `subplot` function. You can try it once you are done with the rest of exercises. 
+
+(4) Assign texts to each point that will show when you hover over it.
+- The text should contain the country name, GDP per capita, life expectancy, and population.
+- Remember to add line breaks.
+- For GDP per capita and life expectancy, round the numbers to 2 digits.
+- Place a dollar sign in front of GDP per capita.
+```{r}
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter",
+    color = ~continent,
+    colors = colors,
+    fill = ~"",
+    size = ~pop,
+    marker = list(
+      sizemode = "diameter",
+      opacity = 0.6,
+      sizes = c(10, 50) 
+    ),
+    hoverinfo = "text",
+    # placing a dollar sign in front of GDP per Capita 
+    text = ~ paste(
+      "Country:", country_name,
+      "<br>GDP per capita:", paste0("$", round(gdp_per_capita, digit = 2)),
+      # round off GDP per Capita and life expectancy to 2 digits 
+      "<br>Life Expectancy:", paste(round(life_expectancy, digits = 2), "years"),
+      "<br>Population:", pop
+    )
+  )
+```
+
+
+(5) Add labels to the plot using `layout()`
+- Change the axis labels and give the plot a title. 
+- Add an appropriate legend.
+- Give credit to the World Bank as a source. To accomplish this, you may consider using the code below: 
+    ```{r}
+    annotations = list(
+      x = 1.2, 
+      y = -0.1,
+      text = "Source: World Bank",
+      showarrow = F, 
+      xref = "paper", 
+      yref = "paper",
+      xanchor = "right", 
+      yanchor = "auto", 
+      xshift = 0, 
+      yshift = 0,
+      font = list(size = 12)
+    ) 
+    ```
+   
+   
+(6) Fine-tune and complete the plot. 
+- Make sure the x-axis is log-tranformed. 
+- To transform into a logarithmic axis, you should use this code:
+
+    ```{r, eval = FALSE}
+    xaxis = list(
+      type = "log", 
+      showgrid = TRUE, 
+      tickmode = "linear"
+    )
+    ```
+- Make sure the sizes of the symbol in the legend are constant. 
+- Add a thin white border around the points to make it easier to distinguish overlapping points. 
+- You should consider using the following code in `marker`. 
+    ```{r}
+    line = list(
+            width = 1,
+            color = "white"
+          )
+    ```
+- Feel free to make more adjustments if you think they will improve the quality of the plot. 
+
+
+```{r}
+lq |>
+  plot_ly(
+    x = ~gdp_per_capita,
+    y = ~life_expectancy,
+    mode = "markers",
+    type = "scatter",
+    color = ~continent,
+    colors = colors,
+    fill = ~"",
+    size = ~pop,
+    marker = list(
+      sizemode = "diameter",
+      opacity = 0.6,
+      sizes = c(10, 50), 
+      #  Add a thin white border around the points to make it easier to distinguish overlapping points
+      line = list(
+        width = 1,
+        color = "white"
+      )
+    ),
+    hoverinfo = "text",
+    text = ~ paste(
+      "Country:", country_name,
+      "<br>GDP per capita:", paste0("$", round(gdp_per_capita, digit = 2)),
+      "<br>Life Expectancy:", paste(round(life_expectancy, digits = 2), "years"),
+      "<br>Population:", pop
+    )
+  ) |>
+  layout(
+    title = "Wealth and Health by Country in 2015",
+    # making sure the sizes of the symbol in the legend are constant.
+    legend = list(
+      title = list(text = "<b> Continent <b>"),
+      itemsizing = "constant"
+    ),
+    xaxis = list(
+      title = "GDP per capita (USD, PPP2015)",
+      type = "log",
+      showgrid = TRUE,
+      tickmode = "linear"
+    ),
+    yaxis = list(
+      title = "Life Expectancy (years)"
+    ),
+    annotations = list(
+      x = 1.2, 
+      y = -0.1,
+      text = "Source: World Bank",
+      showarrow = F, 
+      xref = "paper", 
+      yref = "paper",
+      xanchor = "right", 
+      yanchor = "auto", 
+      xshift = 0, 
+      yshift = 0,
+      font = list(size = 12)
+    ) 
+  )     
+
+    
+```
+    
+Thank you! 
+
+
+
+

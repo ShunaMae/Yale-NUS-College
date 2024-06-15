@@ -1,0 +1,76 @@
+---
+title: "New York Mayoral Election 2017"
+author: "Team 5B"
+date: "1/26/2022"
+output: 
+    html_document:
+        toc: true
+        theme: united
+---
+
+``` {r setup, include=FALSE, echo=FALSE}
+library(kableExtra)
+library(tidyverse)
+library(scales)
+ny_mayor <- read.csv("ny_mayor.csv")
+```
+
+# Introduction
+
+The wikipedia article indicates that Bill de Blaiso won[^1].
+
+    ‘Incumbent Democrat Bill de Blasio won reelection to a second term with 66.2% of the vote against Republican Nicole Malliotakis.’
+
+Thus, it is our clear belief, as the people of wikipedia speak the truth, that Bill really did win.
+
+# Plotting Against the Table
+
+``` {r setup, include=FALSE}
+kbl(ny_mayor,
+    caption = "New York Mayoral Election 2017")
+```
+## Data presented as a table
+
+``` {r}
+
+```
+
+| Borough | de Biasio | Malliotakis | Other |
+|:--------|:----------|:------------|:------|
+|         |           |             |       |
+|         |           |             |       |
+|         |           |             |       |
+|         |           |             |       |
+|         |           |             |       |
+|         |           |             |       |
+
+
+## Data presented as a bar plot
+
+``` {r include=FALSE, echo=FALSE}
+# Put calls to library() at the start of your RMD file
+ny_mayor_long <- read_csv("ny_mayor.csv") |>
+mutate(borough = str_replace(borough, " ", "\n")) |> pivot_longer(-borough) |>
+mutate(name = fct_rev(name))
+ggplot(ny_mayor_long, aes(borough, value, fill = name)) +
+  geom_col(position = "dodge") +
+  scale_x_discrete(limits = rev) +
+  coord_flip() +
+  scale_y_continuous(labels = label_comma()) +
+  scale_fill_manual(
+    labels = c("Other", "Malliotakis", "de Blasio"),
+values = c("palegreen4", "firebrick2", "steelblue") )+
+  labs(
+    title = "New York Mayoral Election 2017",
+    caption = "Source: CNN",
+    x = "Borough",
+    y = "Votes",
+    fill = "Candidate" 
+) +
+guides(fill = guide_legend(reverse = TRUE)) +
+theme(legend.key.size = unit(1, "lines"))
+```
+
+## What is better: table or bar plot?
+
+[^1]:Accessed [here](https://en.wikipedia.org/wiki/2017_New_York_City_mayoral_election) on 2022-01-26.

@@ -1,0 +1,182 @@
+---
+title: "Solutions: Singapore population pyramid"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+header-includes: 
+    - \usepackage{hyperref}
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(message=FALSE)
+```
+
+First, we load the packages that we need for this task.
+
+```{r}
+library(readxl)
+library(scales)
+library(tidyverse)
+```
+
+(1) The most convenient option is to import sheet 'T2', which contains
+    'Singapore Residents By Age Group'.
+    It would be possible to use sheet 'T3', which has more fine-grained data
+    ('Singapore Residents By Single Year'), but the additional level of detail
+    is not useful in the present context.
+    
+    Missing data (e.g.\ in the column for the year 1999 and residents in the
+    age bracket '85--89 years') is encoded by the character string 'na'.
+    
+    The relevant rows to import are 38--61 (male residents) and 63--86 (female
+    residents).
+    However, to set the correct argument for `slice()` in the code chunk
+    below, we must skip the first 10 rows, which contain metadata, and one
+    more row for column header.
+    Thus, we must subtract 11 from the row numbers in the Excel file.
+    
+    ```{r}
+    sg <- read_excel(
+      "outputFile.xlsx",
+      sheet = "T2",
+      na = "na",
+      skip = 10
+    ) |>
+      slice(27:50, 52:75)
+    ```
+    
+(2)
+
+    ```{r}
+    sg <- select(sg, age = `Data Series`, ends_with("0"))
+    ```
+
+(3)
+
+    ```{r}
+    sg <- mutate(
+      sg,
+      age = str_replace(age, "(.*) Years & Over$", ">\\1") |>
+        str_remove(" Years") |>
+        (\(x) {
+          factor(x, levels = unique(x))
+        })()
+    )
+    ```
+
+(4)
+
+    ```{r}
+    sg <- mutate(sg, sex = rep(c("male", "female"), each = nrow(sg) / 2))
+    ```
+
+(5) The following helper function, named `fill_highest_age_group()`,
+    identifies the first age group with `NA` (the variable called `x`) and the
+    last age group without `NA` (`y`) in an input vector `v`.
+    The function then shifts the value from `y` to `x`.
+
+    ```{r}
+    fill_highest_age_group <- function(v) {
+      x <-
+        which(is.na(v)) |>
+        first()
+      y <-
+        which(!is.na(v)) |>
+        last()
+      v[x] <- v[y]
+      v
+    }
+    ```
+
+    The next helper function, `fill_highest_age_groups()`, where `groups` is
+    in plural, performs `fill_highest_age_group()`, where `group` is in
+    singular, for both genders.
+    
+    ```{r}
+    fill_highest_age_groups <- function(w) {
+      male <- w[1:(length(w) / 2)]
+      female <- w[(length(w) / 2 + 1):length(w)]
+      c(fill_highest_age_group(male), fill_highest_age_group(female))
+    }
+    ```
+    
+    We can now mutate `age` with `fill_highest_age_groups()`.
+    
+    ```{r}
+    sg <- mutate(sg, across(ends_with("0"), fill_highest_age_groups))
+    ```
+    
+(6)
+
+    ```{r}
+    sg <- filter(sg, str_starts(age, ">", negate = TRUE) | age == ">90")
+    ```
+    
+(7)
+
+    ```{r}
+    sg <- pivot_longer(
+      sg,
+      -c(age, sex),
+      names_to = "year",
+      values_to = "pop",
+      values_drop_na = TRUE
+    )
+    ```
+
+(8) I flip the sign of the male population so that the male bars will extend
+    into the right direction.
+    
+    ```{r}
+    sg <- mutate(sg, pop = if_else(sex == "male", -pop, pop))
+    ```
+    
+    I change axis tick labels to non-negative numbers with
+    `scale_x_continuous(labels = ~ comma(abs(.)))`
+    
+    The ColorBrewer palette 'Set1' starts with red and blue, which is a common
+    colour code for male and female in population pyramids.
+    The colours are a little bit too intense for my taste; thus, I reduce the
+    alpha-level.
+
+    Finally, I use `theme()` to shift the legend to the bottom right.
+
+    ```{r fig.width = 8, fig.height = 6}
+    ggplot(sg, aes(pop, age, fill = sex)) +
+      geom_col(alpha = 0.75) +
+      labs(
+        x = "Population",
+        y = "Age (years)",
+        fill = "Sex",
+        title = "Singapore Resident Population between 1960 and 2020",
+        caption = "Source: Department of Statistics Singapore",
+      ) +
+      scale_x_continuous(labels = ~ comma(abs(.))) +
+      scale_fill_brewer(palette = "Set1", direction = -1) +
+      facet_wrap(~year, nrow = 2) +
+      theme(
+        legend.position = c(1, 0),
+        legend.justification = c(1, 0)
+      )
+    ```
+
+    A figure width of 8 and figure height of 6 leads to a reasonable font size
+    (e.g.\ in the axis labels).
+    For your information, here is how you save the plot to a file.
+    
+    ```{r}
+    ggsave("sg_pyramid.pdf", width = 8, height = 6)
+    ```
+    
+(9) Since 1960, Singapore's population has become older, as we can see from
+    the age groups represented by the topmost bars in the panels.
+    The bar plots also have undergone a dramatic change in shape.
+    In 1960, the age structure resembled a triangular shape in which the largest
+    age group was at the bottom, and the bars tapered off towards the top.
+    As time went by, a noticeable bulge formed in the middle-aged group.
+    In 2020, there are more Singaporeans aged between 65 and 69 than between
+    0 and 4 years.
+    Towards older age groups, all pyramids are slightly asymmetric because
+    women tend to live longer than men.

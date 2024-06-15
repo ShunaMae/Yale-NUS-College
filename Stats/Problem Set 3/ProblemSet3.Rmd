@@ -1,0 +1,386 @@
+---
+title: "ProblemSet3"
+author: "Shuna"
+output: 
+  prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
+  toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = "center", message = FALSE)
+library(tidyverse)
+library(car)
+library(GGally)
+```
+
+## Part 1 - Diet
+
+The data set (Diet_R.csv) contains information on 78 people using one of three diets, and contains information on their weight before starting the diet and their weight 6 weeks after being on a specific diet. 
+
+Person	Participant number	
+gender	Gender, 1 = male, 0 = female	
+Age	Age (years)	
+Height	Height (cm)	
+preweight	Weight before the diet (kg)	
+Diet	Diet	
+weight6weeks	Weight after 6 weeks (kg)	
+
+
+
+```{r}
+data = read.csv("Diet_R.csv") |>
+  mutate(weight_loss = weight6weeks - pre.weight)
+```
+
+### Q1: Does diet affect weight loss? 
+
+```{r}
+# first of all, visualization. 
+data |>
+  select(Diet, weight_loss) |>
+  ggplot(aes(as.factor(Diet), weight_loss)) +
+  geom_violin()
+```
+
+```{r}
+q1 <- data |>
+  # select columns 
+  select(Diet, weight_loss) |>
+  # remove na values 
+  filter(!(is.na(Diet) | is.na(weight_loss))) |>
+  mutate(Diet = as.factor(Diet))
+
+# perform one-way anova 
+model_q1<- aov(weight_loss ~ Diet, data = q1)
+summary(model_q1)
+```
+
+The p-value of 0.00324 is less than 0.05 (alpha), we reject the null hypothesis and conclude that the Diet type is significantly affecting the weight loss. If we want to see which diet is affecting the weight loss, we could fit a linear model, but this time I just did a one-way anova. 
+
+
+### Q2: Is there an effect of diet or gender on weight loss?
+
+```{r}
+data |>
+  filter(!(is.na(Diet)|is.na(gender) | is.na(weight_loss))) |>
+  ggplot(aes(as.factor(Diet), weight_loss, color = as.factor(gender))) + 
+  geom_jitter(width=0.25)
+```
+
+```{r}
+# two-way anova 
+q2 <- data |>
+  # select three columns for simplicity 
+  select(Diet, gender, weight_loss) |>
+  # remove NAs
+  filter(!(is.na(Diet) | is.na(gender) | is.na(weight_loss))) |>
+  # change gender column from int to fctr
+  mutate(
+    Diet = as.factor(Diet),
+    gender = as.factor(gender)
+  )
+
+model_q1_lm <- lm(weight_loss ~ Diet, data = q1)
+summary(model_q1_lm)
+
+# two-way anova 
+model_q2 <- aov(weight_loss ~ Diet + gender, data = q2)
+summary(model_q2)
+
+model_q2_lm <- lm(weight_loss ~ Diet + gender, data = q2)
+summary(model_q2_lm)
+```
+    
+ Looking at the anova summary, we can tell that gender is not significantly affecting the weight loss. `lm` function helps us to see the Adjusted R-squared value; we can see that the model (`model_q2_lm`) is explaining only 7% of the distribution, suggesting it is a horrible model. 
+    
+  For Diet, we know that it is significantly affecting the weight loss, but the look at summary of `model_q1_lm` reveals that the model only explains about 12% of the variance. It is not a good model either. This tells us that even though different diets results in different weight loss, diet is not everything.  
+    
+    
+### Q3: Is there an interaction between diet or gender on weight loss?
+
+```{r}
+q3 <- data |>
+  select(Diet, weight_loss, gender) |>
+  filter(!(is.na(Diet) | is.na(weight_loss) | is.na(gender)))
+
+model_q3 <- aov(weight_loss ~ Diet * gender, data = q3)
+summary(model_q3)
+```
+
+  The interaction term has a p-value of 0.09 which is not statistically significant. We fail to reject the null hypothesis that there is no interaction between diet and gender on weight loss. 
+  
+  
+### Q4: Which diet is best for losing weight?
+
+```{r}
+data |>
+  group_by(Diet) |>
+  mutate(Diet = as.factor(Diet)) |>
+  summarize(count = n())
+```
+
+  Since the sample size of each group is not equal, we do not use Tukey post-hoc method. Instead, we use the Scheffe method, which is the most conservative post-hoc comparison method and produces the widest confidence intervals when comparing group means. [^1]
+    
+  [^1]: "How to Perform Post-Hoc Pairwise Comparisons in R"<https://www.statology.org/pairwise-comparison-in-r/>
+    
+```{r, warning=FALSE}
+library(DescTools)
+ScheffeTest(model_q1)
+```
+    
+  In the outcome, we see that Diet 1 and 2 does not differ significantly in weight loss. On the other hand, Diet 3 significantly differ from both 1 and 2. When we look at the confidence interval, Diet 3 has the lowest interval. Therefore, we can conclude that Diet 3 is the best for losing weight. 
+  
+  Alternatively, we can look at the summary of `model_q1_lm`:
+```{r}
+summary(model_q1_lm)
+```
+  
+ The summary tells the same story that diet 3 is statistically significantly different from the others. Maybe not as clear as the Scheffe method, but the same outcome. 
+    
+### Q5: Does age have any role in weight loss? 
+
+```{r}
+q5 <- lm(weight_loss ~ Age, data = data)
+summary(q5)
+```
+
+  The summary p-value of 0.61, which suggests no significant difference. Hence, we fail to reject the null hypothesis and conclude that there is no evidence that age affects the weight loss. The model explains almost nothing about the distribution, as can be seen in the R-squared value. 
+    
+  We can also visualize this, the scattered plot affirms that there is no linear relationship. 
+    
+```{r}
+data |>
+  select(Age, weight_loss) |>
+  filter(!(is.na(Age) | is.na(weight_loss))) |>
+  ggplot(aes(Age, weight_loss)) +
+  geom_point() +
+  geom_smooth(
+    formula = y ~ x,
+    method = 'lm'
+  )
+```
+
+## Part 2
+
+The file depression.csv contains the results of a study looking at the effect of treatment on depression. 
+
+Hospt: The patient’s hospital (1, 2, 3, 5, or 6)
+Treat: The treatment received by the patient (Lithium, Imipramine, or Placebo)
+Outcome: Whether or not a recurrence occurred during the patient’s treatment (Recurrence or No Recurrence)
+Time: Either the time (days) till recurrence, or if no recurrence, the length (days) of the patient’s participation in the study.
+AcuteT: The time (days) that the patient was depressed prior to the study.
+Age: The age of the patient in years, when the patient entered the study.
+Gender: The patient’s gender (1 = Female, 2 = Male)
+
+
+```{r}
+data = read.delim("depression.csv", sep=",")
+```
+
+### Q6: Is there any association between treatment and outcome? 
+
+```{r}
+q6 <- data |>
+  filter(!(is.na(Treat) | is.na(Outcome))) |>
+  select(Treat, Outcome) |>
+  group_by(Treat, Outcome) |>
+  summarise(num = n()) |>
+  pivot_wider(names_from = Outcome, values_from = num) 
+
+chisq.test(q6[-1])
+```
+
+  Since this question is asking about the association between outcome and treatment, we can simply run a chi-squared test. The p-value of 0.001 suggests that outcome is dependent on the treatment. 
+    
+  Or, as the independent variable is a discrete/binomial variable, we can choose to make a logistic regression model.
+    
+```{r}
+q6_alt<- data |>
+  select(Treat, Outcome) |>
+  filter(!(is.na(Treat) | is.na(Outcome))) |>
+  mutate(
+    Treat = factor(Treat, levels = c('Placebo', "Imipramine", "Lithium")),
+    Outcome = factor(Outcome, levels = c("No Recurrence", "Recurrence"))
+  ) 
+
+# logistic regression 
+model_q6 <- glm(
+  Outcome ~ Treat, 
+  family = binomial(link = "logit"), 
+  data = q6_alt
+)
+
+summary(model_q6)
+```
+    
+  We can see that Imipramine has a statistically significant effect on the outcome. Simple answer to the question would be yes, there is an association between treatment type and outcome. 
+    
+    
+### Q7: Which treatment is best at reducing the odds of a patient having a recurrent depressive episode? 
+
+  From the summary above, we can tell two things. 
+  
+ 1. If a patient receives Imipramine, the log odds of recurrence increases by -1.63 and it is statistically significant. 
+ 2. If a patient receives Lithium, the log odds of recurrence increases by -0.24 and it is not statistically significant.
+    
+ Collectively, we can say that Imipramine is the best treatment to reduce the odds of a patient having a recurrenct depressive episode.  
+
+### Q8: Does the hospital a patient is treated at effect whether they are likely to suffer a recurrence or not?   
+
+```{r}
+q8 <- data |>
+  select(Hospt, Outcome) |>
+  mutate(
+    Hospt = as.factor(Hospt),
+    Outcome = as.factor(Outcome)
+  )
+
+model_q8 <- glm(
+  Outcome ~ Hospt, 
+  family = binomial(link = "logit"), 
+  data = q8
+)
+
+summary(model_q8)
+```
+
+  Since the model is testing 4 null hypothesis, we adjust the alpha to be 0.05 / 4 = 0.0125. The summary shows that no p-value is below 0.0125. Therefore, we conclude that the hospital a patient receives treatment does not affect the odds of a patient having a recurrence. 
+    
+
+## Part 3 
+
+the dataset (FEV.csv) contains information of a series of patients specifically looking at FEV - the amount of breath a person can exhale in 1 second, along with some independent variables ... 
+age	years
+height	
+sex		
+smoke
+
+What can you tell me about the relationship between these independent variables and FEV? 
+
+
+```{r}
+# remove id column as it is irrelevant 
+data = read.delim("FEV.csv", sep=",") |> select(-id)
+```
+
+ First, we plot the data. 
+    
+```{r}
+p1 <- data |>
+  ggplot(aes(age, fev, color = sex)) + 
+  geom_jitter(width = 0.5) 
+p2 <- data |>
+  ggplot(aes(height, fev,  color = smoke)) + 
+  geom_point()
+
+p1
+p2
+```
+    
+  Age and height look quite linearly correlated with fev. For sex, maybe males have higher fev. For smoking, we note that the sample size for smokers seems very small. 
+    
+  Below is the plot of each variable against each other. We can see that age and height is highly correlated with a correlation coefficient of 0.792. Including both variables in the model may cause multicolinearity. 
+
+```{r}
+data |>
+  select(-fev) |>
+  ggpairs()
+```
+     
+```{r}
+summary(lm(fev ~ height, data = data))
+summary(lm(fev ~ age, data = data))
+```
+  
+  
+  When we see how much age or height explains the variation in fev, while age only explains about 57%, height explains 75%. We conclude that among these two highly correlated independent variables, height is the better predictor to use in a model. Therefore, we start off with building an additive model that includes everything but age. It explains about 75% of the variance, so it is a pretty good model. 
+
+```{r}
+additive_height_smoke_sex <- lm(fev ~ height + smoke + sex, data = data)
+summary(additive_height_smoke_sex)
+```
+    
+  However, this model contains three predictors and it is hard to interpret. Since smoke/non-current smoker is not significant, we consider removing that variable. 
+    
+```{r}
+data |>
+  group_by(smoke) |>
+  summarise(num = n())
+```
+    
+  Current smokers are only about 1/9 of the nun-current smokers. Due to the insignificant p-value in `first_model` and skewed sample size, we build an additive model that excludes smoking status. The model explains 75.8% of the variation, which show a slight improvement from the last model. 
+
+```{r}
+additive_height_sex <- lm(fev ~ height + sex, data = data)
+summary(additive_height_sex)
+```
+
+ So far we have only tested additive model, now we consider interation model as well. 
+```{r}
+interaction_height_sex <- lm(fev ~ height * sex, data = data)
+summary(interaction_height_sex)
+
+simple_height <- lm(fev ~ height, data = data)
+summary(simple_height)
+```
+
+ Both models are significant. Simple model explains 75.3% of the data while interaction model explains 76.4% of the data. From this look of it, the interaction model is better. But since the difference is only subtle, we check the AICc later.  We can derive the following equation from the interaction model `interaction_height_sex`:
+$$
+fev = -4.31 + 0.112 \times height - 1.54 \times sex + 0.02 \times sex*height + \epsilon
+$$
+ 
+ The model makes sense because first, tall people would have bigger lungs to exhale more, and second, sex and height should be correlated. I don't quite get why the coefficient for sex(male) is negative, but the following visualization of the model shows that males do not necessarily have the larger fev. 
+
+```{r}
+data |>
+  ggplot(aes(height, fev, color = sex)) +
+  geom_point() + 
+  geom_smooth(
+    formula = y ~ x,
+    method = "lm",
+    se = FALSE
+  )
+```
+
+ However, when we look at the plot, we cannot help but recognize how scarce females are for over 66. The inequality of sample size by sex for those >66 may be affecting the model. Hence, we build the following model: 
+ 
+```{r}
+# filter out those who are taller than 66
+no_tall_men <- data |>
+  filter(height <= 66)
+# visualize
+ggplot(data = no_tall_men,
+       aes(height, fev, color = sex)) + 
+  geom_point() +
+  geom_smooth(
+    formula = y ~ x,
+    method = "lm",
+    se = FALSE
+  )
+
+interaction_height_sex_66 <- lm(fev ~ height * sex, data = no_tall_men)
+summary(interaction_height_sex_66)
+simple_height_66 <- lm(fev ~ height, data = no_tall_men)
+summary(simple_height_66)
+```
+ The adjusted R-squared value are smaller than the previous two models. We can also compare by AICc. 
+ 
+```{r}
+cat(sprintf(
+  "Interaction of height and sex: %g \nSimple height: %g \nInteraction of height and sex under 66: %g \nSimple height under 66: %g",
+  AICcmodavg::AICc(interaction_height_sex),
+  AICcmodavg::AICc(simple_height),
+  AICcmodavg::AICc(interaction_height_sex_66),
+  AICcmodavg::AICc(simple_height_66)
+))
+
+```
+
+ In both original data and adjusted data, the interaction model shows the lower AICc. Though the AICc is far smaller in the adjusted data than the original data, the different sample size makes it difficult to judge. Nevertheless, we can conclude that the interaction model that involves height and sex is the best model to explain the fev. It would be ideal to get more samples for females of over 66, because that would certainly improve the model accuracy. How we would interpret the model is stated above, when we compared the interaction and simple models.     
+    
+```{r}
+sessionInfo()
+
+```

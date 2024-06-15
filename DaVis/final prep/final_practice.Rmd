@@ -1,0 +1,512 @@
+---
+title: "final_practice"
+author: "shuna"
+date: "5/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(lubridate)
+library(tidyverse)
+library(tmap)
+library(ggraph)
+library(igraph)
+library(tidygraph)
+library(countrycode)
+library(readxl)
+library(sf)
+library(tmap)
+library(rmapshaper)
+```
+(a) Create a tbl_graph from these data. Note that the network is undirected.
+
+```{r}
+f_nodes <- read_csv("florence_nodes.csv")
+f_edges <- read_csv("florence_edges.csv") 
+```
+
+```{r}
+# tidygraph 
+florence <- tbl_graph(
+  nodes = f_nodes,
+  edges= f_edges,
+  directed = FALSE
+)
+florence
+```
+
+(b) How many edges are in the network? 
+```{r}
+#nodes
+gorder(florence)
+#edges 
+gsize(florence)
+```
+
+(b_2) are there anuy parallel edges or loops in the network? 
+```{r}
+is_simple(florence)
+```
+
+(c)what is the density of the network? 
+
+The density of a network is the proportion of edges in a network that actually do exist out of all edges that could potentially exist if all node pairs were connected.
+
+```{r}
+edge_density(florence)
+```
+
+(d) what is the transitivity of the network? 
+
+transitivity is a tendency for triplets to form triangles in undirected networks.
+
+```{r}
+transitivity(florence)
+```
+
+For each node in the network we can calculate how many triangles are involved. 
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(local_trans = local_triangles()) |>
+  as_tibble()
+```
+
+We can also compare nodes in the same network in terms of their tendency to form local triangles 
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(cluster_coef = local_transitivity()) |>
+  as_tibble()
+# number of undirected triangles that contain x 
+# divided by number of undirected troplets with x as midpoint 
+```
+
+(e) what is the diameter of the network? 
+
+the diameter of a network is the longest finite distance between any pair of nodes. i.e., the max of the shortest path length between any two nodes. 
+```{r}
+diameter(florence)
+```
+
+```{r}
+florence
+```
+
+(f) what is the shortest path from the Guadagni family to the Barbadori family? 
+
+to and from the node...
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(distance_to_ginori = node_distance_to(name == "Ginori"),
+         distance_from_ginari = node_distance_from(name == "Ginori")) |>
+  as_tibble()
+```
+
+shortest path between two nodes 
+```{r}
+florence |>
+  convert(to_shortest_path, name == "Guadagni", name == "Barbadori") |> as_tibble()
+```
+```{r}
+florence |>
+  convert(
+    to_shortest_path, 
+    name == "Guadagni", 
+    name == "Barbadori"
+  ) |> activate(edges) |>
+  as_tibble()
+  
+```
+```{r}
+all_shortest_paths(florence, from = "Guadagni", to = "Barbadori")
+```
+
+
+# highest degree 
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(
+    degree = centrality_degree(mode = "all")
+  ) |>
+  as_tibble()
+```
+
+
+## highest betweenness centrality 
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(
+    betw = centrality_betweenness()
+  ) |>
+  as_tibble() |>
+  arrange(betw) |>
+  tail(1) |>
+  pull()
+```
+
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(
+    eigen = centrality_eigen()
+  ) |>
+  as_tibble() |>
+  arrange(eigen) |>
+  tail(1) |>
+  pull()
+```
+
+## components 
+
+```{r}
+florence |>
+  activate(nodes) |>
+  mutate(comp = group_components()) |>
+  as_tibble() |>
+  select(comp) |>
+  distinct()
+```
+
+## max cliques 
+```{r}
+largest.cliques(florence)
+```
+
+```{r}
+ggraph(florence, layout = "stress") +
+  geom_edge_link() + 
+  geom_node_label(aes(label = name))
+```
+
+
+# Data wrangling 
+
+
+```{r}
+epl <- read_csv("epl_results.csv", na = "-")
+head(epl)
+```
+```{r}
+abbr <- colnames(epl)[2:21]
+teams <- epl |>
+  cbind(abbr) |>
+  select(name = home, abbr) |>
+  print()
+```
+
+
+
+```{r}
+epl_pivotted <- epl |> 
+  pivot_longer(!home, names_to = "abbr", values_to = "result") |>
+  print()
+```
+
+```{r}
+new_teams = teams
+for (i in 1:19){
+  new_teams <- rbind(new_teams, teams)
+}
+new_teams
+```
+
+
+
+```{r}
+epl_replaced <- left_join(epl_pivotted, teams, by = "abbr") |>
+  filter(!is.na(result)) |>
+  select(home, away = name, result)
+```
+
+```{r}
+library(tidyr)
+epl_sep <- separate(
+  data = epl_replaced, 
+  col = result, 
+  into = c("home_goals", "away_goals"), 
+  sep = "\\-"
+)
+```
+
+```{r}
+epl_pts <- epl_sep |>
+  mutate(
+    home_pts = case_when(
+      home_goals > away_goals ~ 3,
+      home_goals < away_goals ~ 0,
+      TRUE ~ 1
+    ),
+    away_pts = case_when(
+      home_goals < away_goals ~ 3,
+      home_goals > away_goals ~ 0,
+      TRUE ~ 1
+    )
+  )
+```
+
+```{r}
+epl_pi <- epl_pts |>
+  pivot_longer(
+    cols = c(home, away),
+    names_to = "home_or_away",
+    values_to = "team"
+  ) |>
+  select(team, home_or_away, home_goals, away_goals, home_pts, away_pts) |>
+  print()
+```
+
+```{r}
+epl_i <- epl_pi |>
+  mutate(pts = if_else(
+    home_or_away == "home", 
+    home_pts,
+    away_pts
+  ),
+  goals_for = if_else(
+    home_or_away == "home",
+    home_goals,
+    away_goals
+  ),
+  goals_against = if_else(
+    home_or_away == "away",
+    home_goals,
+    away_goals
+  )) |>
+  select(-home_pts, -away_pts, -home_goals, -away_goals, -home_or_away) |>
+  print()
+```
+
+
+```{r}
+epl_j <- epl_i |>
+  mutate(
+    goals_for = as.integer(goals_for),
+    goals_against = as.integer(goals_against)
+  ) |>
+  group_by(team) |>
+  summarise(
+    pts = sum(pts),
+    goals_for = sum(goals_for),
+    goals_against = sum(goals_against)
+  ) |>
+  mutate(
+    goals_diff = goals_for - goals_against
+  ) |>
+  select(-goals_against) |>
+  ungroup() |>
+  print()
+```
+
+```{r}
+
+```
+
+```{r}
+epl_k <- epl_j |>
+  arrange(-pts, -goals_diff) |>
+  rowid_to_column() |>
+  dplyr::rename(pos = rowid) |>
+  print()
+```
+
+# string 
+
+```{r}
+ipsum <- read_file("corporate_ipsum.txt")
+ipsum <- str_split(ipsum, "\\s+") |> unlist()
+str(ipsum)
+```
+
+
+```{r}
+str_match("The chromosome had duplicated duplicated hard themselves", 
+          "(\\b\\w+\\b) \\1")
+```
+
+```{r}
+ipsum <- str_remove_all(ipsum, "[[:punct:]]+$")
+ipsum <- str_remove_all(ipsum, "^[[:punct:]]+")
+```
+
+```{r}
+ipsum <- str_to_lower(ipsum)
+```
+
+```{r}
+ipsum <- ipsum[!(ipsum %in% tm::stopwords())]
+```
+
+```{r}
+ipsum <- ipsum[ipsum != "."]
+```
+
+
+
+```{r}
+f <- tibble(
+  word = as.vector(ipsum)
+)
+```
+f
+```{r}
+f
+```
+
+```{r}
+st <- f |>
+  group_by(word) |>
+  summarise(count = n()) |>
+  filter(count >= 20) |>
+  print()
+```
+
+
+```{r}
+library(ggwordcloud)
+st |>
+  ggplot(aes(label = word, size = count)) +
+  geom_text_wordcloud() +
+  scale_size_area(max_size = 8) + 
+  
+  theme_minimal()
+```
+
+# choropleth 
+
+```{r}
+atm <- read_excel("API_FB.ATM.TOTL.P5_DS2_en_excel_v2_3932325.xls", skip = 2)
+```
+
+
+
+```{r}
+atm <- atm |>
+  select("Country Name","Country Code", "2018") |>
+  print()
+```
+
+```{r}
+sum(is.na(atm$`2018`))
+```
+
+```{r}
+import_and_simplify <- function(zip_file) {
+  zip_file |>
+    unzip() |>
+    str_subset(".shp$") |>
+    read_sf() |>
+    rmapshaper::ms_simplify()
+  }
+
+wb_c <- import_and_simplify("wb_countries_admin0_10m.zip")
+wb_l <- import_and_simplify("wb_land_10m.zip")
+```
+
+```{r}
+View(atm)
+```
+
+```{r}
+wb_c <- wb_c |>
+  mutate(
+    ISO_A3 = 
+      case_when(
+        FORMAL_EN == "French Republic" ~"FRA",
+        FORMAL_EN == "Kingdom of Norway" ~"NOR",
+        TRUE ~ISO_A3
+      )
+  )
+```
+
+
+```{r}
+colnames(atm)
+```
+
+```{r}
+countries <- wb_c|>
+  inner_join(atm, by = c("ISO_A3" = "Country Code")) |>
+  select(
+    code = "ISO_A3",
+    atm = "2018",
+    geometry
+  )
+```
+
+
+```{r}
+countries
+```
+
+```{r}
+tm_shape(wb_l, projection = "+proj=eck4") +
+  tm_polygons("grey") +
+  tm_shape(countries, projection = "+proj=eck4") +
+  tm_polygons(
+    "atm",
+    pallete = "OrRd",
+    colorNA = "grey")
+```
+
+# lubridate 
+
+```{r}
+covid19 <- read_csv("covid_19_data.csv") 
+head(covid19)
+```
+
+```{r}
+covid19 <- covid19 |>
+  filter(`Country/Region` == "Mainland China" | `Country/Region` == "Singapore")
+```
+
+```{r}
+covid <- covid19 |>
+  mutate(ObservationDate = mdy(ObservationDate)) |>
+  print()
+```
+
+```{r}
+covid |>
+  group_by(ObservationDate, `Country/Region`) |>
+  summarise(count = sum(Confirmed)) |>
+  ggplot(aes(ObservationDate, count, color = `Country/Region`)) +
+  geom_line()
+```
+
+```{r}
+?slice_head
+```
+
+```{r}
+MC <- covid |>
+  filter(`Country/Region` == "Mainland China") |>
+  group_by(ObservationDate, `Country/Region`) |>
+  summarise(count = sum(Confirmed)) |>
+  filter(count > 10000) |>
+  head(1) |>
+  pull(ObservationDate)
+```
+
+```{r}
+MS <- covid |>
+  filter(`Country/Region` == "Singapore") |>
+  group_by(ObservationDate, `Country/Region`) |>
+  summarise(count = sum(Confirmed)) |>
+  filter(count > 10000) |>
+  head(1) |>
+  pull(ObservationDate)
+```
+
+```{r}
+MC - MS
+```
+

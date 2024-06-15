@@ -1,0 +1,3 @@
+"0","titanic %>%"
+"0","  group_by(class)%>%"
+"0","  summarise(people = length(class))"

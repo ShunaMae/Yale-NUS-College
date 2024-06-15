@@ -1,0 +1,553 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Import the data
+```{r}
+oph <- read.csv("HornbillID.csv")
+```
+
+# Packages 
+```{r}
+#load the packages 
+library(tidyverse)
+library(tibble)
+library(ggplot2)
+library(vegan)
+library(dplyr)
+library(RVAideMemoire)
+library(skimr)
+library(MASS)
+library(moments)
+library(mda)
+library(caret)
+library(gg3D)
+library(plotly)
+library("writexl")
+```
+
+# Separate data 
+```{r}
+male <- oph %>%
+  filter(sex == "m")%>%
+  dplyr::select(-id,-hornbill, -ID, -side, -sex, -ratio_colour_ub,
+         -eccen_ub_mark, -convex_ub_mark, -sd_grey_ub,-mean_grey_ub,
+         -solidity_ub_mark)
+
+female <- oph %>%
+  filter(sex == "f")%>%
+  dplyr::select(-id,-ID, -hornbill, -side, -sex)
+```
+
+# Normality
+## females
+### Check normality for female
+```{r}
+#Cheers. Hair et al. (2010) and Bryne (2010) argued that data is considered to be normal if Skewness is between ‐2 to +2 and Kurtosis is between ‐7 to +7. 
+
+female_skewness <- female %>%
+  dplyr::select(-name)%>%
+  skewness()
+
+female_kurtosis <- female %>%
+  dplyr::select(-name)%>%
+  kurtosis()
+
+female_skewness
+female_kurtosis
+
+#ratio_maj_min_lb -> negatively skewed 
+#ratio_colour_c -> positively skewed 
+#eccen_c_mark -> negatively skewed 
+#mean_grey_lb -> positively skewed 
+```
+
+### Fix skewness 
+```{r}
+#https://www.datanovia.com/en/lessons/transform-data-to-normal-distribution-in-r/
+
+female_normal<- female %>%
+  #moderately negatively skewed ratio_maj_min_lb
+  mutate(ratio_maj_min_lb = log10(max(ratio_maj_min_lb+1) - ratio_maj_min_lb))%>%
+  #severely positively skewed ratio_colour_c
+  mutate(ratio_colour_c =  1/(ratio_colour_c))%>%
+  #severely  negatively skewed eccen_c_mark
+  mutate(eccen_c_mark = log10(max(eccen_c_mark+1) - eccen_c_mark))%>%
+  #moderately positively skewed mean_grey_lb
+  mutate(mean_grey_lb =  log10(mean_grey_lb))
+
+female_skewness_new <- female_normal %>%
+  dplyr::select(-name)%>%
+  skewness()
+
+female_kurtosis_new <- female_normal %>%
+  dplyr::select(-name)%>%
+  kurtosis()
+
+female_skewness_new
+female_kurtosis_new
+
+```
+
+## Males 
+
+### Visualization
+```{r}
+ggplot(data = male)+
+  geom_histogram(aes(x = ratio_maj_min_c))
+
+ggplot(data = male)+
+  geom_histogram(aes(x = sqrt(ratio_maj_min_lb)))
+
+ggplot(data = male)+
+  geom_histogram(aes(x = ratio_colour_lb))
+
+```
+
+### Check normality 
+```{r}
+male_skewness <- male %>%
+  dplyr::select(-name)%>%
+  skewness()
+
+male_kurtosis <- male %>%
+  dplyr::select(-name)%>%
+  kurtosis()
+
+male_skewness
+male_kurtosis
+
+#ratio_maj_min_c -> positively skewed 
+#ratio_maj_min_lb -> positively skewed
+#ratio_colour_lb -> positively skewed 
+#eccen_c_mark -> positively skewed 
+#sd_grey_c -> positively skewed 
+#sd_grey_lb -> positively skewed 
+```
+
+### Fix skewness 
+```{r}
+
+male_normal <- male %>%
+  mutate(ratio_maj_min_lb = sqrt(ratio_maj_min_lb))%>%
+  mutate(eccen_c_mark = 1/eccen_c_mark)%>%
+  mutate(sd_grey_c = 1/sd_grey_c)%>%
+  mutate(sd_grey_lb = 1/sd_grey_lb)
+  
+male_skewness_new <- male_normal %>%
+  dplyr::select(-name)%>%
+  skewness()
+
+male_kurtosis_new <- male_normal %>%
+  dplyr::select(-name)%>%
+  kurtosis()
+
+male_skewness_new
+male_kurtosis_new
+
+#should I look into box-cox transformation?
+```
+
+# Females LDA
+
+The LDA algorithm starts by finding directions that maximize the separation between classes, then use these directions to predict the class of individuals. These directions, called linear discriminants, are a linear combinations of predictor variables.
+
+LDA assumes that predictors are normally distributed (Gaussian distribution) and that the different classes have class-specific means and equal variance/covariance.
+
+## Check the effect
+
+```{r}
+female_lda <- lda(name ~ ., data=female_normal)
+female_variable <- female_normal %>%
+  dplyr::select(-name)
+female_lda
+#solidity of the casque mark shows the most significant impact 
+#the area of a particle divided by its convex hull area
+```
+## Test the accuracy 
+```{r}
+female_lda_p <- predict(female_lda, new_data = female_normal[,c(2:22)])$class
+female_lda_p
+table(female_lda_p, female_normal[,1])
+mean(female_lda_p == female_normal$name)
+# 100% prediction 
+```
+# 2D visualization 
+```{r}
+#convert list to dataframe 
+female_lda_predict <- predict(female_lda)
+female_lda_plot <- data.frame(name = female_normal[,1], LDA = female_lda_predict$x)
+
+#plot 
+ggplot(data = female_lda_plot, aes(x=LDA.LD1, y = LDA.LD2))+
+  geom_point(aes(colour = name),
+             size = 5,
+             alpha = 0.5)+
+  labs(title = "Females",
+       x = "LDA1 (83%)",
+       y = "LDA2 (17%)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+# Males LDA
+
+## Check the effect 
+```{r}
+#check for the effect size 
+male_lda <- lda(name ~ ., data=male_normal)
+male_lda
+```
+## Test the model accuracy 
+```{r}
+#test the model 
+male_lda_p <- predict(male_lda, new_data = male_normal[,c(2:16)])$class
+male_lda_p
+table(male_lda_p, male_normal[,1])
+mean(male_lda_p == male_normal$name)
+# 93% accuracy 
+```
+
+## 2D visualization 
+```{r}
+#convert list to dataframe 
+male_lda_values <- predict(male_lda)
+male_lda_plot <- data.frame(name = male_normal[,1], LDA = male_lda_values$x)
+
+#plot 
+ggplot(data = male_lda_plot, aes(x=LDA.LD1, y = LDA.LD2))+
+  geom_point(aes(colour = name),
+             size = 4,
+             alpha = 0.5)+
+  labs(title = "Males",
+       x = "LDA1(60%)",
+       y = "LDA2(22%)")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+## 3D visualization 
+
+
+```{r}
+plot_ly(male_lda_plot, x = ~LDA.LD1, y = ~LDA.LD2, z = ~LDA.LD3,
+        mode = "markers", color = ~name, showscale = TRUE) %>%
+   layout(scene = list(xaxis = list(title = 'LDA1 (60%)'),
+                                   yaxis = list(title = 'LDA2 (22%)'),
+                                   zaxis = list(title = 'LDA3 (8%)')))
+```
+```{r}
+male_lda_plot
+write_xlsx(male_lda_plot,"3dplot.xlsx")
+```
+
+
+# Female Model finalization 
+
+## Ver1
+```{r}
+#exclude the least significant variable 
+female_normal_ver1 <- female_normal %>%
+  select(-ratio_maj_min_c)
+
+female_lda_ver1 <- lda(name ~ ., data=female_normal_ver1)
+female_lda_ver1_p <- predict(female_lda_ver1, new_data = female_normal_ver1[,c(2:21)])$class
+mean(female_lda_ver1_p == female_normal_ver1$name)
+female_lda_ver1
+```
+
+## Ver2
+```{r}
+#exclude the least significant variable 
+female_normal_ver2 <- female_normal_ver1 %>%
+  select(-ratio_colour_c)
+
+female_lda_ver2 <- lda(name ~ ., data=female_normal_ver2)
+female_lda_ver2_p <- predict(female_lda_ver2, new_data = female_normal_ver2[,c(2:20)])$class
+mean(female_lda_ver2_p == female_normal_ver2$name)
+female_lda_ver2
+```
+
+## Ver3 
+```{r}
+#exclude the least significant variable 
+female_normal_ver3 <- female_normal_ver2 %>%
+  select(-eccen_lb_mark)
+
+female_lda_ver3 <- lda(name ~ ., data=female_normal_ver3)
+female_lda_ver3_p <- predict(female_lda_ver3, new_data = female_normal_ver3[,c(2:19)])$class
+mean(female_lda_ver3_p == female_normal_ver3$name)
+female_lda_ver3
+```
+
+## Ver4
+
+```{r}
+#exclude the least significant variable 
+female_normal_ver4 <- female_normal_ver3 %>%
+  select(-mean_grey_ub)
+
+female_lda_ver4 <- lda(name ~ ., data=female_normal_ver4)
+female_lda_ver4_p <- predict(female_lda_ver4, new_data = female_normal_ver4[,c(2:18)])$class
+mean(female_lda_ver4_p == female_normal_ver4$name)
+female_lda_ver4
+```
+
+## Ver5
+
+```{r}
+#exclude the least significant variable 
+female_normal_ver5 <- female_normal_ver4 %>%
+  select(-eccen_ub_mark)
+
+female_lda_ver5 <- lda(name ~ ., data=female_normal_ver5)
+female_lda_ver5_p <- predict(female_lda_ver5, new_data = female_normal_ver5[,c(2:17)])$class
+mean(female_lda_ver5_p == female_normal_ver5$name)
+female_lda_ver5
+```
+## Ver6
+```{r}
+#exclude the least significant variable 
+female_normal_ver6 <- female_normal_ver5 %>%
+  select(-sd_grey_ub)
+
+female_lda_ver6 <- lda(name ~ ., data=female_normal_ver6)
+female_lda_ver6_p <- predict(female_lda_ver6, new_data = female_normal_ver6[,c(2:16)])$class
+mean(female_lda_ver6_p == female_normal_ver6$name)
+female_lda_ver6
+```
+
+## Ver7
+```{r}
+#exclude the least significant variable 
+female_normal_ver7 <- female_normal_ver6 %>%
+  select(-ratio_colour_lb)
+
+female_lda_ver7 <- lda(name ~ ., data=female_normal_ver7)
+female_lda_ver7_p <- predict(female_lda_ver7, new_data = female_normal_ver7[,c(2:15)])$class
+mean(female_lda_ver7_p == female_normal_ver7$name)
+female_lda_ver7
+```
+## Ver8
+```{r}
+#exclude the least significant variable 
+female_normal_ver8 <- female_normal_ver7 %>%
+  select(-sd_grey_c)
+
+female_lda_ver8 <- lda(name ~ ., data=female_normal_ver8)
+female_lda_ver8_p <- predict(female_lda_ver8, new_data = female_normal_ver8[,c(2:14)])$class
+mean(female_lda_ver8_p == female_normal_ver8$name)
+female_lda_ver8
+```
+## Ver9
+```{r}
+#exclude the least significant variable 
+female_normal_ver9 <- female_normal_ver8 %>%
+  select(-convex_ub_mark)
+
+female_lda_ver9 <- lda(name ~ ., data=female_normal_ver9)
+female_lda_ver9_p <- predict(female_lda_ver9, new_data = female_normal_ver9[,c(2:13)])$class
+mean(female_lda_ver9_p == female_normal_ver9$name)
+female_lda_ver9
+```
+## Ver10
+```{r}
+#exclude the least significant variable 
+female_normal_ver10 <- female_normal_ver9 %>%
+  select(-ratio_maj_min_ub)
+
+female_lda_ver10 <- lda(name ~ ., data=female_normal_ver10)
+female_lda_ver10_p <- predict(female_lda_ver10, new_data = female_normal_ver10[,c(2:12)])$class
+mean(female_lda_ver10_p == female_normal_ver10$name)
+female_lda_ver10
+```
+
+## Ver11
+```{r}
+#exclude the least significant variable 
+female_normal_ver11 <- female_normal_ver10 %>%
+  select(-ratio_maj_min_lb)
+
+female_lda_ver11 <- lda(name ~ ., data=female_normal_ver11)
+female_lda_ver11_p <- predict(female_lda_ver11, new_data = female_normal_ver11[,c(2:11)])$class
+mean(female_lda_ver11_p == female_normal_ver11$name)
+female_lda_ver11
+```
+
+
+## Ver12
+```{r}
+#exclude the least significant variable 
+female_normal_ver12 <- female_normal_ver11 %>%
+  select(-sd_grey_lb)
+
+female_lda_ver12 <- lda(name ~ ., data=female_normal_ver12)
+female_lda_ver12_p <- predict(female_lda_ver12, new_data = female_normal_ver12[,c(2:10)])$class
+mean(female_lda_ver12_p == female_normal_ver12$name)
+female_lda_ver12
+```
+
+## Ver13
+```{r}
+#exclude the least significant variable 
+female_normal_ver13 <- female_normal_ver12 %>%
+  select(-mean_grey_lb)
+
+female_lda_ver13 <- lda(name ~ ., data=female_normal_ver13)
+female_lda_ver13_p <- predict(female_lda_ver13, new_data = female_normal_ver13[,c(2:9)])$class
+mean(female_lda_ver13_p == female_normal_ver13$name)
+female_lda_ver13
+```
+
+## Ver14
+```{r}
+#exclude the least significant variable 
+female_normal_ver14 <- female_normal_ver13 %>%
+  select(-mean_grey_c)
+
+female_lda_ver14 <- lda(name ~ ., data=female_normal_ver14)
+female_lda_ver14_p <- predict(female_lda_ver14, new_data = female_normal_ver14[,c(2:8)])$class
+mean(female_lda_ver14_p == female_normal_ver14$name)
+female_lda_ver14
+```
+
+## Ver15
+```{r}
+#exclude the least significant variable 
+female_normal_ver15 <- female_normal_ver14 %>%
+  select( -convex_lb_mark)
+
+female_lda_ver15 <- lda(name ~ ., data=female_normal_ver15)
+female_lda_ver15_p <- predict(female_lda_ver15, new_data = female_normal_ver15[,c(2:7)])$class
+mean(female_lda_ver15_p == female_normal_ver15$name)
+female_lda_ver15
+```
+
+## Ver16
+```{r}
+#exclude the least significant variable 
+female_normal_ver16 <- female_normal_ver15 %>%
+  select( -eccen_c_mark)
+
+female_lda_ver16 <- lda(name ~ ., data=female_normal_ver16)
+female_lda_ver16_p <- predict(female_lda_ver16, new_data = female_normal_ver16[,c(2:6)])$class
+mean(female_lda_ver16_p == female_normal_ver16$name)
+female_lda_ver16
+```
+
+## Ver17
+```{r}
+#exclude the least significant variable 
+female_normal_ver17 <- female_normal_ver16 %>%
+  select( -convex_c_mark)
+
+female_lda_ver17 <- lda(name ~ ., data=female_normal_ver17)
+female_lda_ver17_p <- predict(female_lda_ver17, new_data = female_normal_ver17[,c(2:5)])$class
+mean(female_lda_ver17_p == female_normal_ver17$name)
+female_lda_ver17
+```
+
+## Ver18
+```{r}
+#exclude the least significant variable 
+female_normal_ver18 <- female_normal_ver17 %>%
+  select( -solidity_c_mark)
+
+female_lda_ver18 <- lda(name ~ ., data=female_normal_ver18)
+female_lda_ver18_p <- predict(female_lda_ver18, new_data = female_normal_ver18[,c(2:4)])$class
+mean(female_lda_ver18_p == female_normal_ver18$name)
+female_lda_ver18
+```
+
+## Ver19
+```{r}
+#exclude the least significant variable 
+female_normal_ver19 <- female_normal_ver18 %>%
+  select(-ratio_colour_ub)
+
+female_lda_ver19 <- lda(name ~ ., data=female_normal_ver19)
+female_lda_ver19_p <- predict(female_lda_ver19, new_data = female_normal_ver19[,c(2:3)])$class
+mean(female_lda_ver19_p == female_normal_ver19$name)
+female_lda_ver19
+```
+
+## Ver20
+```{r}
+#exclude the least significant variable 
+female_normal_ver20 <- female_normal_ver19 %>%
+  select(-solidity_ub_mark)
+
+female_lda_ver20 <- lda(name ~ ., data=female_normal_ver20)
+female_lda_ver20_p <- predict(female_lda_ver20, new_data = female_normal_ver20[,c(2)])$class
+mean(female_lda_ver20_p == female_normal_ver20$name)
+female_lda_ver20
+```
+## Fin ver
+```{r}
+mean(female_lda_ver19_p == female_normal_ver19$name)
+female_lda_ver19
+#98% accuracy 
+#includes solidity 
+```
+# Males Model finializaton 
+
+## Ver1
+```{r}
+male_normal_ver1 <- male_normal %>%
+  select(-ratio_colour_lb)
+male_lda_ver1 <- lda(name ~ ., data=male_normal_ver1)
+male_lda_ver1_p <- predict(male_lda_ver1, new_data = male_normal_ver1[,c(2:15)])$class
+mean(male_lda_ver1_p == male_normal_ver1$name)
+male_lda_ver1
+```
+
+## Ver2
+```{r}
+male_normal_ver2 <- male_normal_ver1 %>%
+  select(-mean_grey_lb)
+male_lda_ver2 <- lda(name ~ ., data=male_normal_ver2)
+male_lda_ver2_p <- predict(male_lda_ver2, new_data = male_normal_ver2[,c(2:14)])$class
+mean(male_lda_ver2_p == male_normal_ver2$name)
+male_lda_ver2
+```
+
+## Ver3
+```{r}
+male_normal_ver3 <- male_normal_ver2 %>%
+  select(-ratio_maj_min_ub)
+male_lda_ver3 <- lda(name ~ ., data=male_normal_ver3)
+male_lda_ver3_p <- predict(male_lda_ver3, new_data = male_normal_ver3[,c(2:13)])$class
+mean(male_lda_ver3_p == male_normal_ver3$name)
+male_lda_ver3
+```
+
+## Ver4
+```{r}
+male_normal_ver4 <- male_normal_ver3 %>%
+  select(-sd_grey_c)
+male_lda_ver4 <- lda(name ~ ., data=male_normal_ver4)
+male_lda_ver4_p <- predict(male_lda_ver4, new_data = male_normal_ver4[,c(2:12)])$class
+mean(male_lda_ver4_p == male_normal_ver4$name)
+male_lda_ver4
+```
+
+## Ver5
+```{r}
+male_normal_ver5 <- male_normal_ver4 %>%
+  select(-ratio_maj_min_c)
+male_lda_ver5 <- lda(name ~ ., data=male_normal_ver5)
+male_lda_ver5_p <- predict(male_lda_ver5, new_data = male_normal_ver5[,c(2:11)])$class
+mean(male_lda_ver5_p == male_normal_ver5$name)
+male_lda_ver5
+#92%
+```
+
+## Ver6
+```{r}
+male_normal_ver6 <- male_normal_ver5 %>%
+  select(-eccen_lb_mark)
+male_lda_ver6 <- lda(name ~ ., data=male_normal_ver6)
+male_lda_ver6_p <- predict(male_lda_ver6, new_data = male_normal_ver6[,c(2:10)])$class
+mean(male_lda_ver6_p == male_normal_ver6$name)
+male_lda_ver6
+#87%
+```

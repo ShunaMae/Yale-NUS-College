@@ -1,0 +1,44 @@
+---
+title: "Lec05_prep"
+author: "shuna"
+date: "1/23/2022"
+output: html_document
+---
+```{r}
+library(ggplot2)
+```
+
+Text in superscript is placed between a pair of carets ^super^ 
+Text in subscript is placed between a pair of tilds ~sub~ 
+
+It is also possible to insert footnotes as shown here [^our_first_footnote]
+
+[^our_first_footnote]: Here is a footnote 
+
+
+$$
+x = \theta \times \mu
+$$
+$x = y^2$
+
+
+
+- list 
+- is 
+- like this
+
+or 
+
+1) this
+2) also 
+3) can 
+    (a) what
+    (b) about
+    (c) this?
+4) you like it? 
+
+
+```{r}
+print(.packages())
+```
+

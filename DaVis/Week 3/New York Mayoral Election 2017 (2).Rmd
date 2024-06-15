@@ -1,0 +1,130 @@
+---
+title: "New York Mayoral Election 2017"
+author: "Shuna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r, include=FALSE, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(dplyr)
+library(scales)
+library(kableExtra)
+library(readr)
+library(janitor)
+
+ny <- read_csv("ny_mayor.csv")
+```
+
+### Introduction 
+
+An election for Mayor of New York City was held on November 7, 2017.
+
+>"Incumbent Democrat Bill de Blasio won reelection to a second term with 66.2% of the vote against Republican Nicole Malliotakis." ^[Quote from <https://en.wikipedia.org/wiki/2017_New_York_City_mayoral_election>, accessed on 28 January 2022]
+
+This quote is extracted from the Wikipedia page. 
+
+### Data presented as a table 
+```{r, echo=FALSE}
+# add a row for sum of each column
+ny_with_total<- ny |>
+  # reference :<https://stackoverflow.com/questions/4946873/add-row-to-a-data-frame-with-total-sum-for-each-column>
+  adorn_totals("row")
+# convert it to a data frame 
+ny <- as.data.frame(ny_with_total)
+# rename columns 
+ny <- rename(ny, 
+       "Borough" = "borough",
+       "de Blasio" = "de_blasio",
+       "Malliotakis" = "malliotakis",
+       "Other" = "other")
+
+```
+
+
+```{r, echo=FALSE}
+# making a table
+ny |>
+  # add a caption
+  kbl(caption = "New York Mayoral Election 2017",
+      # add commas for numbers
+      format.args = list(big.mark = ",")) |>
+  # group columns 
+  add_header_above(c(" " = 1, 
+                     "Candidate" = 3)) |>
+  # add footnote
+  footnote(general = "<small>Source: CNN</small>",
+           # remove title 
+           general_title = "",
+           # keep the footnote small
+           fixed_small_size = TRUE,
+           # title will not be excaped against HTML
+           escape = FALSE) |>
+  # add alternative row colors
+  kable_paper("striped", 
+              # reduce the size
+              full_width = F) |>
+  # add a solid line for total 
+  row_spec(5,
+    extra_css = c("border-bottom: 1px solid black"))
+  
+```
+
+
+### Data presented as a bar plot 
+
+```{r, echo=FALSE, message=FALSE}
+ny_mayor_long <- read_csv("ny_mayor.csv") |>
+  mutate(borough = str_replace(borough, " ", "\n")) |>
+  pivot_longer(-borough) |>
+  mutate(name = fct_rev(name)) 
+
+ggplot(ny_mayor_long, 
+       aes(borough, value, fill = name)) +
+  # make barplot
+  geom_col(position = "dodge") +
+  scale_x_discrete(limits = rev) +
+  # flip the plot
+  coord_flip() + 
+  # add commas to the numbers
+  scale_y_continuous(labels = label_comma()) + 
+  # edit the legend and colors 
+  scale_fill_manual(
+    labels = c("Other", 
+               "Malliotakis", 
+               "de Blasio"),
+    values = c("palegreen4", 
+               "firebrick2", 
+               "steelblue")) + 
+  # add axis labels, titles, and footnote
+  labs(
+    title = "New York Mayoral Election 2017",
+    caption = "Source: CNN",
+    x = "Borough",
+    y = "Votes",
+    fill = "Candidate") + 
+  guides(fill = guide_legend(reverse = TRUE)) + 
+  theme(legend.key.size = unit(1,"lines"))
+
+```
+
+### What is better: table or bar plot? 
+
+With a table, we can easily obtain the exact numerical values and quantities without having to go an extra step of calculating it from the height of each bar.
+The total number of votes is much easier to represent in a table than a bar plot
+too. It also provides a more "objective" sense of comparison between the different values, as compared to bar plots. The latter may be more susceptible to "visual manipulation" to mislead viewers into making comparisons of inaccurate magnitudes (e.g. when the y axis does not start at 0). 
+
+However, if we wish to infer a trend or make other comparisons, a table does not 
+provide as much visual convenience to aid us like a bar plot would. For example, 
+we would not be able to visualize the exact magnitude to which de Blasio outcompeted his opponents, but a bar graph allows us to easily see that he
+received a landslide victory in most boroughs. If we wanted to understand the 
+rough proportion of votes taken by other candidates at first glance, the proportions of each bar helps us reach a rough conclusion faster. 
+
+
+
+

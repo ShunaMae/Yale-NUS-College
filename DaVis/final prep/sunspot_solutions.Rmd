@@ -1,0 +1,261 @@
+---
+title: "Solutions: Solar cycles"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+urlcolor: blue
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: preston.bib
+biblio-style: natbib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for these exercises:
+
+```{r}
+library(lubridate)
+library(tidyverse)
+```
+
+I also use `summarise_by_time()` from the **timetk** package.
+Because I only use this function once, I do not load the entire package.
+Instead, I use the double colon operator: `timetk::summarise_by_time()`.
+
+(1) Some numbers are preceded by whitespace.
+    In the next code chunk, I remove leading whitespace with the argument
+    `trim_ws = TRUE`.
+
+    ```{r}
+    spots <-
+      read_delim(
+        "SN_d_tot_V2.0.csv",
+        delim = ";",
+        col_names = c(
+          "year",
+          "month",
+          "day",
+          "year_fraction",
+          "ss_number",
+          "sd",
+          "n_obs",
+          "definitive"
+        ),
+        na = c("-1", "-1.0"),
+        trim_ws = TRUE
+      ) |>
+      print()
+    ```
+    
+(2)
+
+    ```{r}
+    spots <-
+      spots |>
+      mutate(date = make_date(year, month, day)) |>
+      print()
+    ```
+
+(3) The next pipeline prints the latest date with a sun spot number equal to
+    `NA`.
+
+    ```{r}
+    spots |>
+      filter(is.na(ss_number)) |>
+      pull(date) |>
+      last() |>
+      stamp("Tuesday, 3 December, 2019", quiet = TRUE)()
+    ```
+
+(4) The output from the next pipeline answers the question: are all dates
+    consecutive?
+    After `mutate()`, the last element in the column
+    `is_next_date_consecutive` is `NA` because there is no next date.
+    I use `slice_head(-1)` to remove this value from
+    `is_next_date_consecutive`.
+
+    ```{r}
+    spots |>
+      mutate(
+        date_diff = date %--% lead(date) / ddays(1),
+        is_next_date_consecutive = (date_diff == 1)
+      ) |>
+      slice_head(n = -1) |>
+      pull(is_next_date_consecutive) |>
+      all()
+    ```
+
+(5)
+
+    ```{r}
+    spots <-
+      spots |>
+      filter(year >= 1975) |>
+      timetk::summarise_by_time(
+        date,
+        .by = "month",
+        mean_daily_ss_number = mean(ss_number)
+      ) |>
+      print()
+    ```
+
+(6)
+
+    ```{r}
+    solar_cycles <-
+      read_csv("solar_cycles.csv") |>
+      mutate(
+        `Start (Minimum)` = ym(`Start (Minimum)`),
+        Maximum = ym(Maximum)
+      ) |>
+      glimpse()
+    ```
+
+(7)
+
+    ```{r}
+    solar_cycles <-
+      solar_cycles |>
+      mutate(
+        rise_in_years = round(
+
+          # Either:
+          # (`Start (Minimum)` %--% Maximum) / dyears(1),
+          # or:
+          time_length(`Start (Minimum)` %--% Maximum, unit = "year"),
+          digits = 1
+        ),
+        is_rise_equal = (`Time of Rise (years)` == rise_in_years)
+      )
+    table(solar_cycles$is_rise_equal)
+    ```
+    
+    There are two solar cycles in which the numbers do not match.
+
+    ```{r}
+    solar_cycles |>
+      filter(!is_rise_equal) |>
+      select(
+        "Solar Cycle",
+        "Start (Minimum)",
+        "Maximum",
+        "Time of Rise (years)",
+        rise_in_years
+      )
+    ```
+
+    In the last column, only the last decimals differ.
+    It is unclear how Wikipedia calculated the numbers.
+    One might suspect that the difference is caused by `dyears(1)` having a
+    duration of 365.25 days instead of 365 days.
+    However, it does not explain the difference in the last row of the
+    following tibble.
+
+    ```{r}
+    solar_cycles |>
+      filter(!is_rise_equal) |>
+      mutate(
+        rise_in_units_of_365_days =
+          (`Start (Minimum)` %--% Maximum) / ddays(365),
+        rise_in_units_of_dyears =
+          (`Start (Minimum)` %--% Maximum) / dyears(1)
+      ) |>
+      select(contains("rise", ignore.case = TRUE)) |>
+      glimpse()
+    ```
+
+(8)
+
+    ```{r}
+    solar_cycles <-
+      solar_cycles |>
+      filter(`Start (Minimum)` >= "1975-01-01") |>
+      print()
+    ```
+
+(9) After `mutate()` the last element in the column `mid_date` is `NA` because
+    it is not possible to determine the middle of a time interval if the end
+    point of the interval is unknown.
+    I remove the last row with `slice_head(-1)`.
+
+    ```{r}
+    solar_cycles <-
+      solar_cycles |>
+      rename(
+        number = "Solar Cycle",
+        start = "Start (Minimum)"
+      ) |>
+      mutate(
+        number = str_extract(number, "\\d+$"),
+        mid_date = as_date(int_end(start %--% lead(start) / 2))
+      ) |>
+      slice_head(n = -1) |>
+      print()
+    ```
+
+(11) I make points semitransparent with `alpha = 0.5` so that overlapping
+     points are visible.
+
+     ```{r fig.width=5, fig.height=4}
+     ggplot(spots, aes(date, mean_daily_ss_number)) +
+       geom_point(colour = "deepskyblue4", alpha = 0.5) +
+       geom_smooth(
+         aes(colour = ""), # Add empty colour to obtain a legend
+         method = "loess",
+         se = FALSE,
+         span = 0.1
+       ) +
+       geom_label(
+         aes(
+           mid_date,
+           label = number,
+           fill = "" # Add empty fill to obtain a legend
+         ),
+         data = solar_cycles,
+         y = 0,
+         label.r = unit(0, "cm"), # Give label same appearance as legend key
+         label.size = 0
+       ) +
+       scale_colour_manual(values = "black") +
+       labs(
+         x = "Year",
+         y = "Mean daily sunspot number",
+         colour = "LOESS fit",
+         fill = "Solar cycle",
+         title = "Solar Activity",
+         subtitle = "Sunspot number averaged by month",
+         caption = "Source: Royal Observatory of Belgium"
+       ) +
+       guides( # Give legend key same appearance as label
+         fill = guide_legend(
+           keyheight = 1,
+           override.aes = aes(label = "21")
+         )
+       ) +
+       theme(
+         legend.position = c(1, 1),
+         legend.justification = c(0.9, 1),
+         legend.spacing = unit(0, "cm")
+       )
+     ```
+     
+     ```{r, include=FALSE}
+     ggsave("sunspot.pdf", width = 5, height = 4)
+     ```
+     
+(11) Since 1975, the sunspot number has exhibited oscillations with a period
+     of approximately 11 years.
+     While the frequency appears to remain constant, the amplitude of the
+     maximum has decreased.
+     The latest complete cycle (2008-2019) has been called "Modern Minimum"
+     (<https://en.wikipedia.org/wiki/Solar_cycle#Cycle_history>).
+     However, there is nothing unusual about the current activity level when
+     we compare it with data from past centuries.
+     Much smaller minima have been observed before (e.g.\ during the Maunder
+     Minimum between 1645 and 1715).
+     

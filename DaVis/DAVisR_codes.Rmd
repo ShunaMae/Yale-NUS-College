@@ -1,0 +1,482 @@
+---
+title: "DAVisR"
+author: "shuna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+# Conditional element selection 
+
+```{r}
+v <- c(31, -50, 93, 29, -44, 93)
+```
+
+## Comparison Operators 
+
+
+1. dplyr::between(x,left,right) TRUE iff left <= x <= right 
+2. x %in% y TRUE iff x is an element in y 
+
+## if_else()
+
+we want to turn `v <- c(31, -50, 93, 29, -44, 93)` into a chanracter string
+`("odd', "even", "odd", "odd", "even", "odd")`. 
+
+We can turn `v` into a logical vector 
+```{r}
+v %% 2 == 0
+```
+we use a function `if_else()`
+
+`if_else(condition, true, false)`
+
+true and false kust be vectors of the same class 
+- true[i] if condition[i] is TRUE
+- false[i] if condition[i] is FALSE
+
+```{r, message=FALSE}
+library(dplyr)
+if_else(c(TRUE, TRUE, FALSE, FALSE), 1:4, -1:-4)
+```
+```{r}
+if_else(v %% 2 == 0, "even", "odd")
+```
+
+## case_when()
+
+```{r}
+x <- c(31, -50, 93, 29, -44, 93, 91.5)
+case_when(
+  x %% 2 == 0 ~ "even",
+  x %% 2 == 1 ~ "odd",
+  TRUE ~ "neither even nor odd"
+)
+```
+## Logical operators 
+
+bit演算ですね。
+
+```{r}
+pin <- c(TRUE, FALSE, FALSE, TRUE)
+password <- c(FALSE, FALSE, TRUE, TRUE)
+```
+
+### AND
+
+the operator AND returns TRUE iff both input are TRUE. 
+```{r}
+pin & password
+```
+### OR
+
+the operator OR returns TRUE when either is TRUE or both are TRUE
+```{r}
+pin | password
+```
+### NOT
+
+```{r}
+!pin
+```
+
+# Data type conversion 
+
+## Mixing numeric and character elements
+
+When mixing numeric vector and character vector, you get character vector. 
+
+
+```{r}
+"42" > 8
+```
+
+```{r}
+"42" < 8
+```
+The letter `4` comes alphabetically before the letter `8`.
+
+
+## General rules of coercion 
+
+```{r}
+# logical vector 
+logical <- c(TRUE, FALSE, TRUE)
+
+# numeric vector 
+x 
+
+# int 
+int <- 1:3
+
+# character 
+
+chr <- c("odd", "even", "neither")
+```
+
+```{r}
+c(logical, int)
+```
+TRUE and FALSE are turned into the integers 1 and 0. 
+
+## as. 
+
+```{r}
+as.numeric(c(TRUE, FALSE))
+```
+
+```{r}
+as.logical(seq(-3,6, by = 0.5))
+```
+FALSE if the number is exactly 0 
+
+FALSE if the element is either FALSE, false, F 
+
+```{r}
+as.logical(c(TRUE, "true", T, FALSE, "false", F, NA))
+```
+```{r}
+# if negative, round up 
+# if positive, round down
+as.integer(c(-2.111, -2.99999, -1.2, 0, 1.2, 2.99))
+```
+## Taking advantage 
+
+```{r}
+nchar(c("TRUE", "Odd"))
+```
+```{r}
+nchar(c(42, -6857))
+```
+
+```{r}
+logical_value <- rep(c(TRUE, FALSE), c(500, 100))
+sum(logical_value)
+```
+# Missing and Undefined values 
+
+```{r}
+x <- cat()
+x
+```
+## NA
+```{r}
+class(NA_real_)
+```
+
+```{r}
+class(NA_integer_)
+```
+
+```{r}
+nchar(NA)
+```
+
+```{r}
+test <- c(1,2,3,4,5,NA, 6,7,8,9,10)
+```
+
+```{r}
+is.na(test)
+```
+```{r}
+any(is.na(test))
+```
+```{r}
+anyNA(test)
+```
+
+```{r}
+mean(test[!is.na(test)])
+```
+## INF
+
+```{r}
+Inf + 1
+
+```
+```{r}
+1/Inf
+```
+
+## NaN
+
+```{r}
+0 / 0
+```
+## NULL
+
+```{r}
+v_1 <- c(1, Inf, NA, NULL, NaN)
+v_1
+```
+# Factors 
+
+## builtin factors 
+```{r}
+state.name
+```
+
+```{r}
+state.region
+```
+
+```{r}
+class(state.name)
+class(state.region)
+```
+## Create factors 
+
+```{r}
+v <- c("apple", "orange", "banana")
+factor(v)
+```
+we can add levels 
+
+```{r}
+v2 <- factor(v, levels = c("apple", "banana", "orange", "grape"))
+v2
+```
+factors not in the levels will be NAs 
+```{r}
+v3 <- factor(c("apple", "banana", "orange", "peach"),
+             levels = c("apple", "banana", "orange", "grape"))
+v3
+```
+
+## Subsetting of factors 
+
+```{r}
+v2[1:2]
+```
+
+```{r}
+v3[-4]
+```
+
+```{r}
+v[c(TRUE, TRUE, FALSE)]
+
+```
+v1[c(TRUE, TRUE, FALSE)]
+
+```{r}
+v == "orange"
+v[v == "orange"]
+```
+## Retrieving and changing the levels 
+
+```{r}
+levels(v2)
+```
+
+```{r}
+nlevels(v2)
+```
+
+```{r}
+library(forcats)
+v4 <- fct_recode(v2,
+                 A = "apple", 
+                 B = "banana",
+                 O = "orange",
+                 G = "grape")
+v4
+```
+
+```{r}
+as.character(v4)
+```
+
+## R's internal representation of factors 
+
+```{r}
+f1 <- factor(c("Grande", "Venti", "Grande", "Tall"), 
+             levels = c("Grande", "Venti", "Tall", "Short"))
+str(f1)
+```
+```{r}
+typeof(f1)
+f1
+```
+
+```{r}
+attributes(f1)
+```
+
+```{r}
+as.integer(f1)
+```
+```{r}
+f2 <- fct_recode(
+  f1, 
+  '16' = "Grande", 
+  "17" = "Short", 
+  "18" = "Venti",
+  "19" = "Tall")
+f2
+```
+```{r}
+as.integer(f2)
+```
+
+```{r}
+as.integer(levels(f2)[f2])
+
+```
+## Dropping unused levels 
+```{r}
+unique(f1)
+```
+```{r}
+f_drop <- fct_drop(f1)
+f_drop
+```
+
+## Arrangng the order of levels according to their frequency 
+
+```{r}
+favorite <- factor(c(
+  rep("coffee", 61),
+  rep("tea", 13),
+  rep("merchandise", 1),
+  rep("food", 25)
+))
+```
+
+```{r}
+levels(favorite)
+```
+
+```{r}
+table(favorite)
+```
+
+```{r}
+favorite_sorted <- fct_infreq(favorite)
+table(favorite_sorted)
+```
+
+## Ordered factors 
+
+```{r}
+f1 <- factor(c("Grande", "Venti", "Grande", "Tall"), 
+             levels = c("Grande", "Venti", "Tall", "Short"), 
+             ordered = TRUE)
+f1
+```
+```{r}
+f1 <- ordered(c("Grande", "Venti", "Grande", "Tall"), 
+             levels = c("Grande", "Venti", "Tall", "Short"))
+f1
+```
+
+```{r}
+f1 < "Tall"
+```
+
+```{r}
+opinion <- factor(c(
+  "Disagree",
+  "Agree",
+  "Disagree",
+  "Neutral",
+  "Agree",
+  "Agree"
+))
+str(opinion)
+```
+```{r}
+size <- c("Grande", "Venti", "Grande", "Tall")
+f <- ordered(size, levels = c("Short", "Tall", "Grande", "Venti"))
+f > "Tall"
+```
+
+```{r}
+library(ggplot2)
+#ggplot(mpg, aes(displ, hwy)) +
+  geom_point(colour = "blue")
+ggplot(mpg, aes(displ, hwy)) +
+  geom_point(aes(colour = "blue"))
+ggplot(mpg, aes(displ, hwy, colour = "blue")) +
+  geom_point()
+```
+```{r}
+data(harelynx)
+ggplot(harelynx, aes(hare, lynx, colour = year)) +
+  geom_path() +
+  geom_point()
+```
+
+
+```{r}
+writers_c <- list(
+  c("lemmon", "Mccartney"),
+  c("Harrison", "lennon", "maccartney", "starkey")
+)
+side_c <- list(
+  1:2,
+  c("the fool on the hill", "flying"),
+  writers_c,
+  c(180,136)
+)
+side_c
+```
+
+```{r}
+side_c[c(1,3)]
+```
+```{r}
+names(side_c) <- c("track", "title", "writers", "duration")
+side_c
+```
+
+```{r}
+library(purrr)
+side_c$title
+side_c |> 
+  pluck("title") 
+```
+
+```{r}
+library(tibble)
+side_c_tibble <- 
+  tibble(
+    track = 1:2,
+    title = c("The fool on the hill", "Flying"),
+    writers = writers_c,
+    duration = c(180,136)
+  )
+side_c_tibble
+```
+
+```{r}
+side_c_tibble$writers[[1]][2]
+```
+
+```{r}
+titles <- list(
+  c("magical", "your mother"),
+    "I am Ali", 
+  c("the fool", "is flying")
+)
+
+map(titles, length)
+map_dbl(titles, length)
+```
+
+```{r}
+durations <- list(
+  c(168, 153),
+  275,
+  c(180,136),
+  230
+)
+str(durations)
+map_dbl(durations, sum)
+```
+

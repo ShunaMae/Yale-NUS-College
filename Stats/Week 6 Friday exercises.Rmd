@@ -1,0 +1,53 @@
+---
+title: "week6_stats_exercises"
+author: "shuna"
+date: "2/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+binom.test(59, 100,0.59)
+```
+
+
+```{r}
+binom.test(55, 100, 0.5)$p.value
+```
+
+```{r}
+take_sample <- function(){
+  t <- sample(c("H", "T"), 100, replace = TRUE, c(0.59, 0.41))
+  sum(t == "H")
+}
+```
+
+```{r}
+# we got a coin 
+# and we dont know if its fair or not
+# so null hypothesis is its fair 
+p_values = c()
+for (i in 1:10000){
+  x = binom.test(take_sample(), 100, 0.5)$p.value
+  p_values[i] = x
+}
+
+hist(p_values)
+```
+
+
+```{r}
+million_coins <- function(){
+  t <- sample(c("H", "T"), 100, replace = TRUE, c(0.52, 0.48))
+  sum(t == "H")
+}
+```
+
+
+```{r}
+binom.test(million_coins(), 100000000, 0.5)$p.value
+```
+

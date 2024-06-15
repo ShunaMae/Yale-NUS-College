@@ -1,0 +1,213 @@
+---
+title: "Lec07_exercise"
+author: "shuna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+library(forcats)
+library(formattable)
+library(styler)
+```
+```{r}
+gss_cat
+```
+
+## Exercise 1 
+
+(a) what are the levels of `gss_cat$race`?
+    ```{r}
+    levels(gss_cat$race)
+    ```
+(b) tabulate the frequency of the `races` with `table()`
+    ```{r}
+    table(gss_cat$race)
+    ```
+
+(c) Write a function `nice_table()` that takes two arguments 
+
+    ```{r}
+    nice_table <- function(col_name_in_gss, col_name_shown){
+      table(gss_cat[,col_name_in_gss]) |> 
+        as.data.frame() |> 
+        mutate(Freq = color_bar("lightgreen")(Freq)) |>
+        kbl(
+          col.names = c(col_name_shown, "Frequency"),
+          align = c("l", "r"),
+          escape = FALSE
+          ) |> 
+        kable_styling(c("striped", "condensed"), full_width = FALSE)
+    }
+    
+    nice_table("race", "Race")
+
+    ```
+
+    ```{r}
+    nice_table <- function(col_name_in_gss, col_name_shown){
+      table(gss_cat[[col_name_in_gss]]) |> 
+        as.data.frame() |> 
+        mutate(Freq = color_bar("lightgreen")(Freq)) |>
+        kbl(
+          col.names = c(col_name_shown, "Frequency"),
+          align = c("l", "r"),
+          escape = FALSE
+          ) |> 
+        kable_styling(c("striped", "condensed"), full_width = FALSE)
+    }
+    
+    nice_table("race", "Race")
+
+    ```
+
+
+(d)
+(e)
+(f)
+Drop the unused level and recreate the table. Sort the columns in the order of frequency. 
+```{r}
+gss_cat[["race_drop_unused"]] <-
+  # sort the column
+  fct_infreq(
+    # drop the unused level
+    fct_drop(
+      gss_cat[["race"]]
+      )
+    )
+
+nice_table("race_drop_unused", "Race")
+```
+
+# Exercise 2
+
+
+(a) what are the levels? 
+    ```{r}
+    levels(gss_cat$rincome)
+    ```
+ - can add commas for the numbers 
+ - inconsistency in "-" and "to" 
+ - Lt to `>`
+ 
+```{r}
+nice_table("rincome", "Income")
+```
+
+(b) 
+
+    ```{r}
+    Others <- factor(c("Not applicable", 
+                       "No answer", 
+                       "Don't know",
+                       "Refused"))
+    fct_c(Others)
+
+    ```
+```{r}
+levels(gss_cat[["rincome"]])
+```
+
+```{r}
+gss_cat[["rincome"]] <- fct_recode(gss_cat[["rincome"]],
+                      "Not applicable" = "No answer",
+                      "Not applicable"= "Don't know",
+                      "Not applicable" = "Refused",
+                      "$25,000 or more"= "$25000 or more",
+                      "$20,000 to 24,999" = "$20000 - 24999",
+                      "$15,000 to 19,999" = "$15000 - 19999",
+                      "$10,000 to 14,999" = "$10000 - 14999",
+                      "$5,000 to 9,999" = "$8000 to 9999", 
+                      "$5,000 to 9,999" = "$7000 to 7999", 
+                      "$5,000 to 9,999" = "$6000 to 6999",
+                      "$5,000 to 9,999" = "$5000 to 5999",
+                      "$1,000 to 4,999" = "$4000 to 4999",
+                      "$1,000 to 4,999" = "$3000 to 3999",
+                      "$1,000 to 4,999" = "$1000 to 2999",
+                      "Less than $1,000" = "Lt $1000")
+
+gss_cat[["rincome"]] <- fct_shift(fct_drop(gss_cat[["rincome"]]), n = 1)
+
+nice_table("rincome", "Income")
+```
+
+# Exercise 4 
+
+(a)
+    ```{r}
+    levels(gss_cat$partyid)
+    ```
+(b) 
+    ```{r}
+    gss_cat[["partyid_aggregated"]] <- fct_infreq(
+      fct_collapse(
+      gss_cat[["partyid"]],
+      "Republican" = c("Strong republican", 
+                       "Not str republican"),
+      "Independent" = c("Ind,near rep", 
+                        "Independent", 
+                        "Ind,near dem"),
+      "Democrat" = c("Not str democrat",
+                     "Strong democrat"),
+      "Other" = "Other party",
+      "Missing" = c("No answer",
+                    "Don't know")
+      )
+    )
+    nice_table("partyid_aggregated", "Party")
+    ```   
+
+# Exercise 5
+
+```{r}
+levels(gss_cat$relig)
+```
+
+```{r}
+gss_cat[["is_protestant"]] <- fct_collapse(
+  gss_cat[["relig"]],
+  "Protestant" = "Protestant",
+  "Other" = c("No answer",
+              "Don't know",
+              "Inter-nondenominational", 
+              "Native american",
+              "Christian",
+              "Orthodox-christian",
+              "Moslem/islam",
+              "Other eastern",
+              "Hinduism",
+              "Buddhism",
+              "Other",
+              "None",
+              "Jewish",
+              "Catholic",
+              "Not applicable"
+  )
+)
+
+gss_cat
+```
+
+```{r}
+# extract the necessary factors 
+data <- gss_cat[, c("is_protestant", 
+                    "has_denom")]
+# convert it to a data frame 
+data <- as.data.frame.matrix(table(data$has_denom, data$is_protestant))
+data
+```
+

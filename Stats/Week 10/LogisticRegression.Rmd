@@ -1,0 +1,123 @@
+---
+title: "LogisticRegression"
+output: html_document
+date: '2022-03-24'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(datasets)
+
+data <- esoph
+head(data)
+model <- aov(ncases ~ agegp*alcgp, data = data)
+summary(model)
+model$coefficients
+
+modellm <- lm(ncases ~ agegp*alcgp, data = data)
+summary(modellm)
+
+
+```
+
+
+```{r}
+
+dat = data.frame(state = c(rep(1, 5), rep(0, 20),
+                     rep(1, 15), rep(0, 10)),
+           condition = c(rep("WT", 25), rep("mut b-cat", 25)))
+  
+dat$condition = factor(dat$condition, c("WT", "mut b-cat"))
+tmp <-glm(state~condition, data=dat, family=binomial)
+summary(tmp)                 
+
+```
+
+logit: log(p/(1-p))
+```{r}
+logit(100)
+```
+
+
+```{r}
+library(survival)
+help(ovarian)
+
+ovarian$rx <- factor(ovarian$rx, 
+                     levels = c("1", "2"), 
+                     labels = c("A", "B"))
+ovarian$resid.ds <- factor(ovarian$resid.ds, 
+                           levels = c("1", "2"), 
+                           labels = c("no", "yes"))
+ovarian$ecog.ps <- factor(ovarian$ecog.ps, 
+                          levels = c("1", "2"), 
+                          labels = c("good", "bad"))
+```
+
+```{r}
+plot(ovarian$age,ovarian$resid.ds,xlab="Age", ylab="Residual Disease",pch=19,col="purple",cex=1.5,yaxt="n")
+axis(2, at=c(1,2), labels=c("no","yes"))
+```
+
+```{r}
+ovarian
+```
+
+
+```{r}
+residFit<-glm(resid.ds~age, data=ovarian, family=binomial)
+summary(residFit)
+```
+
+###Run the logistic regression of age vs residual disease
+```{r logistic regression}
+residProbs <- predict(residFit,type = "response")
+residProbs
+residPred <- ifelse(residProbs > 0.5, "yes", "no")
+residPred
+ovarian$resid.ds
+output<-data.frame(probability=residProbs,prediction=residPred,actual=ovarian$resid.ds)
+output
+# we get about 58% right prediction 
+mean(output$prediction==output$actual)
+
+exp(coef(residFit))
+
+```
+
+
+the odd ratio is 1.066 
+no effective change 
+really bad estimater 
+
+```{r}
+head(output) 
+true_positive <- sum(output$prediction == "yes" & output$actual == "yes")
+false_positive <- sum(output$prediction == "yes" & output$actual == "no")
+true_negative <- sum(output$prediction == "no" & output$actual == "no")
+false_negative<- sum(output$prediction == "no" & output$actual == "yes")
+```
+```{r}
+true_positive
+true_negative
+false_positive
+false_negative
+```
+
+```{r}
+precision <- true_positive / (true_positive + false_positive) 
+precision
+```
+
+Roc: receiver operating characteristic 
+
+- compare the TPR against the FPR
+
+```{r}
+sessionInfo()
+```

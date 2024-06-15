@@ -1,0 +1,5 @@
+"0",""
+"0","shapiro.test(sqrt(RGR_data$RGR))"
+"2","Error in shapiro.test(sqrt(RGR_data$RGR)) : 
+  sample size must be between 3 and 5000
+"

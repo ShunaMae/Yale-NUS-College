@@ -1,0 +1,35 @@
+---
+title: "test"
+author: "shuna"
+date: "1/17/2022"
+output: html_document
+---
+
+```{r}
+x <- seq(6, 2, length.out = 3)
+y <- 3:1
+x[x - y]
+```
+
+```{r}
+u <- c(TRUE, TRUE, FALSE, FALSE, FALSE)
+v <- c(TRUE, FALSE, TRUE, TRUE, FALSE)
+u[v]
+```
+
+```{r}
+v <- 4
+w <- 3:4
+x <- 1:4
+v + w + x
+```
+```{r}
+winner <- c("me", "you", "me", "her", "him", "you")
+length(winner)
+unique(winner)
+length(unique(winner))
+data(iris)
+iris %>%
+  summarise(n = n())
+```
+

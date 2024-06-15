@@ -1,0 +1,43 @@
+---
+title: "Reflections on Data Visualisation"
+author: "Shuna, John Jacobs & Ho Ning"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center")
+```
+
+
+# Task 1
+
+**Find an example of (good or bad) data visualisation in the media.**
+
+We find the following figure condensed with a lot of information. However, limited data and statistics were conveyed through this figure.
+The figure is from <https://www.moh.gov.sg/news-highlights/details/update-on-local-covid-19-situation-(26-sep-2021)>, with 4 stacked graphs to communicate statistics regarding the medical support provided for Covid-19 infected individuals.
+
+
+```{r example_of_visualisation, out.width='40%'}
+knitr::include_graphics("fig3(26sep21).png")
+```
+
+
+# Task 2
+
+**Explain what you like or dislike about the figure.**
+
+What is there to dislike?
+
+- Age range for groupings is inconsistent.
+- Age group 12-18 years old is negligible.
+- Colours between the age group could be more distinct.
+- Numerical data provided cannot be read.
+- Dates on the x-axis are repetitive (indicated month) and its vertical presentation makes it hard to viewers to read 
+- the y-axis for "Requires Oxygen Supplementation" seems slightly off, for the 200 upper limit is placed in an awkward position.
+
+# Task 3
+
+**How would you improve the presentation of the data?**
+
+Perhaps an interactive stacked line plot might be more useful, such that the numerical data is shown to viewers through hover text. Additionally, the dates on the x-axis can be angled for easier read. Colours of age groups should be changed to `RColorBrewer`'s `Set1`.

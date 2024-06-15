@@ -1,0 +1,50 @@
+---
+title: "Lecture4"
+output: html_document
+---
+
+##### World bank
+
+the file _worldbank.tsv_ contains lots of information on different statistics associated with different countries ... lets load this into R
+
+```{r}
+worldbank = read.delim("worldbank.tsv", sep='\t')
+```
+
+lets make a histogram of the population growth .... 
+
+```{r}
+
+```
+
+OK - how about making a boxplot of Population_growth - separating countries by their Climate Region?
+
+```{r}
+
+```
+
+what about a scatter plot of  Population_growth - separating countries by their Climate Region?
+
+```{r}
+?stripchart
+
+```
+
+what about a violin plot of Population_growth - separating countries by Climate Region? 
+
+```{r, messages=FALSE, warnings=FALSE}
+library(vioplot)
+
+
+```
+
+Plot the cumulative frequency distribution of Population_growth 
+
+```{r}
+?ecdf
+```
+
+
+```{r}
+sessionInfo()
+```

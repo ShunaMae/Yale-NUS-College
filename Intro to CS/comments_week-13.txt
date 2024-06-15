@@ -1,0 +1,513 @@
+Hi guys,
+
+Thanks for your handin.  Here are some comments.
+
+----------
+
+mini-project_about-depth-first-and-breadth-first-traversals.ml
+
+-----
+
+no comments
+
+
+----------
+
+mini-project_about-indexing-data-structures.ml
+
+-----
+
+let string_index_lr_a s i =
+  if i < 0 || i >= String.length s
+  then None
+  else Some (String.get s i);;
+
+the recommendation, ever since twice_less_than in Week 03, is to write
+
+  if 0 <= i && i < ...
+
+Otherwise, fine.
+
+-----
+
+let string_index_lr_b s i =
+
+good
+
+-----
+
+let string_index_lr_c s i_given =
+
+good
+
+-----
+
+let string_index_rl_a s i =
+  let len = String.length s in
+
+ditto; also, 
+
+  let last_index = String.length s - 1 in
+
+makes more sense (cf. midterm project, etc.)
+
+-----
+
+let string_index_rl_b s i = 
+
+OK
+
+-----
+
+let string_index_rl_c s i_given =
+  try let _ = String.mapi (fun i c -> if i = (String.length s - 1 - i_given)
+                            then raise (Found c)
+                            else c) s
+    in None
+  with
+  | Found c ->
+    Some c;;
+
+And how many times are we going to compute
+  String.length s - 1
+?
+Reference:
+  https://delimited-continuation.github.io/YSC1212/2021-2022_Sem2/week-09_the-polymorphic-option-type.html#executive-summary
+
+-----
+
+arrays
+
+ditto
+
+-----
+
+lists
+
+ditto
+
+-----
+
+let list_index_lr_b vs i =
+  match List.nth vs i with
+  | exception _ -> None
+  | _ -> Some (List.nth vs i);;
+
+this definition doesn't make sense (and is syntactically incorrect)
+
+-----
+
+let list_index_lr_c vs_given i =
+  let rec list_nth vs i'=
+    match vs, i' with
+    | [], _ -> None
+    | _, i' when i' < 0 -> None
+    | v::_, 0 -> Some v
+    | v::vs', i' -> list_nth vs' (i' - 1) in
+  list_nth vs_given i;;
+
+first walk, then run:
+
+- we haven't seen the "when" annotation (and also this clause is unnecessary)
+
+- write by cases, and then once things are correct, do whatever you like
+
+- https://delimited-continuation.github.io/YSC1212/2021-2022_Sem2/week-04_unit-tests.html#interlude-about-style
+
+-----
+
+let list_index_lr_d vs_given i =
+  let len = list_fold_right 0 (fun i ih -> 1 + ih) vs_given in
+  let tracker = ref (len - i) in
+  let nil_case = [] in
+  let cons_case v ih = let () = tracker := !tracker - 1 in 
+    match ih, !tracker with
+    | [], 0 -> [v]
+    | _, _ -> ih in
+  let vs = list_fold_right nil_case cons_case vs_given in
+  match vs with
+  | [] -> None
+  | [v'] -> Some v'
+  | _ -> None;;
+
+why use side effects when no side effects are needed?
+
+-----
+
+and the rest is not as simple as it can (and should) be
+
+-----
+
+let list_index_rl_a vs i =
+
+OK
+
+-----
+
+let list_index_rl_b vs_given i =
+
+way, way, way, way too complicated
+
+-----
+
+let list_index_rl_c vs_given i =
+
+too complicated (and traverses the list twice)
+
+-----
+
+let list_index_rl_d vs_given i =
+
+too complicated
+
+-----
+
+let llist_index_left_to_right_a llist i =
+let llist_index_left_to_right_c llist n =
+
+OK, you use the lazy annotation, which we haven't seen,
+but these definitions don't work if the lazy list is not finite and the index is negative,
+a reminder to first understand simple things well
+
+-----
+
+let llist_index_left_to_right_d llist n =
+
+too complicated
+
+-----
+
+let llist_index_right_to_left_a llist i =
+
+only works if the lazy list is finite
+
+-----
+
+let stream_index xs_given i_given =
+
+OK
+
+-----
+
+what about indexing a stream right to left?
+(a definition exists)
+
+-----
+
+all in all, the code above is too complicated, witness the fact that you didn't express it using a fold function (which is a good metric for simplicity here, as well as a strong connection to an inductive specification of the traversal)
+
+----------
+
+mini-project_about-indexing-trees.ml
+
+-----
+
+let treeindex_lrb t n =
+  let vs = traverse_bar_fifo t
+  in if 0 <= n && n <= (List.length vs - 1)
+     then Some (List.nth vs n)
+     else None;;
+
+let treeindex_rlb t n =
+  let vs = traverse_foo_fifo t
+  in if 0 <= n && n <= (List.length vs - 1)
+     then Some (List.nth vs n)
+     else None;;
+
+too many traversals: add an index to the traversal (initialized to the given n, if it is non-negative) and decrease it incrementally as you traverse the tree
+
+also, a structurally recursive version exists for one of the two indexing functions,
+one that is expressible with the fold function associated with the tree
+
+----------
+
+week11-streams.ml
+
+-----
+
+let rec stream_stutter2 (Scons (v, ds)) =
+let stream_filter_out_v0 p xs_given =
+let stream_filter_out_v1 p xs_given =
+let stream_filter_out_v2 p xs_given =
+let stream_filter_out_v3 p xs_given =
+
+OK but no testing?
+
+-----
+
+let stream_filter_in p xs_given =
+  let rec visit (Scons(x, dxs')) =
+    if p x
+    then Scons (x, lazy (visit (Lazy.force dxs')))
+    else visit (Lazy.force dxs')
+  in visit xs_given;;
+
+good
+
+-----
+
+let stream_filter_in_using_filter_out p (Scons (x, dxs')) = 
+
+good
+
+-----
+
+and the rest is fine
+
+----------
+
+week12.ml
+
+-----
+
+(* Exercise 2: Implement a string -> unit function that given a string, prints its characters using char_print *)
+
+OK
+
+-----
+
+(* Exercise 3 *)
+
+OK
+
+-----
+
+(* Exercise 14 *)
+
+OK
+
+----------
+
+week-13_annotate.ml
+
+-----
+
+good, only
+
+  and oddp_aux (n : int) : bool =
+
+is missing
+
+----------
+
+Intro to CS Week 13.pdf
+
+-----
+
+front page: OK but there is no need for anonymity anymore
+
+title: telling
+
+contents: clear
+
+page numbers: OK
+
+-----
+
+Introduction
+
+clear and structured
+
+-----
+
+W11
+
+-----
+
+E23
+
+good
+
+why is stream_filter_out_v1 not written in the same (standard) style as stream_filter_in?
+
+-----
+
+E25
+
+clear and archival
+
+
+-----
+
+E26
+
+clear and archival
+
+-----
+
+W12
+
+-----
+
+E02 / E03
+
+clear and archival
+
+(I was expecting you to use OCaml's for-loops, not their functional simulations)
+
+-----
+
+E14
+
+clear
+
+-----
+
+preparatory
+
+OK
+
+-----
+
+indexing
+
+the narrative is clear, and the same comments as above apply
+
+-----
+
+> Now, we implement a solution that is structurally recursive on the list.
+> 
+> let list_index_lr_c vs_given i =
+
+is it?  where is the base case and where is the induction step?
+
+-----
+
+> Now that we have implemented a solution that uses recursion, we express the above solution
+> with list_fold_right.
+
+Er...  No?  list_index_lr_c traverses the list only once but not list_index_lr_d,
+witness the 2 occurrences of list_fold_right.
+Anyhow, inline them, we don't fall back on our feet.
+This part has been hacked, not reasoned about.
+
+-----
+
+> Here, we implement a solution that is structurally recursive on the index of the list.
+
+is it?  where is the base case and where is the induction step?
+
+-----
+
+> Because we performed recursion on the index, it is possible to express the above solution
+> with nat_fold_right.
+
+ditto
+
+-----
+
+> B. implement a solution that uses List.rev.
+> let list_index_rl_b vs_given i =
+> let pop_first vs = match vs with
+> | [] -> []
+> | v::vs' -> vs' in
+> let rec visit vs i =
+> if i < 0
+> then None
+> else if i = 0
+> then match vs with
+> | [] -> None
+> | [v] -> Some v
+> | v::vs' -> Some v
+> else visit (pop_first vs) (pred i) in
+> visit (List.rev vs_given) i;;
+
+Sigh:
+
+let list_index_rtl vs i =
+  list_index_ltr (List.rev vs) i;;
+
+-----
+
+list_index_rl_c
+list_index_rl_d
+
+whimper
+
+-----
+
+lazy lists
+
+let llist_index_left_to_right_a llist i =
+let rec loop llist i =
+match llist with
+| Lnil -> None
+| Lcons (x, lazy llist') ->
+if i = 0 then Some x else loop (llist') (i - 1)
+in loop llist i;;
+
+better test whether i is non-negative, so that this function doesn't diverge even if the lazy list isn't finite,
+but modulo that, this function is nice and simple, the way list_index_left_to_right should be
+
+-----
+
+llist_index_left_to_right_c is not structurally recursive on the index because it doesn't read
+
+  let rec loop i lvs =
+    if i = 0
+    then ...
+    else ....
+
+-----
+
+and the rest is too complicated, when this mini-project was supposed to be a celebration of simplicity
+and of applying what you know
+
+-----
+
+> Indexing is not possible from right to left since a stream does not have an end. It is infinite in
+> length, so it is impossible to determine where we would begin the index from if we were to
+> start from right to left.
+
+And so what?  Look at the type and implement this indexing function.
+
+-----
+
+imperative lists
+
+there is no solution here?
+
+-----
+
+> Conclusion
+> 
+> In this exercise, we practised indexing different data structures of different types in OCaml,
+> from left to right and right to left. Often, the way of implementing both directions was similar
+> and figuring out how to index one way meant it was simple to alter the program slightly to
+> index the code another way. We also gained more familiarity with defining our own
+> exceptions and programming using those exceptions.
+
+Maybe.  But this whole part doesn't convey clarity, unity, and simplicity,
+which was the stated aim of this mini-project.  You *need* to be more contemplative.
+
+-----
+
+traversals
+
+OK, for half of it: breadth-first traversals can't be programmed in a structurally recursive way
+since trees are not constructed breadth-first,
+but since trees are constructed inductively,
+of course depth-first traversals can be programmed recursively,
+witness all the recursive functions written in the lecture notes,
+starting with number_of_leaves and number_of_nodes
+
+-----
+
+indexing, continued
+
+Right.  The idea here was to parameterize process with an index instead of constructing intermediate data structures.
+
+-----
+
+Conclusion
+
+comprehensive
+
+----------
+
+Overall, you clearly didn't have enough time to reflect first and program later,
+but modulo that, you can manage.
+
+Thanks for attending Intro to CS,
+
+-- Olivier

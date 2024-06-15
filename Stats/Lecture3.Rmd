@@ -1,0 +1,166 @@
+---
+title: "Lecture3"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+### Part 1
+
+Body temperature of 12 individuals in degrees centigrade 
+```{r}
+table7_1 = c(37.0, 36.0, 37.1, 37.1, 36.2, 37.3, 36.8, 37.0, 36.3, 36.9, 36.9, 36.7, 36.8)
+```
+
+What is the mean of this dataset? 
+
+```{r}
+mean(table7_1)
+```
+
+What is the median of this dataset?
+
+```{r}
+median(table7_1)
+```
+
+Trim out the bottom and top 10% of values and calculate the mean?
+
+```{r}
+mean(table7_1, trim = 0.1)
+```
+
+What is the mode of this dataset?
+
+<https://statisticsglobe.com/mode-in-r-programming-example>
+```{r}
+# 
+mode <- function(x) {                      
+  unique_x <- unique(x)
+  tabulate_x <- tabulate(match(x, unique_x))
+  unique_x[tabulate_x == max(tabulate_x)]
+}
+```
+
+```{r}
+mode(table7_1)
+```
+```{r}
+names(table(table7_1)[table(table7_1) == max(table(table7_1))])
+```
+
+
+# plot a histogram of table7_1 and add lines to show the measures of central tendency
+
+```{r}
+ggplot() + 
+  aes(table7_1)+ 
+  geom_histogram(binwidth=0.1, colour="black", fill="white")+
+  labs(x = "Body temperarue")+
+  geom_vline(xintercept = mean(table7_1), colour = "green")+
+  geom_vline(xintercept = median(table7_1), colour = "blue")
+```
+
+what is the range of this data? 
+
+```{r}
+range(table7_1)
+max(table7_1) - mean(table7_1)
+```
+
+what is the IQR of this dataset? 
+
+```{r}
+IQR(table7_1)
+```
+
+what are the quartiles of this dataset?
+
+```{r}
+quantile(table7_1)
+```
+
+
+what is the standard deviation of this dataset? 
+
+```{r}
+sd(table7_1)
+```
+
+what is the variance of this dataset
+
+```{r}
+var(table7_1)
+```
+
+##### World bank
+
+the file _worldbank.tsv_ contains lots of information on different statistics associated with different countries ... lets load this into R
+
+```{r}
+worldbank = read.delim("worldbank.tsv", sep='\t')
+```
+
+lets make a histogram of the population growth .... 
+
+```{r}
+ggplot(data = worldbank, aes(x = Population_growth))+
+  geom_histogram(fill = 'white',
+                 color = 'black')+
+  labs(x = "Population Growth")
+```
+
+OK - how about making a boxplot of Population_growth - separating countries by their Climate Region?
+
+```{r}
+ggplot(data = worldbank, aes(x = Region, y = Population_growth))+
+  geom_boxplot()+
+  labs(x = "Climate Region",
+       y = "Population Growth")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+what about a scatter plot of  Population_growth - separating countries by their Climate Region?
+
+```{r}
+# ?stripchart
+```
+
+```{r}
+ggplot(data = worldbank, aes(x=Region, y=Population_growth)) + 
+  geom_jitter(position=position_jitter(0.1), size = 2, alpha = 0.5)+
+  labs(x = "Climate Region",
+       y = "Population Growth")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+what about a violin plot of Population_growth - separating countries by Climate Region? 
+
+```{r, messages=FALSE, warnings=FALSE}
+library(vioplot)
+vioplot(worldbank$Population_growth ~ worldbank$Region,
+        xlab = "", ylab = "Population Growth", las = 2)
+```
+
+Plot the cumulative frequency distribution of Population_growth 
+
+```{r}
+# ?ecdf
+```
+
+```{r}
+ggplot(data = worldbank, aes(x = Population_growth)) +
+  stat_ecdf(geom = "step")+
+  labs(x = "Population Growth",
+       y = "Frequency",
+       title = "Cumulative Frequency Distribution")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+sessionInfo()
+```

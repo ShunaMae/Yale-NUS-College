@@ -1,0 +1,279 @@
+---
+title: "Midterm Practice"
+author: "Aditya Singhania"
+date: "3/1/2022"
+output:
+  pdf_document:
+    number_sections: true
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+These are the packages that I will need for my solutions.
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(Hmisc)
+```
+
+# Relation between tibbles, data frames, and ists
+
+## (a) Tibble
+
+```{r}
+musicians_tbl <- tibble(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beatles", "Beatles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+```
+
+## (b) Data frame
+
+```{r}
+musicians_dfr <- data.frame(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beatles", "Beatles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+```
+
+## (c) List
+
+```{r}
+musicians_list <- list(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beatles", "Beatles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+```
+
+## (d) Applying functions to all
+
+```{r}
+musicians <- Hmisc::llist(musicians_tbl, musicians_dfr, musicians_list)
+sapply(musicians, function(x) {
+  list(
+    class = class(x),
+    is_tib = is_tibble(x),
+    is_df = is.data.frame(x),
+    is_list = is.list(x)
+  )
+})
+```
+
+## (e) Attributes
+
+```{r}
+lapply(musicians, attributes)
+```
+
+## (f) Subsetting operations
+
+```{r}
+lapply(musicians, attributes)
+```
+
+## (g) Remove attributes
+
+```{r}
+remove_attr <- function(x) {
+  attr(x, "class") <- NULL
+  attr(x, "row.names") <- NULL
+  # dropping appended "label" attribute
+  attr(x,"label") <- NULL
+  return(x)
+}
+
+musicians_cleaned <- lapply(musicians, remove_attr)
+
+# to check attributes
+# lapply(musicians_cleaned,attributes)
+
+# Check whether identical
+
+lapply(musicians_cleaned, function(x) identical(x,musicians_list))
+```
+
+## Map-family of functions
+
+```{r}
+mtcars
+```
+
+### (ai) Mean
+
+```{r}
+map(mtcars, mean)
+```
+
+### (aii) Type
+
+```{r}
+map(nycflights13::flights, typeof)
+```
+
+### (aiii) Is factor
+
+```{r}
+map(forcats::gss_cat, is.factor)
+```
+
+### (aiv) Unique values
+
+```{r}
+map_int(iris, n_distinct)
+```
+
+## (b) pmap
+
+```{r}
+pmap(list(10, 1:10, 2:11), runif)
+```
+What does pmap(list(10, 1:10, 2:11), runif) do? Why?
+
+_Ans:_ `pmap()` allows us to specify a single list that will contain all the vectors that
+we want to supply to any command or function. In this case, pmap allows us to accommodate 
+3 vectors in a single list that will run with the runif() command, rather than 
+using `runif()` and `map()` on each list 1) 10, 2) 1:10 and 3) 2:11 3 separate times.
+
+# source: 
+https://dcl-prog.stanford.edu/purrr-parallel.html#pmap
+
+
+
+## (c) `map_dfr` `beaver1`, `beaver2`
+
+
+```{r}
+# Original function
+map_dfr(
+  list(beaver1, beaver2), function(dfr) {
+    glm(activ ~ temp, data = dfr, family = binomial) |> pluck(coef)
+  }
+)
+
+# Formula
+map_dfr(
+  list(beaver1, beaver2), ~ {
+    glm(activ ~ temp, data = ., family = binomial) |> pluck(coef)
+  }
+)
+```
+Describe what this code chunk does.
+
+_Ans:_ 
+1. `map_dfr()` helps to bind the rows and columns that come from the two lists (beaver1
+and beaver2) into a single dataframe.
+
+2. Within the function, `glm()` calls for a generalized linear model to be fit to the dataframe.
+
+3. (activ ~ temp) indicates that the line should be fitted based on the relationship
+between temperature on activity. There will be two linear models due to it being 
+applied to 2 datasets. 
+
+4. (family = binomial) specifies that there is binomial data involved, we can see
+that for the column `activ`, the values are either 0 (indicating no activity) or 1
+(indicating activity).  
+
+5. The coefficients of the two lines from beaver1 and beaver2 are retrieved, 
+which includes the intercept in the 1st column and the gradient in the second column (temp). 
+
+https://purrr.tidyverse.org/reference/map.html
+https://data.princeton.edu/r/glms
+
+
+# Tibbles with list columns
+
+```{r}
+data(starwars)
+```
+
+## (a) Names of all list columns
+
+```{r}
+starwars |>
+  # Predicate functions must be wrapped in `where()`
+  select(where(is.list)) |>
+  names()
+```
+
+## (b) Milenium Falcon
+
+```{r}
+starwars |>
+  select(name, starships) |>
+  filter(map_lgl(starships, ~ "Millennium Falcon" %in% .)) |>
+  select(name)
+
+# Alternatively, and perhaps, more succintly
+starwars$name[map_lgl(starwars$starships, ~ "Millennium Falcon" %in% .)]
+```
+
+## (c) Unique Films
+
+```{r}
+unique(unlist(starwars$films))
+```
+
+## (d) Feminine characters
+
+```{r}
+starwars_fem_percent <- unnest_longer(starwars, films) |>
+  filter(!is.na(gender)) |>
+  group_by(films) |>
+  summarise(
+    n_male = sum(gender == "masculine"),
+    n_female = sum(gender == "feminine"),
+    fem_percent = (n_female / (n_male + n_female)) * 100
+  )
+```
+
+<https://stackoverflow.com/questions/41803446/group-data-frame-by-elements-from-a-variable-containing-lists-of-elements>
+
+## (e) Plot feminine percentage by move release date
+
+```{r}
+release <- tribble(
+  ~movies, ~year,
+  "A New Hope", 1977,
+  "The Empire Strikes Back", 1980,
+  "Return of the Jedi", 1983,
+  "The Phantom Menace", 1999,
+  "Attack of the Clones", 2002,
+  "Revenge of the Sith", 2005,
+  "The Force Awakens", 2015
+)
+
+fem_by_year <-
+  left_join(starwars_fem_percent, release, by = c("films" = "movies"))
+
+ggplot(fem_by_year, aes(year, fem_percent, label = films)) +
+  geom_point() +
+  # fitting regression line 
+  stat_smooth(method = "lm", col = "coral1") +
+  geom_label_repel() +
+  labs(
+    y = "Feminine characters", 
+    x = "Year", 
+    title = "Gender ratio of Characters in Star Wars Movies", 
+    caption = "Source: Star Wars API (https://swapi.dev/)"
+  ) +
+  # default scales::percent() multiplies its input value by 100, manually input scale value = 1
+  scale_y_continuous(labels = scales::percent_format(scale = 1))
+  
+```
+
+Source: https://thomasadventure.blog/posts/ggplot2-percentage-scale/
+
+## (f) Comments
+
+_Ans:_ There is a positive trend in the percentage of feminine characters
+appearing onscreen with each Star Wars Movie released through the years from 1977 
+(when a New Hope is released) to 2015 (The Force Awakens). 
+We see one partciular outlier outside the general linear model which is from 
+Attack of the Clones, where 33.3% of the characters were feminine characters.  

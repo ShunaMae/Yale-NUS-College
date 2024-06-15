@@ -1,0 +1,113 @@
+---
+title: "Plotly memo"
+author: "shuna"
+date: "4/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(plotly)
+```
+```{r}
+data(diamonds)
+```
+
+```{r}
+diamonds
+```
+
+
+```{r}
+p <- plot_ly(diamonds, x = ~color, color = ~ cut)
+p |> layout(barmode = 'stack')
+```
+
+```{r}
+# doesn't produce black bars
+plot_ly(diamonds, x = ~cut, color = "black")
+# produces red bars with black outline
+plot_ly(
+  diamonds, 
+  x = ~cut, 
+  color = "red", 
+  stroke = I("black"), 
+  span = I(2)
+)
+```
+
+```{r}
+data(iris)
+iris
+```
+
+```{r}
+p <- plot_ly(iris, x = ~Petal.Length, y = ~Petal.Width)
+add_markers(p, color = ~Species, stroke = I("grey")) |>
+  layout(
+    title = "Iris Petal Length vs Petal Width",
+    xaxis = list(title = 'Petal Length (cm)'), 
+    yaxis = list(title = 'Petal Width (cm)'), 
+    legend = list(title=list(text='Species of Iris'))
+  )
+```
+
+```{r}
+subplot(
+  plot_ly(iris, x = ~Sepal.Length, stroke = I("White"), nbinsx = 20) |>
+    add_histogram(name = "Sepal Length"),
+  plot_ly(iris, x = ~Sepal.Width, stroke = I("White"), nbinsx = 20) |>
+    add_histogram(name = "Sepal Width"),
+  plot_ly(iris, x = ~Petal.Length, stroke = I("White"), nbinsx = 20) |>
+    add_histogram(name = "Petal Length"),
+  plot_ly(iris, x = ~Petal.Width, stroke = I("White"), nbinsx = 20) |>
+    add_histogram(name = "Petal Width"),
+  nrows = 4
+)
+```
+
+```{r}
+iris$Petal.Width
+```
+
+```{r}
+data(mpg)
+
+mpg |>
+  count(class) |>
+  plot_ly(x = ~class, y = ~n) |>
+  add_bars()
+```
+
+
+```{r}
+mpg
+p <- plot_ly(mpg, y = ~displ, alpha = 0.5)
+
+p1 <- p |> add_boxplot(x = "Overall", name = "Overall")
+p2 <- p |> add_boxplot(x = ~class, name = "class")
+
+subplot(
+  p1, p2, shareY = TRUE, widths = c(1/8, 7/8), margin = 0
+) |>
+  layout(
+    title = "Displ by class", 
+    yaxis = list(title = 'Displ'),
+    annotations = list(x = 1.2, y = -0.1, 
+      text = "Source: mpg data",
+      showarrow = F, xref='paper', yref='paper', 
+      xanchor='right', yanchor='auto', xshift=0, yshift=0,
+      font = list(size=12))
+  )
+```
+
+
+```{r}
+plot_ly(iris, x = ~Sepal.Length, y = ~Sepal.Width, z = ~Petal.Width) |>
+  add_markers(color = ~Species, size = ~Petal.Length)
+```
+

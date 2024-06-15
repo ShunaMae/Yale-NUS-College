@@ -1,0 +1,215 @@
+33---
+title: "Lecture18"
+output: html_document
+date: '2022-04-07'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+dat = read.delim("birthsmokers.txt")
+
+m1 = lm(Wgt ~ Gest + Smoke, data=dat)
+
+summary(m1)
+
+predict(m1, data.frame(Gest=c(40, 37), 
+                       Smoke = c("Smoke", "Not Smoke")
+                       ))
+```
+## logistic regression 
+
+```{r}
+library(survival)
+help(ovarian)
+
+ovarian$rx <- factor(ovarian$rx, 
+                     levels = c("1", "2"), 
+                     labels = c("A", "B"))
+ovarian$resid.ds <- factor(ovarian$resid.ds, 
+                           levels = c("1", "2"), 
+                           labels = c("no", "yes"))
+ovarian$ecog.ps <- factor(ovarian$ecog.ps, 
+                          levels = c("1", "2"), 
+                          labels = c("good", "bad"))
+
+residFit<-glm(resid.ds~age, data=ovarian, family=binomial)
+summary(residFit)
+
+residProbs <- predict(residFit,data.frame(age=c(30, 65, 100)), type = "response")
+residPred <- ifelse(residProbs > 0.5, "yes", "no")
+
+
+```
+
+```{r}
+library(dplyr)
+ovarian <- ovarian %>% mutate(age_group = ifelse(age >=50, "old", "young"))
+surv_object <- Surv(time = ovarian$futime, event = ovarian$fustat)
+ 
+fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, data  = ovarian)
+
+foo = predict(fit.coxph, data.frame(rx=c("A", "B"), resid.ds=c("yes", "no"), age_group=c("old", "young"), ecog.ps=c("good", "bad")))
+
+exp(foo)
+```
+the more independent variables we have, the more complicated the possible models be 
+
+```{r}
+get_likelihood = function(thetas, successes, failures){
+  lvals = dbinom(successes, successes+failures, thetas)
+  
+  return(data.frame(theta = thetas, likelihood = lvals))
+  
+}
+
+
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_prior(thetas)
+likelihood = get_likelihood(thetas, 83 , 17)
+plot(likelihood$theta, likelihood$likelihood)
+```
+
+pick the model with the lowest AIC 
+AIC means something only when compared to another AIC 
+
+```{r}
+m1 = lm(Wgt ~ Gest + Smoke, data=dat)
+m2 = lm(Wgt ~ Gest, data = dat)
+m3 = lm(Wgt ~ Smoke, data = dat)
+m4 = lm(Wgt ~ Gest + Smoke + Gest*Smoke, data = dat)
+m5 = lm(Wgt ~ 1, data = dat)
+
+
+
+logLik(m1)
+
+AIC(m1)
+-2 * logLik(m1) + 2*4
+# 4 because 
+# intercept, gest, smoking status, the error term 
+
+AIC(m1, m2, m3, m4, m5)
+```
+
+```{r}
+library('MuMIn')
+
+AICc(m1)
+
+AICc(m1, m2, m3, m4, m5)
+
+```
+
+```{r}
+
+BIC(m1)
+-2 * logLik(m1) + 4*log(nrow(dat))
+BIC(m1, m2, m3, m4)
+
+```
+
+
+```{r}
+x = read.delim("bloodpress.txt")
+
+mbp_all = lm(BP ~ Age + Weight + BSA + Dur + Pulse + Stress, data=x[,-1])
+mbp_all = lm(BP ~., data = x[,-1])
+# add a straight line in y axis 
+mbp_intercept = lm(BP ~ 1, data=x[,-1])
+
+summary(mbp_all)
+summary(mbp_intercept)
+```
+
+```{r}
+# use AIC to decide whether or not we should do regression
+# need to start with the empty model -> mbp_intercept 
+mbp.forward = step(mbp_intercept, direction="forward",  scope=formula(mbp_all))
+summary(mbp.forward)
+mbp.forward$anova
+```
+
+```{r}
+mbp.backward = step(mbp_all, direction="backward", scope=formula(mbp_all))
+summary(mbp.backward)
+```
+
+
+```{r}
+mbp.both = step(mbp_intercept, direction="both", scope=formula(mbp_all))
+summary(mbp.both)
+```
+
+```{r}
+mbp_all = lm(BP ~ Age + Weight + BSA + Dur + Pulse + Stress, data=x)
+options(na.action = "na.fail")
+dd = dredge(mbp_all)
+subset(dd, delta < 4)
+```
+
+
+
+```{r}
+library(caret)
+library(devtools)
+
+devtools::install_github("compgenomr/compGenomRData")
+
+set.seed(3031) 
+
+fileLGGexp=system.file("extdata","LGGrnaseq.rds", package="compGenomRData")
+fileLGGann=system.file("extdata", "patient2LGGsubtypes.rds",  package="compGenomRData")
+
+gexp=readRDS(fileLGGexp)
+head(gexp[,1:5])
+tgexp <- t(gexp)
+```
+
+
+```{r}
+patient=readRDS(fileLGGann)
+head(patient)
+
+tgexp=merge(patient,tgexp,by="row.names")
+
+# push sample ids back to the row names
+rownames(tgexp)=tgexp[,1]
+tgexp=tgexp[,-1]
+```
+
+
+```{r}
+# get indices for 70% of the data set
+intrain <- createDataPartition(y = tgexp[,1], p= 0.7)[[1]]
+
+# seperate test and training sets
+training <- tgexp[intrain,]
+testing <- tgexp[-intrain,]
+
+lrFit = train(subtype ~ PDPN,  
+               data=training, trControl=trainControl("none"),
+               method="glm", family="binomial")
+
+
+class.res=predict(lrFit,training[,-1])
+confusionMatrix(training[,1],class.res)
+confusionMatrix(training[,1],class.res)$overall[1]
+
+
+class.res=predict(lrFit,testing[,-1])
+confusionMatrix(testing[,1],class.res)
+confusionMatrix(testing[,1],class.res)$overall[1]
+
+```
+
+
+
+
+
+```{r}
+sessionInfo()
+```

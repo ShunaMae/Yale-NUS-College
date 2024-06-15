@@ -1,0 +1,109 @@
+---
+title: "Solutions: Sea surface temperature anomaly"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  html_document
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, fig.align = "center")
+```
+
+I need the following packages for these solutions.
+
+```{r}
+library(grid)
+library(stars)
+library(tidyverse)
+library(tmap)
+```
+
+The packages **envirem**, **knitr**, **raster** and **smoothr** are each only
+needed once.
+Therefore, I will not load the whole packages.
+Instead, I will access the relevant functions in these packages with the
+double-colon operator.
+
+(1) In the next code chunk, specify the resolution of the temperature
+    measurements that you want to use.
+    I recommend setting the variable called `pixels` to `"360x180"` during
+    code development and `"1440x720"` for a production run.
+
+    ```{r}
+    pixels <- "360x180"
+    ```
+
+```{r}
+pixels
+```
+
+    Next, we import both GeoTIFFs.
+    
+    ```{r, cache=TRUE}
+    read_sstan <- function(year) {
+      str_c(
+        "AMSRE_SSTAn_M_",
+        year,
+        "-11-01_rgb_",
+        pixels,
+        ".FLOAT.TIFF"
+      ) |>
+        raster::raster() |>
+        envirem::pacificCentric(crop = FALSE) |>
+        st_as_stars() |>
+        set_names(str_c("y", year))
+    }
+    sstan <- exec(c, !!!map(c(2002, 2007), read_sstan))
+    ```
+    
+    
+```{r}
+str(sstan)
+```
+    
+    YOUR TASK: MAKE A PLOT
+    
+```{r}
+tm_shape(sstan) + 
+  tm_raster()
+```
+  
+```{r}
+
+tm_shape(sstan, projection = "+proj=moll +lon_0=180", raster.warp = FALSE) + 
+  tm_raster()
+```
+    
+```{r}
+sstan <- sstan |>
+  mutate(temp2002 = if_else(y2002 < 99998, y2002, NA_real_),
+         temp2007 = if_else(y2007 < 99998, y2007, NA_real_),
+         surface_2002 = case_when(
+           y2002 == 99999 ~"Land",
+           y2002 == 99998 ~"sea Ice",
+           TRUE ~NA_character_ 
+         ),
+         surface_2007 = case_when(
+           y2007 == 99999 ~"Land",
+           y2007 == 99998 ~"sea Ice",
+           TRUE ~NA_character_ )
+  )
+```
+    
+```{r}
+p <- tm_shape(tm_raster(col = "temp2002"))
+```
+    
+```{r}
+tm_shape(sstan, projection = "+proj=moll +lon_0=180", raster.warp = FALSE) + 
+  tm_raster(col = "temp2002") + 
+  tm_shape(sstan, projection = "+proj=moll +lon_0=180", raster.warp = FALSE) +
+  tm_raster(col = "surface_2002")
+```
+```{r}
+?tm_raster
+```
+
+  

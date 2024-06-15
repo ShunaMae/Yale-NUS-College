@@ -1,0 +1,301 @@
+---
+title: "R Notebook"
+author: "Shuna Maekawa"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+# Import data 
+```{r, message=FALSE, warning=FALSE}
+#load the packages 
+library(tidyverse)
+library(tibble)
+library(ggplot2)
+library(vegan)
+library(dplyr)
+library(RVAideMemoire)
+library(skimr)
+library(ggpubr)
+library(broom)
+library(AICcmodavg)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+#import data from the working directory 
+oph <- read.csv("HornbillID.csv")
+```
+
+
+
+# Data wrangling 
+```{r, message=FALSE, warning=FALSE}
+#replace NA with 0
+oph <- oph %>%
+  replace(is.na(.), 0)
+```
+
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# see the data structure 
+glimpse(oph)
+```
+```{r}
+#separate the dataframe
+
+#male only
+male <- oph %>%
+  filter(sex == "m")
+
+#female only
+female <- oph %>%
+  filter(sex == "f")
+```
+
+# Data analysis 
+
+## Male NMDs
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# NMDs analysis for male hornbills
+set.seed(46)
+nmds_male <- male%>%
+  # exclude non-numerical/empty variables
+  select(-id,-name, -hornbill, -ID, -side, -sex, -ratio_colour_ub,
+         -eccen_ub_mark, -convex_ub_mark, -sd_grey_ub,-mean_grey_ub,
+         -solidity_ub_mark)%>%
+  metaMDS(., distance="jaccard", k=3, trymax=50, trace = 2) 
+```
+
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# see the data structure 
+glimpse(nmds_male)
+```
+
+### biplot
+```{r, message=FALSE, warning=FALSE}
+#plot the raw result 
+plot(nmds_male)
+```
+### stressplot
+```{r, message=FALSE, warning=FALSE}
+# shepherd plot 
+# original dissimilarities are quite well preserved by the reduced dimensions
+stressplot(nmds_male)
+```
+```{r, message=FALSE, warning=FALSE}
+# add nmds scores to the original data
+male_plot <-  nmds_male %>% 
+  #extract nmds scores 
+  scores(., choices = c(1:3), display=c("sites")) %>%
+  #convert the nmds scores in a dataframe 
+  data.frame(.) %>%
+  bind_cols(male, .) %>%
+  left_join(male)
+```
+
+### male NMDs plot
+```{r, message=FALSE, warning=FALSE}
+
+p1 <-  ggplot() +
+  geom_point(data = male_plot, 
+             aes(x=NMDS1, y=NMDS2, 
+                 colour = name,
+                 shape = side),
+             size = 2,
+             alpha = 0.7)
+
+#stat_ellipse(data=males_plot, aes(x=NMDS1, y=NMDS2, colour = name), show.legend = F)
+
+
+p1
+```
+
+### finn and tristan
+```{r}
+finn_tristan <- male_plot%>%
+  filter(name == c( "finn", "tristan"))
+
+
+p2 <- ggplot(data = finn_tristan, aes(x = NMDS1, y = NMDS2))+
+  geom_point(aes(colour= name))
+p2
+
+
+```
+### finn and toby
+```{r}
+
+finn_toby <- male_plot%>%
+  filter(name == c( "finn", "toby"))
+p3 <- ggplot(data = finn_toby, aes(x= NMDS1, y = NMDS2))+
+  geom_point(aes(colour=name))
+p3
+```
+
+## Female NMDs
+
+```{r, message = FALSE, results = FALSE}
+# NMDs analysis for female hornbills 
+set.seed(37)
+nmds_female <- female%>%
+  # exclude non-numerical variables 
+  select(-id,-name, -hornbill, -ID, -side, -sex)%>%
+  metaMDS(., distance="jaccard", k=3, trymax=50, trace = 2) 
+```
+
+### stressplot
+```{r}
+stressplot(nmds_female)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# add nmds scores to the original data
+female_plot <-  nmds_female %>% 
+  #extract nmds scores 
+  scores(., choices = c(1:3), display=c("sites")) %>%
+  #convert the nmds scores in a dataframe 
+  data.frame(.) %>%
+  bind_cols(female, .) %>%
+  left_join(female)
+```
+
+### female NMDs plot 
+```{r, message=FALSE, warning=FALSE}
+# plot the entire nmds 
+p4 <-  ggplot() +
+  geom_point(data = female_plot, 
+             aes(x=NMDS1,
+                 y=NMDS2, 
+                 colour = name, 
+                 shape = side),
+             size = 2,
+             alpha = 0.7)
+
+#  stat_ellipse(data=female_plot,aes(x=NMDS1, y=NMDS2, colour = name), show.legend = F)
+p4
+
+```
+### female boxplot 
+
+```{r}
+# plot NMDS1 values 
+ggplot(data = female_plot, aes(x = id, y = NMDS1))+
+  geom_boxplot(horizontal = TRUE)
+```
+#MANOVA 
+
+## Female Analysis
+
+### adonis
+```{r}
+#data prep
+# dataframe that only contains variables
+female_variables <- female_plot[,7:27]
+
+set.seed(176)
+#variable vs hornbills
+adonis(female_variables ~ female_plot$name*female_plot$side, 
+       permutation = 999)
+
+
+```
+Above shows that female individuals alone is statistically different, but sides are not (interaction model). 
+
+### permanova 
+
+```{r,message=FALSE, warning=FALSE}
+set.seed(189)
+#pairwise.perm.manova(fact = female_plot$name, resp = female_variables, nperm = 999)
+
+```
+Each female hornbill is statistically different from each other. 
+
+
+## Male Analysis 
+
+### adonis 
+```{r,message=FALSE, warning=FALSE}
+#data prep
+# dataframe that only contains variables
+male_variables <- male_plot[,7:27]%>%
+  #remove unnecessary columns 
+  select(-ratio_colour_ub, -eccen_ub_mark, -convex_ub_mark,
+         -sd_grey_ub,-mean_grey_ub, -solidity_ub_mark)
+set.seed(100)
+#variable vs hornbills
+adonis(male_variables ~ male_plot$name*male_plot$side, 
+       permutation = 999)
+
+```
+
+hornbill*side may be statistically significant too (?) 
+
+### permanova 
+```{r,message=FALSE, warning=FALSE}
+#hornbill individuals 
+set.seed(12)
+#pairwise.perm.manova(fact = male_plot$name, resp = male_variables, nperm = 999)
+
+
+```
+
+```{r,message=FALSE, warning=FALSE}
+#hornbill sides
+set.seed(10)
+#pairwise.perm.manova(fact = male_plot$id, resp = male_variables, nperm = 999)
+
+## Error in anova.mlm(lm(resp ~ fact), test = test) : residuals have rank 13 < 15
+## cannot figure out what this 13 means, as the residual degree of freedom is 103-15-1 = 87 and is bigger than the number of dimensions
+```
+
+```{r}
+#check for covarying variables
+library(corrplot)
+cor <- cor(male_variables)
+corrplot(cor, method = "color")
+
+```
+
+```{r,message=FALSE, warning=FALSE}
+male_nmds <- male_plot[, 28:30]
+#pairwise.perm.manova(fact = male_plot$id, resp = male_nmds, nperm = 999)
+```
+
+```{r}
+skim(female_variables)
+```
+```{r}
+skim(male_variables)
+```
+
+# One way anova 
+
+```{r}
+summary(male)
+```
+### ratio_maj_min_c
+```{r}
+test_1 <- aov(ratio_maj_min_c ~ name, data = male)
+summary(test_1)
+# 0.094
+```
+### ratio_maj_min_ub
+```{r}
+test_2 <- aov(ratio_maj_min_ub ~ name, data = male)
+summary(test_2)
+# 0.118
+```
+
+### ratio_maj_min_lb
+```{r}
+test_3 <- aov(ratio_maj_min_lb ~ name, data = male)
+summary(test_3)
+# 0.068
+```
+### ratio_color_c
+```{r}
+test_4 <- aov(ratio_colour_c ~ name, data = male)
+summary(test_4)
+# significant 
+```
+

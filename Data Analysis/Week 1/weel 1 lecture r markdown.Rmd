@@ -1,0 +1,11 @@
+---
+title: "week 1 lecture"
+author: "shuna"
+date: "2023-01-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+

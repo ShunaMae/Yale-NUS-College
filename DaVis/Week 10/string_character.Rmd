@@ -1,0 +1,219 @@
+---
+title: "string_character"
+author: "shuna"
+date: "3/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+homicides <- read_lines("homicides.txt")
+```
+
+```{r}
+class(homicides)
+length(homicides)
+```
+
+# spliting a string 
+```{r}
+x <- c("Herer is one sentence", "Here is another")
+str_split(x, " ")
+```
+
+```{r}
+str_split(x, "")
+```
+
+```{r}
+homicide_split <- str_split(homicides, ", ")
+toNumber <- function(x, i) {
+as.numeric(x[i])
+}
+homicide_coord <- tibble(
+lat = map_dbl(homicide_split, toNumber, 1),
+lon = map_dbl(homicide_split, toNumber, 2)
+)
+head(homicide_coord)
+```
+# combine strings 
+```{r}
+str_c("co", "m", "bine")
+```
+
+```{r}
+str_c("a", "b", "c", sep = ":")
+```
+
+```{r}
+str_sub(x, 9, -2)
+```
+
+# searching for strings that match a pattern 
+
+```{r}
+str_subset(state.name, "ia")
+```
+
+```{r}
+str_which(state.name, "ia")
+```
+
+```{r}
+str_detect(state.name, "ia")
+```
+
+```{r}
+letters
+```
+
+```{r}
+x <- c("Here is a sentence A.", "HERE IS A SENTENCE B.")
+str_to_upper(x)
+```
+
+```{r}
+x <- c("undefined understandable unmatch", "unbelievable something unagi")
+# only the first match
+str_replace(x, "un", "under")
+```
+
+```{r}
+str_replace_all(x, "un", "enjoy")
+```
+
+```{r}
+str_remove(x, "un")
+str_remove_all(x, "un")
+```
+
+# regular expressions 
+
+```{r}
+str_subset(state.name, "a")
+```
+```{r}
+str_subset(state.name, "^A")
+```
+
+```{r}
+str_subset(state.name, "nia$")
+```
+
+```{r}
+str_subset(state.name, "\\bD")
+```
+
+```{r}
+str_subset(state.name, "t\\b")
+```
+
+```{r}
+str_subset(state.name, "t\\B")
+```
+
+# replacing spelling 
+
+```{r}
+example_1 <- c("maximize", "minimise", "exercise")
+str_subset(example_1, "i[sz]e")
+```
+
+```{r}
+str_view_all(example_1, "i[sz]e")
+```
+
+```{r}
+str_subset(state.name, "t.n")
+```
+
+```{r}
+str_subset(state.name, "g.n")
+str_subset(state.name, "g..n")
+```
+
+```{r}
+example_2 <- c("at", "bat", "cat", "hat", "rat")
+str_view_all(example_2, "[bhr]at")
+```
+```{r}
+str_view_all(c("copper", "hum", "explain", "unite"), "[a-rw-z]")
+```
+
+```{r}
+example_1
+```
+
+```{r}
+str_view_all(example_1, "i[^s]e$")
+```
+
+```{r}
+example_4 <- c("enj", "eoj", "e$j", "e\\j")
+str_view_all(example_4, "e\\$j")
+```
+
+# white space 
+
+```{r}
+example_6 <- c(
+  "linebreak\nnext line",
+  "no.break",
+  "whitespace: the final frontier"
+)
+str_view_all(example_6, "\\s")
+```
+
+# punctuation 
+
+```{r}
+str_view_all(example_6, "[[:punct:]]")
+```
+
+```{r}
+dates <- c(
+"November 23rd",
+"Nov 23",
+"Nov 23rd",
+"November, the 23rd",
+"Nov 23, 1992"
+)
+```
+
+```{r}
+str_view_all(dates," \\d*\\b")
+```
+
+words must end in a number and cannot terminate with a space 
+```{r}
+str_view_all(dates, " \\d+\\b")
+```
+
+repetition occurs 7 times 
+
+```{r}
+str_view_all(dates, "[[:lower:]]{7}\\b")
+```
+
+# remove duplication 
+```{r}
+str_replace(
+"The chromosomes duplicated duplicated themselves.",
+"(\\b\\w+\\b) \\1",
+"\\1"
+)
+```
+
+```{r}
+files <- c("IMG8935.png", "page389.html")
+str_replace(
+files,
+"^([[:alpha:]]*\\d+)\\.(\\w{3,})$",
+"File \\1 has extension \\2."
+)
+```
+

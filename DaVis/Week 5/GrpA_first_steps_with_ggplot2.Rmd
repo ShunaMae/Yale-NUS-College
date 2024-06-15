@@ -1,0 +1,222 @@
+---
+title: "first_steps_with_ggplot2"
+author: "Group A: John Jacob Go, Ho Ning, I Yu-Heng, Shuna Maekawa"
+date: "2/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, fig.align = "center")
+```
+
+For these exercises, we need to load the following packages:
+```{r libraries, warning=FALSE}
+library(tidyverse)
+```
+
+# (1) Categorical data
+
+(a) Import CSV file as tibble and remove all columns except `class` and `survived`
+    ```{r, warning=FALSE}
+    # import csv 
+    titanic <- read_csv("titanic.csv")
+    titanic_1 <- titanic |> 
+      # select two columns using dplyr 
+      select(class, 
+             survived)
+    
+    # view the data  
+    glimpse(titanic_1)
+    ```
+
+(b) Make a bar plot of passengers by class
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(titanic_1, 
+           aes(class)) + 
+      # create a bar plot 
+      geom_bar() + 
+      # add titles 
+      labs(x = "Class", 
+           y = "Number of Passengers", 
+           title = "Number of Passengers per Class in Titanic",
+           caption = "Source: Encyclopedia Titanica") + 
+      # adjust the title to the center 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+(c) We can visualize the dependence of the number of survivors on their class using a stacked bar graph or dodged bar graph.
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(titanic_1, 
+           aes(class, fill = survived)) +
+      # create bar plot 
+      geom_bar() +
+      labs(x = "Class", 
+           y = "Number of Passengers", 
+           title = "Number of Passengers per Class in Titanic",
+           caption = "Source: Encyclopedia Titanica") +
+      # edit legends 
+      scale_fill_discrete(name = NULL, 
+                          labels = c("Died", "Survived")) + 
+      # adjust title to the center 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    # alternatively 
+    ggplot(data = titanic, 
+           aes(survived, 
+               fill = class)) +
+      # create a dodged bar plot 
+      geom_bar(position = "dodge2") +
+      labs(title = "Number of Survivors by Class", 
+           x = "Survived", 
+           y = "Number of Passengers",
+           caption = "Source: Encyclopedia Titanica") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+(d) Import built-in data set `Titanic`
+    ```{r}
+    titanic_2 <- apply(Titanic, c(1, 4), sum) |>
+      # convert to tibble 
+      as_tibble(rownames = "class") |>
+      # rename the columns 
+      rename(died = "No", 
+             survived = "Yes")
+    
+    # view the data 
+    glimpse(titanic_2)
+    ```
+
+`titanic_1` contains rows that represent information on individual passengers. Meanwhile, `titanic_2` contains aggregated data. For example, the number of passengers per class that died and survived have already been pre-counted. This makes it easier for us to recreate the bar plot in (b) but could possibly limit the types of data representation/graphs we can perform on `titanic_2`.
+
+(e) Add a column to `titanic_2` with the total number of passengers in each class
+    ```{r}
+    # add two columns together 
+    titanic_2$total <- titanic_2$died + titanic_2$survived
+    glimpse(titanic_2)
+    ```
+(f) Recreate the plot in (b) using `titanic_2`
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(titanic_2, 
+           aes(class, total)) +
+      # create a stacked bar chart 
+      geom_bar(stat = "identity") +
+      # add titles 
+      labs(x = "Class", 
+           y = "Number of Passengers", 
+           title = "Number of Passengers per Class in Titanic",
+           caption = "Source: Encyclopedia Titanica") + 
+      # adjust the title to the center 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+# (2) Distributions of quantitative data
+
+(a) Import built-in data set `morley` and change column `Expt` to be a factor
+    ```{r}
+    # import data 
+    data(morley)
+    # convert Expt to a factor 
+    morley$Expt <- as.factor(morley$Expt)
+    glimpse(morley)
+    ```
+(b) Make a scatter plot of `Speed` (y-axis) versus experiment number (x-axis)
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Expt, Speed)) + 
+      # scatter plot 
+      geom_point() + 
+      # add titles 
+      labs(title = "Observed Speeds in each experiment",
+           x = "Experiment number",
+           y = "Speed (km/sec)") + 
+      # title adjustment 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+(c) Make another scatterplot with `geom_jitter()`
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Expt, Speed)) +
+      # jittered plot 
+      geom_jitter(height = 0,
+                  width = 0.15, 
+                  size = 0.5) +
+      # titles 
+      labs(title = "Observed Speeds in each experiment",
+           x = "Experiment number",
+           y = "Speed (km/sec)") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+We have to change the default argument values of `width` and `height` in `geom_jitter()` because we are using this to avoid overplotting without changing the observed speed values. Some experiments have multiple observations of the same speed value and such points would overlap since they have the same x-coordinates. As such, we should keep `height = 0` to not change speed values but set `width` to be a small number like 0.15 to keep the points x-coordinates close to their original but also preventing the overlapping of points.
+
+(d) Briefly describe what a box plot shows in general
+- A boxplot shows a five number summary of a set of data including its minimum, maximum, median, and its first and third quartile.
+- A boxplot also shows outliers, which are points beyond the whiskers of each box, and the range of the data.
+- It is a good way to compare distributions of categorical variables.
+
+
+(e) Make a boxplot of the measured speeds with one box for each experiment number
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Expt, Speed)) + 
+      # boxplot 
+      geom_boxplot(width = 0.15, 
+                   size = 0.5) +
+      # titles 
+      labs(title = "Distribution of measured speeds in each experiment",
+           x = "Experiment number",
+           y = "Speed (km/sec)") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+(f) Make a violin plot with one violin for each experiment number
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Expt, Speed)) + 
+      # violin plot 
+      geom_violin() +
+      # titles 
+      labs(title = "Distribution of measured speeds in each experiment",
+           x = "Experiment number",
+           y = "Speed (km/sec)") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+(g) What is the advantage of a violin plot compared to a box plot? What is the disadvantage?
+- A violin plot shows full distribution of data, including the density in the distribution. We can see which values appear more frequently than others.
+
+- A violin plot does not show summary statistics that the box plot does such as the median and quartiles of the data.
+
+(h) Make a faceted plot with one histogram for each experiment's speed distribution
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Speed)) + 
+      # histogram 
+      geom_histogram(binwidth = 100) + 
+      # make the plots faceted 
+      facet_wrap(~ Expt) + 
+      # titles 
+      labs(title = "Distribution of measured speeds in each experiment",
+           x = "Speed (km/sec)",
+           y = "Frequency") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+
+(i) Show the speed distribution of each experiment as a frequency polygon
+    ```{r, fig.width = 5, fig.height = 4, out.width = '65%'}
+    ggplot(morley, 
+           aes(Speed, colour = Expt)) + 
+      # frequency polygon plot 
+      # binwidth set to 100 for consistency 
+      geom_freqpoly(binwidth = 100) + 
+      # titles 
+      labs(title = "Distribution of measured speeds in each experiment",
+           x = "Speed (km/sec)",
+           y = "Frequency",
+           colour = "Experiment number") + 
+      theme(plot.title = element_text(hjust = 0.5))
+    ```
+(j) What is the advantage of using non-faceted frequency polygons compared to faceted histograms? What is the disadvantage?
+
+- Non-faceted frequency polygons makes it easy to compare the distribution between each experiment as compared to a faceted histogram, since they are all on the same plot. 
+
+- However, with non-faceted frequency polygons, there is a possibility of overplotting and this would hinder comparison between the distributions of different groups in the data.

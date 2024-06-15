@@ -1,0 +1,251 @@
+---
+title: "Solutions: Flights from New York City"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  bookdown::pdf_document2:
+  number_sections: false
+toc: false
+header-includes: 
+  - \usepackage{hyperref}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, fig.align = "center")
+```
+
+I need the following packages for these solutions:
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+
+(1)
+
+    (a) The following pipeline returns a numeric vector of length 1.
+        Instead of `nrow()`, we may use `count()` or `tally()`, which return
+        a tibble with 1 row and 1 column.
+
+        ```{r}
+        flights |>
+          filter(arr_delay >= 120) |>
+          nrow()
+        ```
+
+    (b)
+    
+        ```{r}
+        flights |>
+          filter(origin == "JFK", dest %in% c("IAH", "HOU")) |>
+          nrow()
+        ```
+    
+    (c) Midnight appears as `2400` in `dep_time`.
+    
+        ```{r}
+        flights |>
+          filter(dep_time <= 600 | dep_time == 2400) |>
+          nrow()
+        ```
+    
+(2)
+
+    (a)
+    
+        ```{r}
+        flights_with_na_dep_time <-
+          flights |>
+          filter(is.na(dep_time))
+        nrow(flights_with_na_dep_time)
+        ```
+    
+    (b) The return value of the next pipeline answers: "Do all of these
+        flights also have a missing `arr_time`?"
+    
+        ```{r}
+        flights_with_na_dep_time |>
+          pull(arr_time) |>
+          is.na() |>
+          all()
+        ```
+    
+    (c) Flights that have missing departure times are probably cancelled
+        flights in the sense that they never departed.
+        The fact that none of these flights has a known arrival time is
+        circumstantial evidence that supports this hypothesis.
+    
+(3)
+
+    ```{r}
+    flights |>
+      group_by(dest) |>
+      summarise(mean_air_time = mean(air_time, na.rm = TRUE)) |>
+      slice_max(order_by = mean_air_time, n = 10)
+    ```
+    
+(4)
+    
+    ```{r}
+    flights |>
+      mutate(speed_mph = 60 * distance / air_time) |>
+      select(air_time, distance, speed_mph, dest) |>
+      slice_min(speed_mph, n = 10)
+    ```
+    
+(5)
+
+    ```{r}
+    select(flights, ends_with("dep_time"))
+    ```
+
+(6) We can use the function `contains()`.
+
+    ```{r}
+    dep_info <- 
+      flights |>
+      select(contains("dep")) |>
+      print()
+    ```
+
+(7)
+
+    (a)
+
+        ```{r}
+        dep_info <-
+          dep_info |>
+          mutate(diff_time = dep_time - sched_dep_time) |>
+          print()
+        ```
+    
+        ```{r echo=FALSE}
+        n_mismatches <- dep_info |>
+          filter(diff_time != dep_delay) |>
+          nrow()
+        ```
+        
+    (b) At first glance, we would expect `diff_time` and `dep_delay` to be
+        equal.
+        However, as the next code chunk shows, there are
+        `r format(n_mismatches, big.mark = ",")` flights for which `diff_time`
+        and `dep_delay` differ.
+        
+        ```{r}
+        dep_info |>
+          filter(diff_time != dep_delay) |>
+          nrow()
+        ```
+
+        The explanation is that times are treated as if they were measured in
+        a decimal system.
+        However, one hour has only 60 minutes, not 100.
+    (c)
+    
+        ```{r}
+        dep_info <-
+          dep_info |>
+          mutate(
+            dep_hour = dep_time %/% 100,
+            dep_min = dep_time %% 100,
+            sched_dep_hour = sched_dep_time %/% 100,
+            sched_dep_min = sched_dep_time %% 100,
+            diff_time =
+              60 * (dep_hour - sched_dep_hour) + dep_min - sched_dep_min
+          ) |>
+          select(dep_time, sched_dep_time, diff_time, dep_delay)
+        ```
+    
+        In most rows, we now have `diff_time == dep_delay`, but not in all.
+        Let us print the first few rows in which `diff_time` and `dep_delay`
+        are different.
+    
+        ```{r}
+        filter(dep_info, diff_time != dep_delay)
+        ```
+    
+        In each of these rows, the flight departed the following day.
+        A proper fix would require working with dates and times.
+        We will learn more about R's date-time structures later in this
+        course.
+        Here is a quick and dirty fix that does the job in the present
+        example.
+        We add 1440 to the time difference, which is the number of minutes
+        in a day.
+    
+        ```{r}
+        dep_info <-
+          dep_info |>
+          mutate(
+            dep_hour = dep_time %/% 100,
+            dep_min = dep_time %% 100,
+            sched_dep_hour = sched_dep_time %/% 100,
+            sched_dep_min = sched_dep_time %% 100,
+            diff_time_tmp =
+              60 * (dep_hour - sched_dep_hour) + dep_min - sched_dep_min,
+            diff_time = if_else(
+              diff_time_tmp == dep_delay,
+              diff_time,
+              diff_time_tmp + 1440
+            )
+          ) |>
+          select(dep_time, sched_dep_time, diff_time, dep_delay)
+        ```
+    
+        Now we find the expected equality between `diff_time` and `dep_delay`.
+    
+        ```{r}
+        all(dep_info$diff_time == dep_info$dep_delay, na.rm = TRUE)
+        ```
+    
+(8)
+
+    ```{r fig.width=3.75, fig.height=3, out.width='45%'}
+    daily_info <-
+      flights |>
+      group_by(year, month, day) |>
+      summarise(
+        mean_dep_delay = mean(dep_delay, na.rm = TRUE),
+        prop_cancelled = mean(is.na(dep_time))
+      )
+    ggplot(daily_info, aes(mean_dep_delay, prop_cancelled)) +
+      geom_point(alpha = 0.5) +
+      labs(
+        title = "Daily Cancellations vs. Departure Delay",
+        caption = "Source: RITA, Bureau of Transportation Statistics",
+        x = "Mean departure delay (minutes)",
+        y = "Cancelled flights"
+      ) +
+      scale_y_continuous(labels = scales::percent)
+    ```
+
+    The percentage of cancelled flights tends to increase as the mean departure
+    delay increases.
+    
+(9) In hour 1, there is only one flight, and its `dep_delay` equals `NA`.
+    Thus, `mean_dep_delay` in hour 1 is also `NA`.
+    Let us remove this row with `drop_na()`.
+    I set the breaks along the x-axis at multiples of 6 because hours follow a
+    duodecimal system.
+
+    ```{r fig.width=3.75, fig.height=3, out.width='45%'}
+    hourly_info <-
+      flights |>
+      group_by(hour) |>
+      summarise(mean_dep_delay = mean(dep_delay, na.rm = TRUE)) |>
+      drop_na()
+    ggplot(hourly_info, aes(hour, mean_dep_delay)) +
+      geom_line() +
+      geom_point() +
+      labs(
+        title = "Departure Delay vs. Hour of Day",
+        caption = "Source: RITA, Bureau of transportation statistics",
+        x = "Hour",
+        y = "Mean departure delay (minutes)"
+      ) +
+      scale_x_continuous(breaks = c(6, 12, 18))
+    ```
+
+    If we want to avoid departure delays, we should fly early in the morning.
+

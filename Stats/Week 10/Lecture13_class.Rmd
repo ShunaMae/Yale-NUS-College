@@ -1,0 +1,105 @@
+---
+title: "Lecture13_class"
+output: html_document
+date: '2022-03-22'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+the t-test and linear model are the same 
+
+```{r}
+
+rnorm_fixed = function(N, mu = 0, sd = 1)
+  scale(rnorm(N)) * sd + mu
+
+y = c(rnorm(15), exp(rnorm(15)), runif(20, min = -3, max = 0)) 
+x = rnorm_fixed(50, mu = 0, sd = 1)
+y2 = rnorm_fixed(50, mu = 0.5, sd = 1.5)  
+value = c(y, y2)
+group = rep(c('y1', 'y2'), each = 50)
+
+a = t.test(y, y2, var.equal = TRUE)
+
+a
+
+b = lm(value ~ 1 + group) 
+
+summary(b)
+
+value = c(y, y2)
+group = rep(c('y1', 'y2'), each = 50)
+group_y2 = ifelse(group == 'y2', 1, 0)
+
+b = lm(value ~ 1 + group_y2)
+```
+
+what about for annovas?
+
+```{r}
+
+data = data.frame(height = c(82, 93, 61, 74, 69, 70, 53,
+                            71, 62, 85, 94, 78, 66, 71, 
+                            64, 73, 87, 91, 56, 78, 87),
+                  genotype = c(rep("AA", 7), rep("Aa", 7), rep("aa", 7)))
+
+```
+
+
+#### interaction tests
+
+```{r}
+library(datasets)
+
+data <- esoph
+head(data)
+
+model <- aov(ncases ~ agegp + alcgp + agegp*alcgp, data = data)
+summary(model)
+
+interaction.plot(x.factor = data$alcgp, #x-axis variable
+                 trace.factor = data$agegp, #variable for lines
+                 response = data$ncases, #y-axis variable, 
+                 col = c("red", "green", "blue", "orange", "pink", "black"),
+                 fun = median, #metric to plot
+                 ylab = "ncases",
+                 xlab = "alcohol consumption",
+                 lty = 1, #line type
+                 lwd = 2, #line width
+                 trace.label = "Age")
+
+
+
+```
+
+
+
+```{r}
+data = read.delim("badinteraction.tsv", sep="\t")
+data
+```
+
+```{r}
+model_interactive <- aov(response ~ factora * factorb, data = data)
+summary(model_interactive)
+```
+
+```{r}
+model_really_bad <- aov(response ~ factora + factorb, data = data)
+summary(model_really_bad)
+ggplot(data = data, aes(factora, response)) + 
+  geom_point(colour = data$factorb) +
+  geom_smooth(method = 'lm', formula = y~x)
+  
+```
+
+```{r}
+library(tidyverse)
+ggplot(data, aes(factora, response, color = factorb))+
+  geom_point() +
+  geom_smooth(method = 'lm', formula = y ~ x )
+```
+

@@ -1,0 +1,107 @@
+---
+title: "Plotly Tutorial"
+author: "Team Red"
+date: "4/7/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+Packages needed for this tutorial: 
+```{r}
+library(tidyverse)
+library(plotly)
+```
+
+# Introduction and Contextualization 
+The R package, **plotly** enables us to creative beautiful graphs with interactive graphics. The interactivity aspect is useful in instances where the data set we are dealing with includes a lot of text information or when there is not enough space to plot everything (i.e., data looks really small and compressed). By including interactivity on the graph, users can access information easier, for example, hovering over a point in a bubble chart to see the exact values of the coordinates and name of which country, school, etc., the point represents. 
+
+There are also lots of parallels between **plotly** and ggplot in the sense that most of the plots that can be created with ggplot can also be created with **plotly**, adding interactivity as a unique feature. 
+
+The function used to plot graphs in **plotly** is `plot_ly()`. The first input to the function has to be the data set you are working with. Then, you can allocate variable names to "visual properties (e.g., `x`, `y`, `color`, etc)". We will look at how to plot different types of plots using this function shortly[^1]. 
+
+[^1]: <https://plotly-r.com/overview.html> Accessed on 7/4/2022
+
+# Layout 
+The `layout()` function is an essential part in plotting graphs in **plotly** as it will be commonly used. The argument, `layout()` can add and modify different parts of the layout of your graph, including, setting the title, axis labels, axis range, plot size, etc. 
+
+```{r}
+layout(
+  plot_ly(mtcars, x = ~mpg, y = ~hp),
+  title = "Miles/(US) gallon and horsepower"
+)
+```
+
+However, when we start to plot graphs that are more complex, it may be harder to read the code in the above example. Hence, we can use the pipe function `|>` to make it easier to read and create the same graph, just insert the title into the `layout()` function as it is the only addition to the layout of our graph[^1]. 
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  layout(
+    title = "Miles/(US) gallon and horsepower",
+    autosize = FALSE, width = 600, height = 500
+  )
+```
+
+# Basic Charts 
+
+### Scatterplots 
+
+As seen in the previous section, `plot_ly()` will plot the data as a scatter plot if the data you input for both variables are both quantitative data. Just inputting the data and variables will you give a basic scatter plot (as seen under the section, 'Layout'). 
+
+Another way to plot a scatter plot is by using `add_markers()`, which is for indicating what kind of plot you want to produce[^2]. However, this may not always be needed because `plot_ly()` will plot a scatter plot from two quantitative variables without any specification. 
+
+[^2]: <https://plotly-r.com/scatter-traces.html#markers> Accessed on 7/4/2022
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_markers() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+To customize your scatter plot even further, you'll have to add the argument `marker = `[^3]. 
+
+[^3]: <https://plotly.com/r/line-and-scatter/> Accessed on 7/4/2022. 
+
+```{r}
+mtcars |>
+  plot_ly(
+    x = ~mpg, y = ~hp,
+    marker = list(
+      size = 10,
+      color = "red",
+      opacity = 0.5
+    )
+  ) |> # Note that plotly uses 'opacity' instead of 'alpha' to adjust the opacity of points!
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+### Line Charts
+
+Line charts also requires two variables of quantitative data for input. In order to change it to a line chart, we have to add the argument `add_lines()` to the plot. 
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_lines() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+### Bubble Chart 
+
+Bubble charts in **plotly** are based off the same arguments for creating a scatter plot. The only distinguishing detail is that we have to assign a variable to the argument `size = ` within the `marker = ` list[^4].
+
+[^4]: <https://plotly.com/r/bubble-charts/> Accessed on 7/4/2022. 
+
+```{r}
+mtcars |>
+  plot_ly(
+    x = ~mpg, y = ~hp,
+    marker = list(size = ~wt, opacity = 0.5, color = "red")
+  ) |>
+  add_markers() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+```

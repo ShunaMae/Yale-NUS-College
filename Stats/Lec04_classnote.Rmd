@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+1 - dbinom(0,20,0.1) - dbinom(1,20,0.1)
+```
+```{r}
+1 - pbinom(1,20,0.1)
+```
+
+```{r}
+hist(rbinom(10000,20,0.1))
+```
+```{r}
+mean(rpois(10000,3))
+var(rpois(10000,3))
+```
+
+```{r}
+hist(rnorm(10000,0,1))
+```
+
+
+```{r}
+plot(ecdf(rnorm(100000,0,1)))
+lines(ecdf(rnorm(100000,1,1)), col = 'red')
+lines(ecdf(rnorm(100000,2,1)), col = 'darkgreen')
+```
+
+```{r}
+plot(ecdf(rnorm(10000,0,1)))
+lines(ecdf(rnorm(10000,0,2)), col = 'red')
+lines(ecdf(rnorm(10000,0,3)), col = 'darkgreen')
+lines(ecdf(rnorm(10000,0,0.5)), col = 'darkblue')
+```
+```{r}
+pnorm(-3, mean = 0, sd = 1)
+```
+
+```{r}
+pnorm(-2, mean = 0, sd = 1)
+```
+
+```{r}
+pnorm(1, mean = 0, sd = 1) - pnorm(-1, mean = 0, sd = 1)
+```
+
+```{r}
+pnorm(2, mean = 0, sd = 1) - pnorm(-2, mean = 0, sd = 1)
+```
+```{r}
+worldbank
+```
+
+```{r}
+# standarization using z-score
+library(dplyr)
+library(ggplot2)
+worldbank %>%
+  mutate(z = (Population_growth - mean(Population_growth)) / sd(Population_growth))%>%
+  ggplot(aes(x = z))+
+  geom_histogram(fill = "white", color = "black")
+           
+```
+

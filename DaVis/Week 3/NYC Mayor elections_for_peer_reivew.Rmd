@@ -1,0 +1,117 @@
+---
+title: "New York Mayoral Election 2017"
+author: "Group A"
+date: "1/26/2022"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(kableExtra)
+ny_mayor <- read.csv("ny_mayor.csv")
+library(tidyverse)
+library(scales)
+```
+
+## Introduction
+
+An election for Mayor of New York City was held on November 7, 2017. 
+
+> ‘Incumbent Democrat Bill de Blasio won reelection to a second term with 66.2% 
+of the vote against Republican Nicole Malliotakis.’ [^1]
+
+This following exercise will show the results of the election in tables. 
+
+[^1]: <https://en.wikipedia.org/wiki/2017_New_York_City_mayoral_election> Accessed on 26/1/2022
+
+## Data presented as a table
+
+
+```{r table, echo = FALSE}
+ny_mayor[nrow(ny_mayor) + 1, ] <- c("Total", sum(ny_mayor$de_blasio), sum(ny_mayor$malliotakis), sum(ny_mayor$other))
+# from: https://statisticsglobe.com/add-new-row-to-data-frame-in-r accessed on 29/1/2022
+
+kbl(
+  ny_mayor,
+  caption = "New York Mayoral Election 2017",
+  format.args = list(big.mark = ","),
+  col.names = c("Borough", "de Balsio", "Malliotakis", "Other")
+) |>
+  add_header_above(c("", "Candidate" = 3)) |>
+  kable_paper(full_width = F, html_font = "Arial") |>
+  kable_styling("striped", full_width = F) |>
+  row_spec(5, extra_css = "border-bottom: 1px solid;") |>
+  # from: https://stackoverflow.com/questions/68010981/table-with-package-kableextra-how-to-add-lines-to-the-tables
+  footnote(
+    general_title = " ",
+    general = c("<small>Source: CNN </small>"),
+    footnote_as_chunk = T,
+    escape = F
+  )
+# from: https://stackoverflow.com/questions/60176526/kableextra-change-font-size-of-table-footnote accessed on 29/1/2022
+# Could not find how to modify "CNN" to the colour blue and add the hyperlink to it.
+```
+
+## Data presented as a bar plot
+```{r bar plot, echo = FALSE}
+ny_mayor_long <- read_csv("ny_mayor.csv") |>
+  mutate(borough = str_replace(borough, " ", "\n")) |>
+  pivot_longer(-borough) |>
+  mutate(name = fct_rev(name))
+ggplot(ny_mayor_long, aes(borough, value, fill = name)) +
+  geom_col(position = "dodge") +
+  scale_x_discrete(limits = rev) +
+  coord_flip() +
+  scale_y_continuous(labels = label_comma()) +
+  scale_fill_manual(
+    labels = c("Other", "Malliotakis", "de Blasio"),
+    values = c("palegreen4", "firebrick2", "steelblue")
+  ) +
+  labs(
+    title = "New York Mayoral Election 2017",
+    caption = "Source: CNN",
+    x = "Borough",
+    y = "Votes",
+    fill = "Candidate"
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(legend.key.size = unit(1, "lines"))
+```
+
+
+## What is better: table or bar plot?
+Advantages of a table:
+
+- Ability to know the exact values for each data point. 
+- The data will be organised such that the data for each candidate is grouped
+together in one column, making it easy to locate which data point you 
+want to look at according to the borough. 
+
+Disadvantages of a table: 
+
+- Inability to instantly read trends for the candidates over different boroughs. 
+- Readers may not be able to know which candidate has the most votes 
+at a quick glance. 
+
+Advantages of a bar plot:
+
+- Readers are able to visualize the data for each candidate at a glance, thus, 
+conveniently knowing each candidate has the most or least votes for each Borough. 
+- This also leads to the data being easily understood among a wider audience. 
+- Each bar can also be filled with color, making the trends bold and clear for 
+every candidate. 
+- In the bar chart shown above, the colors, blue, red, and green are 
+distinguished easily from each other, enabling easier interpretations of the 
+data. 
+
+Disadvantages of a bar plot:
+
+- Not being able to know the exact number of votes each candidate has, only a 
+rough gauge on where the number lies along the x-axis. 
+- Additionally, having different data sets plotted on the same bar plot means 
+that some data sets might get 'squished' (e.g. differences in the 'Other' borough 
+cannot be seen clearly because the scale is dominated by the larger 'de Blasio' 
+borough data). 

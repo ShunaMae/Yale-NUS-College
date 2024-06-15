@@ -1,0 +1,39 @@
+---
+title: "Stats for LS Week 2"
+author: "shuna"
+date: "1/21/2022"
+output: html_document
+---
+```{r}
+probability = c()
+# the index srarts from 0
+# so when i starts from 0, it starts from probability[0], which does not exist. 
+# so need to start from probability[1]
+for (i in c(0:100)){
+  probability[i+1] = (365-i)/365
+}
+```
+
+```{r}
+# see, index 0 does not exist 
+probability[0]
+```
+```{r}
+1 - prod(probability[1:23])
+```
+
+```{r}
+dbinom(x = 5, size = 20, prob = 0.1)
+```
+```{r}
+1 - dbinom(1,20,0.1) - dbinom(0,20,0.1)
+```
+
+```{r}
+dpois(x = 4, lambda = 5)
+```
+
+```{r}
+dbinom(x = 4, size = 10000, prob = 5 * 10^-4)
+```
+

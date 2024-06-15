@@ -1,0 +1,184 @@
+---
+title: "Week08_davis_fri"
+author: "shuna"
+date: "3/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE) 
+```
+
+```{r}
+library(countrycode)
+library(gapminder)
+library(readxl)
+library(tidyverse)
+```
+
+# 1. load data 
+
+```{r}
+gdp <- readxl::read_excel("gdp.xls", skip = 3, sheet = "Data") |>
+  rename(country = "Country Name", country_code = "Country Code")
+life <- readxl::read_excel("life.xls", skip = 3, sheet = "Data") |>
+  rename(country = "Country Name", country_code = "Country Code")
+pop <- readxl::read_excel("pop.xls", skip = 3, sheet = "Data") |>
+  rename(country = "Country Name", country_code = "Country Code")
+```
+
+# 2. check country code 
+
+```{r}
+all(gdp$country_code == life$country_code)
+all(gdp$country_code == pop$country_code)
+```
+# 3. merge the three speadsheets into a single tibble
+```{r}
+gdp_pivoted <- pivot_longer(
+  data = gdp, 
+  cols = c('1960':'2020'),
+  names_to = "year",
+  values_to = "gdp"
+  ) |>
+  select(country, country_code, year, gdp)
+
+life_pivoted <- pivot_longer(
+  data = life, 
+  cols = c('1960':'2020'),
+  names_to = "year",
+  values_to = "life"
+  )|>
+  select(country, country_code, year, life)
+
+pop_pivoted <- pivot_longer(
+  data = pop, 
+  cols = c('1960':'2020'),
+  names_to = "year",
+  values_to = "pop"
+  ) |>
+  select(country, country_code, year, pop)
+
+
+wb <- gdp_pivoted |>
+  left_join(life_pivoted) |>
+  left_join(pop_pivoted)
+```
+
+# 4. What "countries" do not have the matching codes? Do the result make sense? 
+```{r}
+wb |>
+  anti_join(codelist, by = c("country_code" = "iso3c")) |>
+  select("Country", "Country code") |>
+  unique()
+```
+
+
+# 5. Use dplyr to remove rows that do not match any country code in codelist. 
+```{r}
+wb_removed <- wb |>
+  semi_join(codelist, by = c("country_code" = "iso3c"))
+```
+
+# 6. 
+```{r}
+wb <- wb_removed |>
+  filter(!(is.na(gdp) | is.na(life) | is.na(pop)))
+
+missing_values <- wb_removed |>
+  filter(is.na(gdp) | is.na(life) | is.na(pop)) |>
+  group_by(year) |>
+  summarise(na_countries = n())
+
+head(missing_values, n = 6)
+```
+
+
+# 7. Plot the number of missing countries per year 
+```{r}
+ggplot(data = missing_values, aes(as.integer(year), na_countries)) + 
+  geom_line() +
+  labs(
+    x = "Year",
+    y = "Number of Countries with NA",
+    title = "Countries with NA by year",
+    caption = "Source: World Bank"
+  ) + 
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  ) +
+  ylim(0,225) +
+  scale_x_continuous(breaks= c(seq(1960, 2020, 10)))
+```
+
+# 8
+```{r}
+gap <-
+  gapminder_unfiltered |>
+  filter(country != "Netherlands Antilles") |>
+  mutate(country_code = countrycode(country, "country.name", "iso3c"))
+```
+
+## Are there countries in gap without a country code?
+```{r}
+sum(is.na(gap$country_code))
+```
+## Are there countries that share the same country code? 
+```{r}
+gap |>
+  select(country, country_code) |>
+  distinct() |>
+  group_by(country_code) |>
+  summarise(overlaps = n()) |>
+  filter(overlaps != 1) 
+```
+
+```{r}
+all(length(unique(gap$country_code)) == length(unique(gap$country)))
+```
+
+# 9. Which countries are in gap but not in wb 
+
+```{r}
+gap |>
+  select(country) |>
+  filter(!(country %in% wb$country)) |>
+  distinct() 
+```
+
+# 10. 
+
+```{r}
+wb <- wb |>
+  filter(year == 2007) |>
+  select(country, gdp_wb = gdp)
+gap <- gap |>
+  filter(year == 2007) |>
+  select(country, gdp_gap = gdpPercap)
+
+wb
+gap
+wb_gap <- wb |>
+  inner_join(gap)
+wb_gap
+```
+
+# 11.
+```{r}
+Q11 <- wb_gap |>
+  mutate(perc = 100*(gdp_gap - gdp_wb)/gdp_wb)
+```
+
+
+# 12. 
+```{r}
+Q11 |>
+  arrange(perc) |>
+  head(5)
+
+Q11 |>
+  arrange(-perc) |>
+  head(5)
+```
+
+

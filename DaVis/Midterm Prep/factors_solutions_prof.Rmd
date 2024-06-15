@@ -1,0 +1,218 @@
+---
+title: "Solutions: Categorical data in the General Social Survey"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+date: "3 February 2022"
+output:
+  html_document:
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For this exercise, we need the following libraries.
+
+```{r, message=FALSE}
+library(formattable)
+library(kableExtra)
+library(tidyverse)
+```
+
+
+# 'Race' of respondents
+
+(a)
+
+    ```{r}
+    levels(gss_cat$race)
+    ```
+
+(b)
+
+    ```{r}
+    table(gss_cat$race)
+    ```
+
+(c)
+
+    ```{r}
+    nice_table <- function(gss_col_name, table_col_name) {
+      table(gss_cat[[gss_col_name]]) |>
+        as.data.frame() |>
+        mutate(Freq = color_bar("lightgreen")(Freq)) |>
+        kbl(
+          col.names = c(table_col_name, "Frequency"),
+          align = c("l", "r"),
+          escape = FALSE
+        ) |>
+        kable_styling(c("striped", "condensed"), full_width = FALSE)
+    }
+    nice_table("race", "Race")
+    ```
+
+(d)
+
+    ```{r}
+    gss_cat$race_drop_unused <- fct_drop(gss_cat$race)
+    levels(gss_cat$race_drop_unused)
+    ```
+
+    'Not applicable' is not a level of `"gss_cat$race_drop_unused"`.
+(e)
+
+    ```{r}
+    nice_table("race_drop_unused", "Race")
+    ```
+
+    The row for 'Not applicable' has disappeared.
+(f)
+
+    ```{r}
+    gss_cat$race_drop_unused <- fct_infreq(gss_cat$race_drop_unused)
+    nice_table("race_drop_unused", "Race")
+    ```
+
+
+# Investigating the reported income
+
+(a)
+
+    ```{r}
+    levels(gss_cat$rincome)
+    ```
+
+(b)
+
+    ```{r}
+    nice_table("rincome", "Reported income")
+    ```
+    
+    The order of the rows is not intuitive.
+    It would be more conventional to sort the income levels from smallest to
+    largest.
+    The non-numeric answers should be at the end.
+    
+    Another small issue is that some levels have the pattern '... to ...' and
+    other levels '... - ...'.
+    It would be nice to choose a uniform pattern.
+    
+    The abbreviation 'Lt' for 'Less than' is not self-explanatory.
+
+(c)
+
+     We could manually replace the levels with `" - "` by similarly named
+     levels with `"to"`. However, in the following pipeline, I take a shortcut
+     using `str_replace()` from the **stringr** package.
+     
+    ```{r}
+    gss_cat$rincome_improved <-
+      gss_cat$rincome |>
+      fct_recode("Less than $1000" = "Lt $1000") |>
+      fct_relevel("Not applicable", after = 0) |>
+      fct_rev() |>
+      fct_relabel(~ str_replace(.x, " - ", " to "))
+    nice_table("rincome_improved", "Reported income")
+    ```
+
+
+# Party affiliation
+
+(a)
+
+    ```{r}
+    levels(gss_cat$partyid)
+    ```
+
+(b)
+
+    ```{r}
+    gss_cat$partyid_aggregated <-
+      gss_cat$partyid |>
+      fct_collapse(
+        Republican = c("Strong republican", "Not str republican"),
+        Independent = c("Ind,near rep", "Independent", "Ind,near dem"),
+        Democrat = c("Not str democrat", "Strong democrat"),
+        Other = "Other party",
+        Missing = c("No answer", "Don't know")
+      ) |>
+      fct_relevel("Republican", "Independent", "Democrat", "Other", "Missing")
+    levels(gss_cat$partyid_aggregated)
+    ```
+
+(c)
+
+    ```{r}
+    nice_table("partyid_aggregated", "Party affiliation")
+    ```
+
+
+# Religion and denomination
+
+(a)
+
+    ```{r}
+    gss_cat$is_protestant <- fct_other(gss_cat$relig, "Protestant")
+    ```
+
+(b)
+
+    ```{r}
+    gss_cat$has_denom <-
+      fct_other(gss_cat$denom,
+        keep = c(
+          "No answer",
+          "Don't know",
+          "No denomination",
+          "Not applicable"
+        ),
+        other_level = "Has a denomination"
+      ) |>
+      fct_relevel(c(
+        "Has a denomination",
+        "No denomination",
+        "Not applicable",
+        "Don't know"
+      ))
+    ```
+
+(c)
+
+    Conversion from two-way table to data frame requires
+    `as.data.frame.matrix()`, see
+    <https://stackoverflow.com/questions/47216508/create-two-way-table-and-change-to-data-frame-format>.
+
+    ```{r}
+    dfr <-
+      table(gss_cat$has_denom, gss_cat$is_protestant) |>
+      as.data.frame.matrix()
+    ```
+
+    I store the maxima of `Protestant` and `Other` in variables `max_prot` and
+    `max_other`, respectively so that we can scale the column widths later on.
+    
+    ```{r}
+    max_prot <- max(dfr$Protestant)
+    max_other <- max(dfr$Other)
+    ```
+
+    The argument `color_bar_scale` in the next code chunk determines the
+    overall width of the table.
+    I aim to keep the bars relatively short to minimise data ink.
+    
+    ```{r}
+    color_bar_scale <- 5e-4
+    dfr |>
+      mutate(
+        Protestant = color_bar("lightgreen")(Protestant),
+        Other = color_bar("lightblue")(Other)
+      ) |>
+      kbl(
+        escape = FALSE,
+        align = c("r", "r")
+      ) |>
+      kable_styling(c("striped", "condensed"), full_width = FALSE) |>
+      column_spec(2, width = str_c(color_bar_scale * max_prot, "em")) |>
+      column_spec(3, width = str_c(color_bar_scale * max_other, "em"))
+    ```

@@ -1,0 +1,32 @@
+---
+title: "lln"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Law of large numbers
+
+
+
+```{r}
+p_h = 0.5
+n = 1000
+results = c()
+proportion_h = c()
+for(i in 1:n){
+  # the choices are head or tail, you pick one, with the pribability 50-50
+  results = c(results, sample(c("H", "T"), 1, prob=c(0.5, 0.5)))
+  proportion_h = c(proportion_h, sum(results=="H")/length(results))
+  
+}
+
+plot(proportion_h, xlab="Number of trials", ylab="estimated p_h", ylim=c(0,1), type="l")
+abline(h=0.5, col='red', lty='dashed')
+```
+
+

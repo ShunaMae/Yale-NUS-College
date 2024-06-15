@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#load the packages 
+library(tidyverse)
+library(tibble)
+library(ggplot2)
+library(vegan)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(infer)
+library(patchwork)
+library(dplyr)
+library(plyr)
+```
+
+```{r}
+test <- read_csv("EuryWL.csv")
+```
+
+
+
+```{r}
+
+glimpse(test)
+```
+
+```{r}
+nmds <- test %>%
+  select(-Idc,-Idb, -Idfly, -Idf, -Win, -Grapple)
+
+
+
+```
+
+```{r}
+glimpse(nmds)
+```
+
+```{r}
+nmds_values <- nmds %>%
+  metaMDS(., distance="jaccard", k=3, trymax=50, trace = 2)
+```
+
+
+```{r}
+# add nmds scores to the original data
+fly <-  nmds_values %>% 
+  #extract nmds scores 
+  scores(., choices = c(1:3), display=c("sites"))%>%
+  data.frame(.) %>%
+  bind_cols(test, .)
+```
+
+```{r}
+# plot the entire nmds 
+p1 <-  ggplot() +
+  geom_point(data = fly, 
+             aes(x=NMDS1, y=NMDS2, colour = Win), 
+             alpha = 0.7)
+
+
+p1
+```
+
+```{r}
+#make community matrix - extract columns with abundance information, turn data frame into matrix
+all_test = fly[,6:19]
+all_matrix= as.matrix(all_test)
+
+anosim_all = anosim(all_matrix, fly$Win, distance = "bray", permutations = 9999)
+anosim_all
+```
+

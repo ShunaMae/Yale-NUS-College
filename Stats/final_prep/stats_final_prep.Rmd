@@ -1,0 +1,1590 @@
+---
+title: "Final Prep"
+author: "Shuna"
+output: 
+  prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
+  toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+# Problem Set 1 
+
+```{r, include=FALSE}
+library(tidyverse)
+library(survival)
+library(survminer)
+library(tidyverse)
+library(xtable)
+library(car)
+library(GGally)
+```
+
+
+
+## Conditional Probability 
+
+Baye's theorem 
+
+$$
+P(A|B) = \frac{P(A) \times P(B|A)}{P(B)}
+$$
+
+### Question 1
+
+#### Part 1
+
+#### Set ups 
+A test for this disease is highly accurate but not quite perfect. It correctly identifies 95% of patients with the disease but also incorrectly concludes that 1% of the noninfected samples have the disease. 
+
+You get a positive result - what is frequency of the disease in the population would mean that
+
+a) you have >50% chance of having the disease 
+b) you have >99% chance of having the disease 
+
+
+**Answers**
+
+Let $P(D)$ be the probability of having the disease (which is what's asked in the question). 
+
+Let $P(T)$ be the probability of being tested positive. 
+
+Being tested positive is consisted of two cases, one is you have the disease and get the positive result, and the other is you don't have the disease but get the positive result. 
+
+Combining these two, $P(T)$ can be expressed as below:
+
+$$
+P(T) = P(D) \times 0.95 + \left(1-P(D)\right)\times 0.01
+$$
+
+
+$P(T|D)$ denotes the probability of a positive result given having the disease, therefore $P(T|D) = 0.95$. 
+
+$P(D|T)$ denotes the probability of having the disease given getting the positive result, which is $0.5$ in `(a)` and $0.99$ in `(b)`. 
+
+Applying the Bayes Theorem, we get the following equation:
+
+$$
+P(D|T) = \frac{P(T|D)\times{P(D)}}{P(T)}
+$$
+
+##### (a) you have >50% chance of having the disease 
+
+
+
+$$
+\begin{align}
+&0.5 < \dfrac{0.95\times P\left( D\right) }{0.95\times P\left( D\right) +\left( 1-P\left( D\right) \right) \times 0.01} \\
+\Leftrightarrow\ &0.5 < \dfrac{0.95\times P\left( D\right) }{0.01+0.94\times P\left( D\right) } \\
+\Leftrightarrow \ &0.5 < \dfrac{0.95\times P\left( D\right) }{\dfrac{1}{100}\left( 1+94\times P\left( D\right) \right) } \\
+\Leftrightarrow \  &0.5 < \dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } \\ 
+\Leftrightarrow\  & 0.5\left( 1+94\times P\left( D\right) \right) < 95\times P\left( D\right) \\
+\Leftrightarrow\ &P\left( D\right) > \dfrac{1}{96} 
+\end{align}
+$$
+
+
+
+The frequency of the disease is more than `r round(1/96, digits = 4)` in the population. 
+
+##### (b) you have >99% chance of having the disease
+
+Substitute 0.99 to the inequality in the previous question. 
+
+$$
+\begin{align}
+0.99 < \dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } \\
+\Leftrightarrow\ P(D) > \frac{0.99}{95 - 0.99 \times {94}}
+\end{align}
+$$
+
+
+The frequency of the disease is more than `r round(0.99 / (95 - 0.99*94), digits = 4)` in the population. 
+
+
+#### Part 2
+
+A test for a different disease is highly accurate but not quite perfect. It correctly identifies 80% of patients with the disease but also incorrectly concludes that 20% of the noninfected samples have the disease. 
+
+Instead of getting a positive result, you actually get a _negative_ result - at what frequency of the disease in the population do you have 
+
+a) greater than 25% chance of having the disease 
+b) greater than 50% chance of having the disease 
+
+**Answers** 
+
+Let $P(D)$ be the probability of having the disease and $P(N)$ be the probability of getting the negative result. 
+
+$P(D|N)$ denotes the probability of having the disease given the negative result. 
+$P(N|D)$ denotes the probability of getting the negative result given having the disease. 
+
+$P(N)$ can be calculated by summing two probabilities; the probability of getting the negative result despite having the disease, and the probability of getting the negative result and not having the disease.
+
+Following the example above, by using the Bayes theorem, we get 
+
+$$
+P(D|N) = \frac{P(N|D) \times {P(D)}}{P(N)} \\
+= \frac{0.2 \times P(D)}{P(D)\times 0.2 + (1-P(D))\times 0.8}.
+$$
+
+##### (a) what frequency of the disease in the population does one have greater than 25% chance of having the disease? 
+
+$$
+\begin{align}
+0.25 <& \frac{0.2 \times P(D)}{P(D)\times 0.2 + (1-P(D))\times 0.8} \\
+\Leftrightarrow 0.25 <& \frac{0.2 \times P(D)}{P(D)\times 0.2 + (0.8 - 0.8 \times P(D)} \\ 
+\Leftrightarrow 0.25 <& \frac{0.2 \times P(D)}{0.8 - 0.6 \times P(D)} \\ 
+\Leftrightarrow 0.25 <& \frac{P(D)}{4 - 3 \times P(D)} \\
+\end{align}
+$$
+
+Since $P(D) \leq 1$, 
+
+$$
+\Rightarrow 4 - 3\times P(D) < 4 \times P(D) \\
+\Leftrightarrow 7 \times P(D) > 4 \\
+\Leftrightarrow P(D) > \frac{4}{7}
+$$
+
+The frequency is greater than `r round(4/7, digits = 4)`. 
+
+##### (b) what frequency of the disease in the population does one have greater than 50% chance of having the disease?
+
+Substituting 0.5 to equations above: 
+$$
+\begin{align}
+0.5 <& \frac{P(D)}{4 - 3 \times P(D)} \\ 
+\Leftrightarrow 4 - 3& \times P(D) < 2 \times P(D) \\ 
+\Leftrightarrow &P(D) > \frac{4}{5}
+\end{align}
+$$
+The frequency is greater than `r 4/5`.
+
+### Question 2 
+
+Patients diagnosed with pancreatic cancer are asked about they smoke. Patients without pancreatic carcinoma are also asked about if they smoke. 
+
+```{r, include = FALSE}
+data = matrix(c(80, 40, 40, 50), ncol=2, nrow=2)
+colnames(data)= c("pancreatic cancer", "no pancreatic cancer")
+row.names(data)= c("smoker", "no smokers")
+data
+```
+
+a) what is the probability that a patient is a smoker? -> `r round((80+40) / sum(data), digits = 4)`
+
+
+b) what is the probability that a patient has pancreatic cancer? -> `r (80 + 40) / sum(data)`
+
+
+c) what is the probability that a patient has pancreatic cancer given they are a smoker? -> `r round(80 / (80+40), digits = 4)`
+
+
+d) what is the probability that a patient is a non-smoker given that they have pancreatic cancer? -> `r round(40/(40+80), digits = 4)`
+
+
+e) is having cancer independent from smoking status?
+
+Let P(A) be the probability of a patient being a smoker. 
+
+Let P(B) be the probability of a patient having pancreatic cancer. 
+
+If two events are independent, $P\left( A\cap B\right) = P\left( A\right) \times P\left( B\right)$. 
+
+$$
+P(A) = \frac{80+40}{80+40+40+50} \\
+P(B) = \frac{80+40}{80+40+40+50} \\
+P(A\cap B) = \frac{80}{80+40+40+50}
+$$
+Calculate $P(A) \times P(B) - P(A\cap B)$
+
+```{r}
+is_smoker = (80+40)/sum(data)
+has_pancreatic_cancer = (80+40)/sum(data)
+smoker_and_cancer = 80 / sum(data)
+is_smoker + has_pancreatic_cancer - smoker_and_cancer
+```
+
+Since $P(A) \times P(B) - P(A\cap B) \neq 0$, we conclude that these two events are not independent. 
+
+
+### Question 3 
+
+what type of variable is:
+
+a) Birthweight classified as low, not low: Binary variables
+
+
+b) Birthweight classified as low, medium, high: Ordinal variables
+
+
+c) Delivery type classified as cesarean, natural, induced: Categorical variables
+
+
+d) Birthweight in grams: Continuous Variables
+
+
+### Question 4
+
+In a random sample of 4000 people, the average height is 150 cm, and the variance is 36. Height is normally distributed.  
+
+a) one individual was 180 cm .... how many SDs above average were they?
+
+    ```{r}
+    abs(180-150) / sqrt(36)
+    ```
+
+b) another individal was 140 cm tall ... how many SDs are they away from the mean?
+    ```{r}
+    round(abs(140-150) / sqrt(36), digits = 2)
+    ```
+
+c) Another individual was 1.4 SDs below the average height. How tall are they?
+
+    ```{r}
+    sprintf("%g cm", 150 - (1.4 * sqrt(36)))
+    ```
+
+d) If an indivdiual was within 1.96 SDs of average height, what is the shortest they could have been and what is the  tallest?
+
+    ```{r}
+    x = 1.96 * sqrt(36)
+    sprintf("The tallest is %g cm", 150 + x)
+    sprintf("The shortest is %g cm", 150 - x)
+    ```
+
+e) what is so special about 1.96 SDs?
+
+
+    ```{r}
+    random_pop = rnorm(n = 4000, mean = 150, sd = 6)
+    sum(150-x < random_pop & random_pop < 150+x) / length(random_pop)
+    ```
+
+
+    ```{r}
+    sprintf("shortest : %g, tallest : %g", 
+            quantile(rnorm(4000, 150, 6), 0.025),
+            quantile(rnorm(4000, 150, 6), 0.975))
+    ```
+
+the height within 1.96 SDs from the mean represents approximately 95% of the normally distributed population. Thus it matches the 95% confidence interval of the mean. 
+
+
+f) how would you describe individuals who are 
+
+```{r}
+height <- function(height) {
+  x <- (height - 150) / sqrt(36)
+  y <- 0
+  z <- 0
+  if (height > 150) {
+    y <- "above"
+  } else {
+    y <- "below"
+  }
+  if (x > 1) {
+    z <- "very tall"
+  } else if (x > 0) {
+    z <- "slightly taller than average"
+  } else if (x > -1) {
+    z <- "slightly shorter than average"
+  } else {
+    z <- "very short"
+  }
+  sprintf("The individual is %.2f SDs %s average height. In other words, this person is %s.", abs(x), y, z)
+}
+```
+
+i) 170cm tall -> `r height(170)`
+
+
+ii) 120cm tall -> `r height(120)`
+
+
+iii) 155cm tall -> `r height(155)`
+
+
+iv) 90cm tall -> `r height(90)`
+
+
+### Question 5 
+
+the attached figure (psfig1.pdf) shows the number of metastatic events per patient. what is the mean?
+
+```{r}
+patients <- c(50,30,20,10,10)
+lesions <- c(0,1,2,3,4)
+
+s <- 0
+for (i in 1:5){
+  s <- s + (patients[i]*lesions[i])
+  ans <- s / sum(patients)
+}
+sprintf("The mean is %.2f", ans)
+
+```
+
+
+### Question 6
+
+```{r, results='hide', include = FALSE}
+pbc <- read.csv("pbc.tsv", sep = "\t")
+```
+
+
+The file pbc.tsv is a tsv file containing information from Mayo Clinic trial in primary biliary cirrhosis (PBC) of the liver conducted between 1974 and 1984. A total of 424 PBC patients over this interval met eligibility criteria for the randomized placebo controlled trial of the drug D-penicillamine
+
+var | description
+---- | ----
+age |	in years
+albumin |	serum albumin (g/dl)
+alk.phos |	alkaline phosphotase (U/liter)
+ascites |	presence of ascites
+ast | aspartate aminotransferase, once called SGOT (U/ml)
+bili | serum bilirunbin (mg/dl)
+chol |serum cholesterol (mg/dl)
+copper | urine copper (ug/day)
+edema | 0 no edema, 0.5 untreated or successfully treated, 1 edema despite diuretic therapy
+hepato |	presence of hepatomegaly or enlarged liver
+id | case number
+platelet | 	platelet count
+protime |	standardised blood clotting time
+sex |	m/f
+spiders |	blood vessel malformations in the skin
+stage |	histologic stage of disease (needs biopsy)
+status |	status at endpoint, 0/1/2 for censored, transplant, dead
+time |	number of days between registration and the earlier of death, transplantion, or study analysis in July, 1986
+trt |1/2/NA for D-penicillmain, placebo, not randomised
+trig | triglycerides (mg/dl)
+
+
+a) Describe the distribution of patient age?
+    ```{r, fig.align='center', fig.width=4,fig.height=3,warning = FALSE}
+    ggplot(data = pbc, aes(age))+
+      geom_histogram(color = 'black',
+                     fill = 'white',
+                     binwidth = 5)
+
+    ```
+    ```{r}
+    summary(pbc$age)
+    ```
+
+The histogram shows that the patients' ages are roughly normally distributed. We can also confirm this by looking at the mean and the median being almost the same. The oldest patient is about 78 years old and the youngest is about 26 years old. The five number summary is shown above. 
+
+
+b) What kind of distribution does the levels of cholesterol follow? 
+
+    ```{r, fig.width=4, fig.height=3,warning = FALSE}
+    ggplot(data = pbc, aes(chol))+
+       geom_histogram(color = 'black',
+                     fill = 'white',
+                     binwidth = 100)
+
+    ```
+    
+    
+```{r}
+summary(pbc$chol)
+```
+Well, the histogram seems off and so are the five number summary. It has a long tail on the right that extends to 1775. What are the normal cholesterol values people get? 
+
+> "An ideal total cholesterol level is lower than 200 mg/dL. Anything between 200 and 239 mg/dL is borderline, and anything above 240 mg/dL is high." ^[Quote from <https://www.healthline.com/health/serum-cholesterol>, accessed on Feb 21st 2022.]
+
+This means, if the data is correct, over 75% of the patients have high serum cholesterol. 
+
+> "PBC patients with early disease have elevated total cholesterol likely due to high HDL-C levels. Changes in serum cholesterol levels were observed in clinical trials of OCA." ^[Quote from <https://www.dovepress.com/new-developments-in-the-treatment-of-primary-biliary-cholangitis-role--peer-reviewed-fulltext-article-TCRM>, accessed on Feb 21 2022.]
+
+This article suggests that PBC patients have generally high cholesterol. But how high it can be is out of my knowledge scope. My best guess is anything that is over 800 is likely a wrong measurement. Since the unit is mg/dl, if the cholesterol is measured with mg/L, the value would be 10 times larger than it is supposed to be. If that is the case, the max value (1775.0) will be 177.5, which is within the healthy range. Let me plot a histogram with all the values greater than 800 converted to 1/10. 
+
+```{r,fig.width=4, fig.height=3,warning = FALSE}
+chol <- na.omit(pbc[["chol"]])
+for (i in 1:length(chol)){
+  if (chol[i] > 800){
+    chol[i] = chol[i] / 10
+  }
+}
+hist(chol)
+```
+Again, I do not have enough knowledge to correctly read this histogram. However, considering the fact that the pbc patients have relatively high serum cholesterol, this distribution looks better. 
+
+```{r}
+summary(chol)
+```
+The distribution is roughly normally ditributed, slightly skewed to the right but it makes sense because they are pbc patients. 
+
+
+c) What is the median absolute deviation (MAD) of bilirunbin levels in this sample of patients? 
+ 
+    ```{r}
+    a <- c()
+    for (i in 1:nrow(pbc)){
+      a[i] <- abs(pbc$bili[i] - median(pbc$bili))
+    }
+    median(a)
+
+    ```
+
+What does MAD measure?
+
+Mean absolute deviation is the median of distance between each data point and the mean. It measures the variability of a univariate distribution. Unlike the mean absolute deviation, median absolute deviation is robust because it gets less affected by the outliers. 
+
+
+c) What is the probability of a patient having an edema given that they are male?
+
+    ```{r}
+    nrow(pbc %>%
+           filter(sex == "m" & edema == 1)) / 
+      nrow(pbc %>%
+             filter(sex == "m"))
+    ```
+
+d) What is the probability of being on D-penicillamine given that you are female? 
+
+    ```{r}
+
+    x = nrow(pbc %>%
+               filter(sex == "f" &trt == 1)) / 
+      nrow(pbc %>% 
+             filter(sex == "f"))
+    sprintf("The probability of being on D-penicillamine given that you are     female is %.2f", x)
+
+
+    ```
+
+e) Is being on D-penicillamine independent from sex?
+
+Let $P(F)$ be the probability of a patient being a female. 
+
+Let $P(D)$ be the probability of a patient being on D-penicillamine. 
+
+$P(F \cap D)$ denotes the probability of a patient being a female and on D-penicillamine. 
+
+If $P(F) \times P(D) = P(F \cap D)$, then two events are independent. 
+
+```{r}
+# P(F)
+P_f <- nrow(pbc %>% filter(sex == "f")) /
+      nrow(pbc)
+# P(D)
+P_d <- nrow(pbc %>% filter(trt == 1)) /
+      nrow(pbc)
+# P(F and D)
+P_fd <- nrow(pbc %>% filter(sex == "f" & trt == 1)) /
+      nrow(pbc)
+
+P_f * P_d - P_fd
+```
+     
+Since $P(F)\times P(D)$ and $P(F\cap D)$ are not equal, statistically, we conclude that these events are not independent.
+
+
+f) What is the probability of being male and being older than 50 or being female and older than 50?
+
+The probability of being male and being older than 50 $\textbf{OR}$ being female and older than 50 is same as the probability of being older than 50.
+
+
+```{r}
+Qf <- nrow(pbc[pbc$age>50,]) / nrow(pbc)
+sprintf("The probability of being older than 50 is %.2f", Qf)
+```
+
+g) What is the probability that a patient has ascites?
+
+    ```{r}
+    g <- nrow(pbc %>%
+                filter(ascites == 1)) / nrow(pbc)
+    sprintf("The probability of a patient having ascites is %.4f", g)
+    ```
+
+h) What type of variable is edema?: Nominal Variable 
+
+i) What is the probability of having a copper level above 200 and a platelet count above 400?
+
+    ```{r}
+    Q_i <- nrow(pbc %>%
+              filter(copper > 200 & platelet > 400)) / nrow(pbc)
+    sprintf("The probability of having a albumin level above 200 and            platelet count above 400 is %.4f", Q_i)
+    ```
+
+j) Is having spiders independent from disease stage? 
+
+Let $P(S)$ be the probability of having spiders. 
+
+Let $P(d_x)$ be the probability of being on the $x$th stage of the disease
+
+```{r}
+# P(S)
+P_s <- nrow(pbc %>% filter(spiders == 1)) / nrow(pbc)
+for (x in 1:3) {
+  P_dx <- nrow(pbc %>%
+                 filter(stage == x)) / nrow(pbc)
+  P_s_dx <- nrow(pbc %>%
+                   filter(spiders == 1 &
+                            stage == x)) / nrow(pbc)
+  k <- sprintf("For the stage %g, the P(S&d%g) is %.4f and P(S)*P(dx) is  %.4f.", x, x, P_s_dx, P_s * P_dx)
+  print(k)
+}
+```
+
+We observe that in any of the stage of the disease, the probability of having spiders and the stage of the disease is not statistically independent.
+
+
+k) What is the probability that a patient has spiders given that they are on D-penicillmain
+
+    ```{r}
+    nrow(pbc %>% filter(spiders == 1 & trt == 1)) / 
+      nrow(pbc %>% filter(trt == 1))
+
+    ```
+
+### Question 7
+
+Bob takes a sample of 100 women from a community aged 50-65, and Alice takes a sample of 1000 women from a community aged 50-65. 
+
+Which investigator will have the largest standard error ... why?
+
+**Answer**
+Standard error is a measure of the deviation of the sample means from the population mean. It can be calculated by the equation: 
+
+$$
+\textit{standard error} = \frac{sd}{\sqrt{n}}
+$$
+Given that two investigators take samples from the same population, the standard deviation is fixed. Therefore, the standard error of Bob's sample will be $\dfrac{sd}{\sqrt{100}} = 0.1 \times sd$, and that of Alice's sample will be $\dfrac{sd}{\sqrt{1000}}\fallingdotseq 0.032 \times sd$. Hence Bob will have a larger standard error. 
+
+# Problem Set 2
+
+ 
+## hypothesis testing
+
+For all questions - assume a significance level of \alpha = 0.05. 
+
+### Question 1
+
+Patients diagnosed with pancreatic cancer are asked about whether they smoke. Patients without pancreatic carcinoma are also asked about if they smoke. 
+
+```{r}
+data = matrix(c(80, 40, 40, 50), ncol=2, nrow=2)
+colnames(data)= c(" cancer", "no cancer")
+row.names(data)= c("smoker", "non smoker")
+data
+```
+
+a) is having cancer dependent or independent from smoking status?
+
+```{r}
+chisq.test(data)$p.value
+```
+
+    Having p-value of 0.002, we reject the null hypothesis and conclude that there is enough evidence to support that having cancer is dependent on smoking status. 
+
+b) what is the odds of having cancer given that the patient smokes? 
+
+```{r}
+# (80/80+40) / 1- (80/80+40)
+80 / 40
+```
+
+c) what is the odds of having cancer given that the patient does not smoke? 
+
+```{r}
+# (40/40+50) / (1 - 40/40+50)
+40 / 50
+```
+
+d) what is the odds ratio of this? what does this represent / tell you about the relationship between smoking and cancer.   
+
+```{r}
+2.0 / 0.8
+```
+
+    This means that smokers are 2.5 times more likely to have a cancer. 
+
+
+
+## Wilcox vs t.test 
+
+when you dont really care about the actual difference in mean, we can do wilcox test. Also, t test assumes normal distribution. 
+
+
+Assumptions in t test 
+1. the independent variable is continuous 
+2. the sample is representative and random 
+3. the sample is normally distributed 
+4. sample size is large enough 
+5. the homogeneity of variance : the standard deviations of samples are approximately equal. 
+
+### Question 2
+
+the file 'telomeres.txt' contains the estimated telomere lengths estimated from patients normal blood cells and tumour cells. Are telomeres significantly longer in tumours compared to the blood?
+
+
+```{r}
+telomeres <- read_table("telomeres.txt") |> 
+  pivot_wider(
+    names_from = sample, 
+    values_from = tel_content
+) 
+```
+
+    Since each patient has data on control and tumor, and the sample size is failry small, we carry out a paired wilcox test. 
+
+```{r}
+wilcox.test(
+  telomeres$control, 
+  telomeres$tumor, 
+  # control is less than tumor
+  alternative = "less",
+  paired = TRUE
+)
+```
+
+    The p-value of 0.03 suggests that telomeres significantly longer in tumours compared to the blood. 
+
+
+### Question 3
+
+
+Is there a significant difference in the median between x and y?
+
+```{r}
+x = c( 5,  6,  7,  9, 12, 8, 16, 9, 13, 14, 12, 11, 8, 10, 11, 6, 12,  7, 10, 5, 12, 11, 6, 6, 13)
+y = c( 16, 14, 10, 11, 12, 15, 16, 18, 11, 16, 14, 15, 23, 11, 17, 12, 12, 17, 14, 16,9, 18, 14,  4, 24)
+
+boxplot(x,y)
+```
+
+    Boxplot shows that there seems to be a difference between these two. 
+    
+    As we are looking into difference in median, not mean, we try permutation. 
+```{r}
+# calculate the test statistic 
+t_stat <- median(x) - median(y)
+# permutation 
+sample_q3 <- c()
+for (i in 1:1000){
+  # reorder the total population
+  shuffled <- sample(c(x,y))
+  # assign first 25 to the x
+  sample_x <- shuffled[1:25]
+  # assign last 25 to the y
+  sample_y <- shuffled[26:50]
+  # calculate the statistic 
+  m <- median(sample_x) - median(sample_y)
+  sample_q3 <- c(sample_q3, m)
+}
+
+hist(sample_q3)
+
+p_value <- sum(t_stat >= sample_q3) / length(sample_q3)
+p_value
+```
+
+    Yes, there is a significant difference in median between x and y (p-value of 0.003). 
+
+
+### Question 4
+
+The file 'qpcr.txt' contains the results from performing qPCR in two conditions on 10 different genes. 
+
+Which of the genes are significantly upregulated in treatment compared to control? 
+
+```{r}
+qpcr <- read_table2("qpcr.txt")
+```
+    
+     Since each gene has only 6 samples each (control and treatment), the sample size is failry small. As we are just interested in if there is a difference or not, we carry out a wilcox test. 
+    
+```{r}
+genes <- LETTERS[1:10]
+p_values <- c()
+for (g in genes){
+  data <- qpcr |>
+    filter(gene == g)
+  c <- filter(data, condition == "control")$expression
+  t <- filter(data, condition == "treatment")$expression
+  # control < treatment 
+  p <- wilcox.test(c,t, alternative = "less")$p.value
+  p_values[g] <- p
+}
+
+p_values
+# 0.05 / 10
+```
+
+     Since we did 10 different hypothesis testing, this will increase the type I error. We can adjust the p-value by dividing by 10 (the number of null hypothesis) and see if the p-value is less than 0.005. Then, only gene D is significant. Alternativly, we can also use `p.adjust()` function to confirm.  
+```{r}
+p.adjust(p_values)
+```
+
+    From the results above, we conclude that only gene D is upregulaterd significantly. 
+
+
+
+### Question 5
+
+The file pbc.tsv is a tsv file containing information from Mayo Clinic trial in primary biliary cirrhosis (PBC) of the liver conducted between 1974 and 1984. A total of 424 PBC patients over this interval met eligibility criteria for the randomized placebo controlled trial of the drug D-penicillamine
+
+var | description
+---- | ----
+age |	in years
+albumin |	serum albumin (g/dl)
+alk.phos |	alkaline phosphotase (U/liter)
+ascites |	presence of ascites
+ast | aspartate aminotransferase, once called SGOT (U/ml)
+bili | serum bilirunbin (mg/dl)
+chol |serum cholesterol (mg/dl)
+copper | urine copper (ug/day)
+edema | 0 no edema, 0.5 untreated or successfully treated, 1 edema despite diuretic therapy
+hepato |	presence of hepatomegaly or enlarged liver
+id | case number
+platelet | 	platelet count
+protime |	standardised blood clotting time
+sex |	m/f
+spiders |	blood vessel malformations in the skin
+stage |	histologic stage of disease (needs biopsy)
+status |	status at endpoint, 0/1/2 for censored, transplant, dead
+time |	number of days between registration and the earlier of death, transplantion, or study analysis in July, 1986
+trt |1/2/NA for D-penicillmain, placebo, not randomised
+trig | triglycerides (mg/dl)
+
+```{r}
+pbc <- read_table("E:/Academics/Stats/Problem Set 2/pbc.tsv")
+```
+
+a) Is there a significant difference in age between patients who are on D-penicillmain or are on placebo?
+```{r}
+pbc_a <- pbc |>
+  filter(!(is.na(trt) | is.na(age)))|>
+  select(age, trt)
+pbc_a |>
+  ggplot(aes(as.factor(trt), age)) + 
+  geom_violin() + 
+  scale_x_discrete(label = c("D-penicillmain", "placebo"))
+
+D <- filter(pbc_a, trt == 1)$age
+P <- filter(pbc_a, trt == 2)$age
+
+```
+
+    The plot does not show any obvious difference. And the data looks okay-ly normally distributed. We can do a t-test. 
+
+```{r}
+var.test(D,P)
+# no support that the variances are equal 
+```
+
+```{r}
+t.test(D,P, var.equal = TRUE)$p.value
+```
+
+    There is a significant difference in age between patients who are on D-penicillmain and are on placebo.  
+    
+    
+## Chi-squared 
+CHi-square test in R is a statistical method which used to determine if two categorical variables have a significant correlation between them. Therefore, a significant p-value means that they are significantly correlated, and non-significant p-value means that they are independent from each other. 
+
+
+b) Is being treated with D-penicillamine dependent or independent from sex?
+
+```{r}
+pbc_b <- pbc |>
+  filter(!is.na(trt)) |>
+  select(sex, trt) |>
+  mutate(trt = as.character(trt)) |>
+  group_by(sex, trt) |>
+  summarise(dp = n()) |>
+  ungroup() |>
+  pivot_wider(names_from = trt, values_from = dp) |>
+  as.data.frame() 
+
+chisq.test(pbc_b[-1])
+```
+
+    From the result, we conclude that being treated with D-pencillamine is independent from sex. 
+    
+    
+c) Is having spiders independent from disease stage? 
+
+```{r}
+pbc_c <- pbc |>
+  select(spiders, stage) |>
+  filter(!(is.na(spiders) | is.na(stage))) |>
+  group_by(stage, spiders) |>
+  summarise(sp = n()) |>
+  pivot_wider(names_from = spiders, values_from = sp) |>
+  as.data.frame() |>
+  print()
+
+chisq.test(pbc_c[-1], simulate.p.value = TRUE)
+```
+
+    As one of the values in the dataframe is quite small, chi-squared test may yield an inaccurate result. To avoid that, we set simulate.p.value = TRUE which computes p-values by Monte Carlo simulation. From the result, we conclude that having spiders is dependent on disease stage. 
+    
+    
+d) Is there a significant different in cholesterol levels between people with or without an enlarged liver (hepatomegaly)?
+
+```{r}
+pbc_d <- pbc |>
+  select(hepato, chol) |>
+  filter(!(is.na(hepato) | is.na(chol)))
+
+
+pbc_d |>
+  ggplot(aes(as.character(hepato), chol))+
+  geom_violin() + 
+  scale_x_discrete(label = c("without", "with")) +
+  labs(x = "enlarged liver")
+```
+
+    Well the data does not seem normally distributed, and as we are not so concerned with the difference in mean, we should consider wilcox test. 
+    
+```{r}
+wo <- filter(pbc_d, hepato == 0)$chol
+w <- filter(pbc_d, hepato == 1)$chol
+wilcox.test(wo,w)
+```
+
+    From the result, there is no significant difference in cholesterol levels between people with or without an enlarged liver, which is counter-intuitive. If we have used a t-test, we would have gotten a significant result. But since the distribution is not normal, we should stick to the original plan - not significant. 
+    
+    
+### Question 6
+
+A woman claims to be able to tell if tea is prepared with milk added to the cup first or added after the tea was poured. 
+
+She tastes 20 cups of tea (10 with the milk poured in first and 10 with the milk poured in after) ....  and correctly guesses that the milk has been poured first 8 times and that the milk has been poured in last 6 times. 
+
+What is the null and alternative hypothesis for this experiment? 
+
+    The null hypothesis: Her result is out of random choice and there is no relationship between her choice and actual order. 
+    The alternative hypothesis: She can correctly identify which is poured first. 
+
+Can she justify her claim to be able to do this ? 
+
+    No she cannot. We have set our signifncance level \alpha to be 0.05 for this problem set. Under this restraint, her trial of 20 times should yield at most one error to call it significant. Since she wrong-guessed 6 times, we fail to reject the null hypothesis. 
+    
+
+    
+
+## Power
+## type II error 
+### Question 7
+
+a) What is the relationship between power and type II errors? 
+
+    Power equals to 1 minus the probability of having type II errors. Power is the ability of a test to correctly reject false negatives. Type II errors are false negatives, i.e., when the alternative hypothesis is true but we fail to reject the null hypothesis. 
+
+b) How many replicates do I need to perform to achieve 80% power to detect a change in the mean between two conditions of 2? (assume the data is normally distributed so t-tests apply). I ran a pilot experiment and collected the following data.
+
+```{r}
+treatment = c( 7.835008, 12.887306, 10.427879,  8.749182, 10.075484)
+control = c(12.182948,  8.972897,  8.215060, 13.421730, 11.325449)
+boxplot(treatment, control)
+```
+
+```{r}
+t_sd <- sd(treatment)
+c_sd <- sd(control)
+```
+
+```{r, cache=TRUE}
+# # prepare an empty vector for storing power
+# power <- c()
+# # check the sample size from 2 to 30 
+# for(i in 2:30){
+#   # prepare an empty vector for replication 
+#   power_rep <- c()
+#   # replicate for 100 times 
+#   for (j in 1:100){
+#     # prepare an empty vector to store simulation 
+#     result <- c()
+#     # simulation 
+#     for (k in 1:1000){
+#       # two samples, different standard deviation 
+#       # difference in mean of 2
+#       x <- rnorm(i, 2, t_sd)
+#       y <- rnorm(i, 0, c_sd)
+#       # p-value
+#       result = c(result, t.test(x, y, var.equal = FALSE)$p.value)
+#     }
+#     # calculate false negatives
+#     z <- 1 - sum(result > 0.05) / length(result)
+#     # store power
+#     power_rep <- c(power_rep, z)
+#   }
+#   # calculate the mean of power
+#   m_power_rep <- mean(power_rep)
+#   # append
+#   power <- c(power, m_power_rep)
+# }
+# 
+# # plot
+# plot(power, type = "lm", xlab = "sample size")
+# abline(h = 0.8, col = "red")
+
+```
+
+```{r}
+#power
+```
+
+    Under this scenario, sample size of 18 for each would be enough to have the 80% power to detect a difference of 2. Of course, power depends on many other things, such as standard deviation. In this scenatio, we used the pilot data to get a rougn estimate of the standard deviation of the mother population. 
+    
+    
+    4 things that affect the power 
+    1. effect size (in this case, 2)
+    2. variability 
+    3. sample size 
+    4. alpha 
+
+# Problem set 3
+## Part 1 - Diet
+
+The data set (Diet_R.csv) contains information on 78 people using one of three diets, and contains information on their weight before starting the diet and their weight 6 weeks after being on a specific diet. 
+
+Person	Participant number	
+gender	Gender, 1 = male, 0 = female	
+Age	Age (years)	
+Height	Height (cm)	
+preweight	Weight before the diet (kg)	
+Diet	Diet	
+weight6weeks	Weight after 6 weeks (kg)	
+
+
+
+```{r}
+data = read.csv("Diet_R.csv") |>
+  mutate(weight_loss = weight6weeks - pre.weight)
+```
+
+### Q1: Does diet affect weight loss? 
+
+```{r}
+# first of all, visualization. 
+data |>
+  select(Diet, weight_loss) |>
+  ggplot(aes(as.factor(Diet), weight_loss)) +
+  geom_violin()
+```
+
+```{r}
+q1 <- data |>
+  # select columns 
+  select(Diet, weight_loss) |>
+  # remove na values 
+  filter(!(is.na(Diet) | is.na(weight_loss))) |>
+  mutate(Diet = as.factor(Diet))
+
+# perform one-way anova 
+model_q1<- aov(weight_loss ~ Diet, data = q1)
+summary(model_q1)
+```
+
+The p-value of 0.00324 is less than 0.05 (alpha), we reject the null hypothesis and conclude that the Diet type is significantly affecting the weight loss. If we want to see which diet is affecting the weight loss, we could fit a linear model, but this time I just did a one-way anova. 
+
+
+### Q2: Is there an effect of diet or gender on weight loss?
+
+```{r}
+data |>
+  filter(!(is.na(Diet)|is.na(gender) | is.na(weight_loss))) |>
+  ggplot(aes(as.factor(Diet), weight_loss, color = as.factor(gender))) + 
+  geom_jitter(width=0.25)
+```
+
+```{r}
+# two-way anova 
+q2 <- data |>
+  # select three columns for simplicity 
+  select(Diet, gender, weight_loss) |>
+  # remove NAs
+  filter(!(is.na(Diet) | is.na(gender) | is.na(weight_loss))) |>
+  # change gender column from int to fctr
+  mutate(
+    Diet = as.factor(Diet),
+    gender = as.factor(gender)
+  )
+
+model_q1_lm <- lm(weight_loss ~ Diet, data = q1)
+summary(model_q1_lm)
+
+# two-way anova 
+model_q2 <- aov(weight_loss ~ Diet + gender, data = q2)
+summary(model_q2)
+
+model_q2_lm <- lm(weight_loss ~ Diet + gender, data = q2)
+summary(model_q2_lm)
+```
+    
+ Looking at the anova summary, we can tell that gender is not significantly affecting the weight loss. `lm` function helps us to see the Adjusted R-squared value; we can see that the model (`model_q2_lm`) is explaining only 7% of the distribution, suggesting it is a horrible model. 
+    
+  For Diet, we know that it is significantly affecting the weight loss, but the look at summary of `model_q1_lm` reveals that the model only explains about 12% of the variance. It is not a good model either. This tells us that even though different diets results in different weight loss, diet is not everything.  
+    
+    
+### Q3: Is there an interaction between diet or gender on weight loss?
+
+```{r}
+q3 <- data |>
+  select(Diet, weight_loss, gender) |>
+  filter(!(is.na(Diet) | is.na(weight_loss) | is.na(gender)))
+
+model_q3 <- aov(weight_loss ~ as.factor(Diet) * gender, data = q3)
+summary(model_q3)
+```
+
+  
+  
+### Q4: Which diet is best for losing weight?
+
+
+## interaction plot 
+```{r}
+interaction.plot(
+  x.factor = data$Diet,
+  response = data$weight_loss,
+  trace.factor = data$gender,
+  col = c("red", "green"),
+  fun = mean,
+  xlab = "Diet",
+  ylab = "Weight loss",
+  lty = 1,
+  lwd = 2
+)
+```
+
+
+```{r}
+data |>
+  group_by(Diet) |>
+  mutate(Diet = as.factor(Diet)) |>
+  summarize(count = n())
+```
+
+  Since the sample size of each group is not equal, we do not use Tukey post-hoc method. Instead, we use the Scheffe method, which is the most conservative post-hoc comparison method and produces the widest confidence intervals when comparing group means. [^1]
+    
+  [^1]: "How to Perform Post-Hoc Pairwise Comparisons in R"<https://www.statology.org/pairwise-comparison-in-r/>
+    
+```{r, warning=FALSE}
+library(DescTools)
+#ScheffeTest(model_q3)
+```
+    
+  In the outcome, we see that Diet 1 and 2 does not differ significantly in weight loss. On the other hand, Diet 3 significantly differ from both 1 and 2. When we look at the confidence interval, Diet 3 has the lowest interval. Therefore, we can conclude that Diet 3 is the best for losing weight. 
+  
+```{r}
+TukeyHSD(aov(weight_loss ~ as.factor(Diet) * as.factor(gender), data = data), ordered = TRUE)
+```
+  
+  
+ The summary tells the same story that diet 3 is statistically significantly different from the others. Maybe not as clear as the Scheffe method, but the same outcome. 
+    
+### Q5: Does age have any role in weight loss? 
+
+```{r}
+q5 <- lm(weight_loss ~ Age, data = data)
+summary(q5)
+```
+
+  The summary p-value of 0.61, which suggests no significant difference. Hence, we fail to reject the null hypothesis and conclude that there is no evidence that age affects the weight loss. The model explains almost nothing about the distribution, as can be seen in the R-squared value. 
+    
+  We can also visualize this, the scattered plot affirms that there is no linear relationship. 
+    
+```{r}
+data |>
+  select(Age, weight_loss) |>
+  filter(!(is.na(Age) | is.na(weight_loss))) |>
+  ggplot(aes(Age, weight_loss)) +
+  geom_point() +
+  geom_smooth(
+    formula = y ~ x,
+    method = 'lm'
+  )
+```
+
+## Part 2
+
+The file depression.csv contains the results of a study looking at the effect of treatment on depression. 
+
+Hospt: The patient’s hospital (1, 2, 3, 5, or 6)
+Treat: The treatment received by the patient (Lithium, Imipramine, or Placebo)
+Outcome: Whether or not a recurrence occurred during the patient’s treatment (Recurrence or No Recurrence)
+Time: Either the time (days) till recurrence, or if no recurrence, the length (days) of the patient’s participation in the study.
+AcuteT: The time (days) that the patient was depressed prior to the study.
+Age: The age of the patient in years, when the patient entered the study.
+Gender: The patient’s gender (1 = Female, 2 = Male)
+
+
+```{r}
+data = read.delim("depression.csv", sep=",")
+```
+
+### Q6: Is there any association between treatment and outcome? 
+
+```{r}
+q6 <- data |>
+  filter(!(is.na(Treat) | is.na(Outcome))) |>
+  select(Treat, Outcome) |>
+  group_by(Treat, Outcome) |>
+  summarise(num = n()) |>
+  pivot_wider(names_from = Outcome, values_from = num) 
+
+chisq.test(q6[-1])
+```
+
+  Since this question is asking about the association between outcome and treatment, we can simply run a chi-squared test. The p-value of 0.001 suggests that outcome is dependent on the treatment. 
+    
+  Or, as the independent variable is a discrete/binomial variable, we can choose to make a logistic regression model.
+    
+```{r}
+q6_alt<- data |>
+  select(Treat, Outcome) |>
+  filter(!(is.na(Treat) | is.na(Outcome))) |>
+  mutate(
+    Treat = factor(Treat, levels = c('Placebo', "Imipramine", "Lithium")),
+    Outcome = factor(Outcome, levels = c("No Recurrence", "Recurrence"))
+  ) 
+
+# logistic regression 
+model_q6 <- glm(
+  Outcome ~ Treat, 
+  family = binomial(link = "logit"), 
+  data = q6_alt
+)
+
+summary(model_q6)
+```
+    
+  We can see that Imipramine has a statistically significant effect on the outcome. Simple answer to the question would be yes, there is an association between treatment type and outcome. 
+    
+    
+### Q7: Which treatment is best at reducing the odds of a patient having a recurrent depressive episode? 
+
+## calculate the odds  
+
+```{r}
+# intercept 
+exp(sum(coef(model_q6)[1]))
+```
+
+
+```{r}
+# imipiramine 
+exp(sum(coef(model_q6)[c(1,2)]))
+```
+
+```{r}
+#lithium 
+exp(sum(coef(model_q6)[c(1,3)]))
+```
+
+### Q8: Does the hospital a patient is treated at effect whether they are likely to suffer a recurrence or not?   
+
+```{r}
+q8 <- data |>
+  select(Hospt, Outcome) |>
+  mutate(
+    Hospt = as.factor(Hospt),
+    Outcome = as.factor(Outcome)
+  )
+
+model_q8 <- glm(
+  Outcome ~ Hospt, 
+  family = binomial(link = "logit"), 
+  data = q8
+)
+
+summary(model_q8)
+```
+
+  Since the model is testing 4 null hypothesis, we adjust the alpha to be 0.05 / 4 = 0.0125. The summary shows that no p-value is below 0.0125. Therefore, we conclude that the hospital a patient receives treatment does not affect the odds of a patient having a recurrence. 
+    
+
+## Part 3 
+
+the dataset (FEV.csv) contains information of a series of patients specifically looking at FEV - the amount of breath a person can exhale in 1 second, along with some independent variables ... 
+age	years
+height	
+sex		
+smoke
+
+What can you tell me about the relationship between these independent variables and FEV? 
+
+
+```{r}
+# remove id column as it is irrelevant 
+data = read.delim("FEV.csv", sep=",") |> select(-id)
+```
+
+ First, we plot the data. 
+    
+```{r}
+p1 <- data |>
+  ggplot(aes(age, fev, color = sex)) + 
+  geom_jitter(width = 0.5) 
+p2 <- data |>
+  ggplot(aes(height, fev,  color = smoke)) + 
+  geom_point()
+
+p1
+p2
+```
+    
+  Age and height look quite linearly correlated with fev. For sex, maybe males have higher fev. For smoking, we note that the sample size for smokers seems very small. 
+    
+  Below is the plot of each variable against each other. We can see that age and height is highly correlated with a correlation coefficient of 0.792. Including both variables in the model may cause multicolinearity. 
+
+```{r}
+data |>
+  select(-fev) |>
+  ggpairs()
+```
+     
+```{r}
+summary(lm(fev ~ height, data = data))
+summary(lm(fev ~ age, data = data))
+```
+  
+  
+  When we see how much age or height explains the variation in fev, while age only explains about 57%, height explains 75%. We conclude that among these two highly correlated independent variables, height is the better predictor to use in a model. Therefore, we start off with building an additive model that includes everything but age. It explains about 75% of the variance, so it is a pretty good model. 
+
+```{r}
+additive_height_smoke_sex <- lm(fev ~ height + smoke + sex, data = data)
+summary(additive_height_smoke_sex)
+```
+    
+  However, this model contains three predictors and it is hard to interpret. Since smoke/non-current smoker is not significant, we consider removing that variable. 
+    
+```{r}
+data |>
+  group_by(smoke) |>
+  summarise(num = n())
+```
+    
+  Current smokers are only about 1/9 of the nun-current smokers. Due to the insignificant p-value in `first_model` and skewed sample size, we build an additive model that excludes smoking status. The model explains 75.8% of the variation, which show a slight improvement from the last model. 
+
+```{r}
+additive_height_sex <- lm(fev ~ height + sex, data = data)
+summary(additive_height_sex)
+```
+
+ So far we have only tested additive model, now we consider interation model as well. 
+```{r}
+interaction_height_sex <- lm(fev ~ height * sex, data = data)
+summary(interaction_height_sex)
+
+simple_height <- lm(fev ~ height, data = data)
+summary(simple_height)
+```
+
+ Both models are significant. Simple model explains 75.3% of the data while interaction model explains 76.4% of the data. From this look of it, the interaction model is better. But since the difference is only subtle, we check the AICc later.  We can derive the following equation from the interaction model `interaction_height_sex`:
+$$
+fev = -4.31 + 0.112 \times height - 1.54 \times sex + 0.02 \times sex*height + \epsilon
+$$
+ 
+ The model makes sense because first, tall people would have bigger lungs to exhale more, and second, sex and height should be correlated. I don't quite get why the coefficient for sex(male) is negative, but the following visualization of the model shows that males do not necessarily have the larger fev. 
+
+```{r}
+data |>
+  ggplot(aes(height, fev, color = sex)) +
+  geom_point() + 
+  geom_smooth(
+    formula = y ~ x,
+    method = "lm",
+    se = FALSE
+  )
+```
+
+ However, when we look at the plot, we cannot help but recognize how scarce females are for over 66. The inequality of sample size by sex for those >66 may be affecting the model. Hence, we build the following model: 
+ 
+```{r}
+# filter out those who are taller than 66
+no_tall_men <- data |>
+  filter(height <= 66)
+# visualize
+ggplot(data = no_tall_men,
+       aes(height, fev, color = sex)) + 
+  geom_point() +
+  geom_smooth(
+    formula = y ~ x,
+    method = "lm",
+    se = FALSE
+  )
+
+interaction_height_sex_66 <- lm(fev ~ height * sex, data = no_tall_men)
+summary(interaction_height_sex_66)
+simple_height_66 <- lm(fev ~ height, data = no_tall_men)
+summary(simple_height_66)
+```
+ The adjusted R-squared value are smaller than the previous two models. We can also compare by AICc. 
+ 
+```{r}
+cat(sprintf(
+  "Interaction of height and sex: %g \nSimple height: %g \nInteraction of height and sex under 66: %g \nSimple height under 66: %g",
+  AICcmodavg::AICc(interaction_height_sex),
+  AICcmodavg::AICc(simple_height),
+  AICcmodavg::AICc(interaction_height_sex_66),
+  AICcmodavg::AICc(simple_height_66)
+))
+
+```
+
+    
+    
+# survival analysis 
+
+refer to week 11 tues lecture 
+
+types of censoring 
+1. right : we may not know when it occurred (the death happened after the collection period), or people dropping out 
+2. we may not know when it started 
+3. we only know an even occured in an interval of time \
+
+
+### truncation 
+
+1. left truncation 
+if individuals in the population are not observed when the event occures before time t, then the data are said to be left truncated at t 
+individuals with very short survival ecvade sampling - leads to a bias in our analysis 
+
+2. right truncation 
+observations with long time to event are excluded from the analysis
+they are biased towards individuals that have a short time to event
+
+
+
+###Load and process the ovarian dataset from 'survival' package
+```{r setup2}
+data(ovarian) |>
+  print()
+glimpse(ovarian)
+ovarian$rx <- factor(ovarian$rx, 
+                     levels = c("1", "2"), 
+                     labels = c("A", "B"))
+ovarian$resid.ds <- factor(ovarian$resid.ds, 
+                           levels = c("1", "2"), 
+                           labels = c("no", "yes"))
+ovarian$ecog.ps <- factor(ovarian$ecog.ps, 
+                          levels = c("1", "2"), 
+                          labels = c("good", "bad"))
+hist(ovarian$age)
+ovarian <- ovarian %>% mutate(age_group = ifelse(age >=50, "old", "young"))
+ovarian$age_group <- factor(ovarian$age_group)
+```
+
+```{r}
+head(ovarian)
+```
+
+
+###Run the survival analysis age vs Rx
+
+```{r survival}
+surv_object <- Surv(time = ovarian$futime, event = ovarian$fustat)
+surv_object 
+```
+
+## Kaplan-Meier curves 
+```{r}
+fit<-survfit(surv_object ~ 1, data = ovarian)
+summary(fit)
+
+ggsurvplot(fit, data = ovarian,conf.int=FALSE)
+ggsurvplot(fit, data = ovarian)
+```
+
+```{r}
+fit1 <- survfit(surv_object ~ rx, data = ovarian)
+summary(fit1)
+
+ggsurvplot(fit1, data = ovarian, pval = TRUE)
+ggsurvplot(fit1, data = ovarian, pval = TRUE, conf.int=TRUE)
+
+```
+
+```{r}
+
+fit2 <- survfit(surv_object ~ resid.ds, data = ovarian)
+summary(fit2)
+
+ggsurvplot(fit2, data = ovarian, pval = TRUE)
+ggsurvplot(fit2, data = ovarian, pval = TRUE, conf.int=TRUE)
+```
+
+```{r}
+summary(survfit(Surv(futime, fustat) ~ 1, data = ovarian), times = 365.25)
+```
+
+```{r}
+sd <- survdiff(Surv(futime, fustat) ~ resid.ds,
+data = ovarian)
+sd
+1 - pchisq(sd$chisq, length(sd$n) - 1)
+```
+
+
+```{r}
+fit.coxph <- coxph(surv_object ~ rx + resid.ds + age_group + ecog.ps, 
+                   data = ovarian)
+
+cox.zph(fit.coxph)
+
+ggforest(fit.coxph, data = ovarian)
+```
+
+## KM Survival Analysis cannot use multiple predictors, whereas Cox Regression can
+    KM Survival Analysis can run only on a single binary predictor, whereas Cox Regression can use both continuous and binary predictors. KM is a non-parametric procedure, whereas Cox Regression is a semi-parametric procedure.
+
+
+# Bayes theorem 
+
+
+```{r}
+
+set.seed(123)
+winner = c()
+for(i in 1:50000){
+  # randomly roll the ball 
+  p = runif(1, 0,1)
+  # sample either Ajay or Nathan 
+  tmp = sample(c("A", "N"), 8, replace=TRUE, prob=c(p, 1-p))
+  if(sum(tmp=="A")==5){
+    # Ajay won 5 so far 
+    a = 5; n = 3 
+    while(TRUE){
+      tmp = sample(c("A", "N"), 1, prob=c(p, 1-p))
+      #tmps = c(tmps, tmp)
+      # loop 
+      if(tmp =="A"){ a = a + 1 }
+      if(tmp =="N"){ n = n + 1 }
+      # until either reaches 6 
+      if(n == 6 || a == 6){
+        break
+      }
+    }
+    if( a == 6 ){
+      winner = c(winner, "A")
+    }
+    if( n == 6 ){
+      winner = c(winner, "N")
+    }
+  }
+}
+
+```
+
+```{r}
+table(winner)
+```
+
+```{r}
+get_prior = function(vals){
+  valspmin = pmin(vals, 1-vals)
+  prior = valspmin / sum(valspmin)
+  return(data.frame(theta=vals, prior=prior))
+}
+
+
+get_likelihood = function(thetas, successes, failures){
+  lvals = dbinom(successes, successes+failures, thetas)
+  
+  return(data.frame(theta = thetas, likelihood = lvals))
+  
+}
+
+get_posterior = function(likelihood, prior){
+  
+  likelihood$likelihood * prior_distribution$prior
+  
+  marginal_likelihood = sum(likelihood$likelihood * prior_distribution$prior)
+  
+  posterior = (likelihood$likelihood * prior_distribution$prior) / marginal_likelihood
+  
+  posterior = data.frame(theta=likelihood$theta, posterior=posterior)
+  return(posterior)
+}
+```
+
+```{r}
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_prior(thetas)
+likelihood = get_likelihood(thetas, 1 , 0)
+posterior = get_posterior(likelihood, prior_distribution)
+
+
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_prior(thetas)
+likelihood = get_likelihood(thetas, 83 , 17)
+posterior = get_posterior(likelihood, prior_distribution)
+
+plot(prior_distribution$theta, prior_distribution$prior)
+plot(likelihood$theta, likelihood$likelihood)
+plot(posterior$theta, posterior$posterior)
+```
+
+
+```{r}
+
+get_biased_prior = function(vals){
+  return(data.frame(theta=vals, prior=c(0.05, 0.15, 0.125,
+                                        0.08, 0.07, 0.05, 
+                                        0.07, 0.08, 0.125, 
+                                        0.15, 0.05)))
+}
+
+thetas <- seq(0, 1, 0.1)
+prior_distribution = get_biased_prior(thetas)
+likelihood = get_likelihood(thetas, 1 , 0)
+posterior = get_posterior(likelihood, prior_distribution)
+
+plot(prior_distribution$theta, prior_distribution$prior)
+plot(likelihood$theta, likelihood$likelihood)
+plot(posterior$theta, posterior$posterior)
+
+
+```
+
+## model selection 
+
+1. forward selection 
+
+starts with no predictors in the model 
+
+iteratively adds the predictors which contribute the most to explaining the dependent variable 
+
+stops when the improvement is no longer statistically significant 
+
+2. backward selection 
+
+starts with all predictors in the model 
+
+ remove the predictors which contribute the least to explaining the dependent variable 
+
+stops when the improvement is no longer statistically significant 
+
+3. stepwise selection 
+
+starts with no predictors in the model 
+
+a combination of forward and backward selections 
+
+4. all subsets 
+ 
+test everything 
+
+
+## odds 
+
+$$
+\frac{p}{1-p}
+$$

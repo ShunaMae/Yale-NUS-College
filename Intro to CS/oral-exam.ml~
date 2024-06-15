@@ -1,0 +1,21 @@
+(* oral-exam.ml *)
+(* Introduction to Computer Science (YSC1212), Sem2, 2021-2022 *)
+(* Shuna Maekawa shuna@u.yale-nus.edu.sg *)
+(* Version of Thu 28 Apr 2022 *)
+
+(* unit-test function *)
+
+let test_list_appendp_int candidate =
+  let b0 = (candidate [1;2;3] [4;5;6] [1;2;3;4;5;6] = true)
+  and b1 = (candidate [] [1;2][1;2] = true)
+  and b2 = (candidate [1;2][2;3][1;2;3] = false)
+  in  b0 && b1 && b2
+(* ********** *)
+
+(*implementation*)
+let list_appendp v1s v2s v3s =
+  List.append v1s v2s = v3s;;
+
+let () = assert(test_list_appendp, list_appendp)
+
+let end_of_file = "oral-exam.ml";;

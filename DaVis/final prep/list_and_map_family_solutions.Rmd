@@ -1,0 +1,350 @@
+---
+title: "Solutions: Lists and the map-family"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+    number_sections: true
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: pyramid.bib
+biblio-style: natbib
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+The following packages are needed for this exercise:
+
+```{r}
+library(ggrepel) # For geom_text_repel()
+library(DescTools) # For StripAttr()
+library(kableExtra)
+library(tidyverse)
+```
+
+
+# Relation between tibbles, data frames and lists
+
+(a)
+
+    ```{r}
+    musicians_tbl <- tribble(
+      ~name, ~band, ~instrument,
+      "Keith", "Stones", "guitar",
+      "John", "Beatles", "guitar",
+      "Paul", "Beatles", "bass"
+    )
+    ```
+    
+(b)
+
+    ```{r}
+    musicians_dfr <- data.frame(
+      name = c("Keith", "John", "Paul"),
+      band = c("Stones", "Beatles", "Beatles"),
+      instrument = c("guitar", "guitar", "bass")
+    )
+    ```
+    
+    Here are two options for determining whether all columns are character
+    vectors.
+    
+    (i) Elementary solution:
+    
+        ```{r}
+        is.character(musicians_dfr$name) &
+          is.character(musicians_dfr$band) &
+          is.character(musicians_dfr$instrument)
+        ```
+        
+    (ii) Less hard-coded. This option takes advantage of data frames
+         being lists, a fact that we will learn by the end of this exercise.
+    
+         ```{r}
+         map_lgl(musicians_dfr, is.character) |> all()
+         ```
+        
+(c)
+
+    ```{r}
+    musicians_list <- list(
+      name = c("Keith", "John", "Paul"),
+      band = c("Stones", "Beatles", "Beatles"),
+      instrument = c("guitar", "guitar", "bass")
+    )
+    ```
+    
+(d) The straightforward solution is to run
+    
+    ```{r, eval=FALSE}
+    class(musicians_tbl)
+    class(musicians_dfr)
+    class(musicians_list)
+    # etc.
+    ```
+    
+    and then to replace `class()` by `is_tibble()`, `is.data.frame()` and
+    `is.list()`.
+    Here is a slightly less repetitive alternative with nicer output.
+    First, I create a list containing the variables of interest.
+    The function `get()` turns a character string into a variable name.
+
+    ```{r}
+    objects <-
+      c("musicians_tbl", "musicians_dfr", "musicians_list") |>
+      set_names() |>
+      map(get)
+    ```
+
+    The function `classes()` returns the elements of `class()` as a list.
+    This function is useful for printing the classes as a list column later
+    on.
+    
+    ```{r}
+    classes <- function(x) list(class(x))
+    ```
+    
+    Next, I store `functions` as a tibble so that the column names are picked
+    up in the pipeline below that prints a table.
+    
+    ```{r}
+    functions <- c("classes", "is_tibble", "is.data.frame", "is.list") |>
+      set_names() |>
+      map_dfr(identity)
+    objects |>
+      map_dfr(~ map(functions, exec, .)) |>
+      mutate(object = names(objects)) |>
+      relocate(object) |>
+      kbl() |>
+      kable_styling(c("striped", "condensed", "bordered"), full_width = FALSE)
+    ```
+
+    - The results for `musicians_list` are as expected: its class is `"list"`,
+      and it is not a tibble or a data frame.
+    - The results for `musicians_dfr` are more surprising: its class is
+      `data.frame`, but `is.list()` also returns `TRUE`.
+      We also learn that a data frame is usually not a tibble.
+    - A tibble is also always a data frame and a list.
+(e)
+
+    ```{r}
+    attributes(musicians_tbl)
+    attributes(musicians_dfr)
+    attributes(musicians_list)
+    ```
+    
+    All three objects have the same `names` attribute, but the tibble and 
+    the data frame also have attributes `class` and `row.names`.
+(f) We can perform matrix-style subsetting on `musicians_tbl` and
+    `musicians_dfr`, but not on `musicians_list`.
+    
+    ```{r error=TRUE}
+    musicians_tbl[2, 3]
+    musicians_dfr[2, 3]
+    musicians_list[2, 3] # This line throws an error
+    ```
+
+(g) There are two options to remove the attributes.
+
+    (i) Elementary solution:
+    
+        ```{r}
+        attr(musicians_tbl, "class") <- NULL
+        attr(musicians_dfr, "class") <- NULL
+        attr(musicians_tbl, "row.names") <- NULL
+        attr(musicians_dfr, "row.names") <- NULL
+        ```
+    
+    (ii) We can use `StripAttr()` from the **DescTools** package to remove
+         the attributes `class` and `row.names` in a single step.
+
+         ```{r}
+         musicians_dfr <- StripAttr(musicians_dfr, c("class", "row.names"))
+         musicians_tbl <- StripAttr(musicians_tbl, c("class", "row.names"))
+         identical(musicians_tbl, musicians_dfr) &
+           identical(musicians_tbl, musicians_list)
+         ```
+    
+    In conclusion, tibbles and data frames are lists with two additional
+    attributes: `class` and `row.names`.
+    Thanks to these attributes, we can perform matrix-style subsetting.
+    If we remove these attributes from a tibble or data frame, they turn into
+    a simple list.
+
+
+    
+# Map-family of functions
+
+(a)
+    (i)
+
+        ```{r}
+        map_dbl(mtcars, mean)
+        ```
+
+        In the output, the name of the column in `mtcars` appears above the
+        corresponding mean.
+
+    (ii)
+    
+         ```{r}
+         map_chr(nycflights13::flights, typeof)
+         ```
+        
+    (iii)
+    
+          ```{r}
+          map_lgl(gss_cat, is.factor)
+          ```
+    
+    (iv)
+    
+         ```{r}
+         map_int(iris, n_distinct)
+         ```
+         
+(b) First, the function `pmap()` takes the first element of each list element
+    in the first argument (`list(10, 1:10, 2:11)`) and applies the function
+    in the second argument (`runif`).
+    That is, the first element returned by `pmap()` is a vector containing 10
+    random numbers that are uniformly distributed between 1 and 2.
+    
+    Next, the function takes the second element of each list element in
+    `list(10, 1:10, 2:11)`.
+    Because the first list element only has one element (`10`), this number
+    is recycled.
+    That is, the second element returned by `pmap()` is a vector containing
+    10 random numbers that are randomly distributed between 2 and 3.
+
+    This procedure repeats until the last elements in each element of
+    `list(10, 1:10, 2:11)` is reached.
+    Thus, the last element returned by `pmap()` is a vector containing 10
+    random numbers that are randomly distributed between 10 and 11.
+(c) Here is the code chunk rewritten.
+
+    ```{r}
+    map_dfr(
+      list(beaver1, beaver2),
+      ~ glm(activ ~ temp, data = ., family = binomial) |>
+        pluck(coef)
+    )
+    ```
+    
+    The function call `glm(activ ~ temp, data = ., family = binomial)`
+    returns the slope and intercept of a generalised linear model.
+    To be specific, the model is logistic regression because of the argument
+    `family = binomial`.
+    The next step in the pipe (`pluck(coef)`) extracts the regression
+    coefficients (i.e.\ intercept and slope) as a numeric vector.
+    The function `map_dfr()` takes the data frames `beaver1` and `beaver2` and
+    puts the regression coefficients into a tibble with two rows (one for
+    `beaver1` and another for `beaver2`) and two columns (one for the
+    intercept and another for the slope).
+
+
+# Tibbles with list columns
+
+(a) There are (at least) two options.
+
+    (i) Here is a **dplyr**-option:
+
+        ```{r}
+        starwars |>
+          select(where(is.list)) |>
+          names()
+        ```
+
+    (ii) Here is an alternative using `map_lgl()`:
+    
+         ```{r}
+         starwars |>
+           map_lgl(is.list) |>
+           {
+             \(x) names(starwars)[x]
+           }()
+         ```
+    
+(b) Again, there are (at least) two options.
+
+    (i) We can use `map_lgl()`:
+    
+        ```{r}
+        starwars |>
+          filter(map_lgl(starships, ~ ("Millennium Falcon" %in% .))) |>
+          pull(name)
+        ```
+        
+    (ii) We can use `rowwise()` from the **dplyr** package:
+    
+         ```{r}
+         starwars |>
+           rowwise() |>
+           mutate(flew_millenium_falcon = ("Millennium Falcon" %in% starships)) |>
+           filter(flew_millenium_falcon) |>
+           pull(name)
+         ```
+
+(c)
+
+    ```{r}
+    starwars |>
+      pull(films) |>
+      flatten_chr() |>
+      unique()
+    ```
+
+(d)
+
+    ```{r}
+    sw_gender <-
+      starwars |>
+      select(name, gender, films) |>
+      unnest_longer(films) |>
+      group_by(films) |>
+      summarise(prop_fem = mean(gender == "feminine", na.rm = TRUE))
+    ```
+
+(e)
+
+    ```{r fig.width=5.5, fig.height=4.5, fig.align='center', out.width='67%'}
+    release <- tribble(
+      ~movie,                   ~year,
+      "A New Hope",              1977,
+      "The Empire Strikes Back", 1980,
+      "Return of the Jedi",      1983,
+      "The Phantom Menace",      1999,
+      "Attack of the Clones",    2002,
+      "Revenge of the Sith",     2005,
+      "The Force Awakens",       2015
+    )
+    sw_gender <-
+      sw_gender |>
+      left_join(release, by = c("films" = "movie"))
+    ggplot(sw_gender, aes(year, prop_fem, label = films)) +
+      geom_smooth(method = "lm") +
+      geom_point() +
+      geom_text_repel() +
+      labs(
+        title = "Gender Ratio of Characters in Star Wars Movies",
+        caption = "Source: Star Wars API (https://swapi.dev/)",
+        x = "Year",
+        y = "Feminine characters"
+      ) +
+      scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+    ```
+
+(f) The regression line has a positive slope, so the percentage of feminine
+    characters has an increasing tendency.
+    However, with a p-value of 0.0808, the increase is not statistically
+    significant at an alpha level of 0.05.
+    
+    ```{r}
+    model <- lm(prop_fem ~ year, data = sw_gender)
+    broom::glance(model)
+    ```
+    
+
+    

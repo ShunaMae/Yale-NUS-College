@@ -1,0 +1,2 @@
+"0","sec_class <- titanic %>%"
+"0","  filter(class == ""2nd"")"

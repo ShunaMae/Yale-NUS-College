@@ -1,0 +1,55 @@
+---
+title: "Reflections on Data Visualisation"
+author: "Shuna"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center")
+```
+
+
+## Task 1
+
+**Find an example of (good or bad) data visualisation in the media.**
+
+This is an image obtained from an article *"Nearly 30% of birds in U.S., Canada have vanished since 1970"* (https://news.cornell.edu/stories/2019/09/nearly-30-birds-us-canada-have-vanished-1970) from Cornell Chronicle (Cornell University).
+
+```{r bad_plot, out.width='40%'}
+knitr::include_graphics("https://news.cornell.edu/sites/default/files/styles/full_size/public/2019-09/overall_bird_decrease_infographic_square_format_courtesy_of_cornell_lab_of_ornithology.jpg?itok=QGJEd7Va")
+```
+
+
+
+
+# Task 2
+
+**Explain what you like or dislike about the figure.**
+
+I like the following features of the figure:
+
+- The message is extremely clear, 2.9 billion birds gone since 1970. 
+- y-axis starts from 0.
+- Rather than writing 2 billion, they chose to write 2,000,000,000, which has more visual impact. 
+- The background is nice and reminds us of the importance of nature. 
+- The nice drawings of birds filling the space (and they are fading away!!). 
+
+What is there to dislike?
+
+- The x-axis. 30 years, 10 years, and 7 years are represented by almost the same length of x-axis. 
+- Due to the weird x-axis, the information might be delivered in a wrong way. In the image in the article, in 2000, the decline has been less than 2 billion. But in the actual plot, by 2000, the decline is about 2.5 billion. 
+- The map of North America on the background isn't doing much. In the original plot, the map depicts colour-coded breeding biomes, which is shown in plot C of the same image. The image on the article fails to include that information, and thus the map is not necessary. 
+
+
+The original plot was obtained from *"Decline of North American avifauna"* published in Science in 2019. (https://www.science.org/doi/10.1126/science.aaw1313)
+```{r original_plot, out.width='80%'}
+knitr::include_graphics("https://www.science.org/cms/10.1126/science.aaw1313/asset/b9394c89-009a-4977-9ea7-73a83454210a/assets/graphic/366_120_f1.jpeg")
+```
+
+
+# Task 3
+
+**How would you improve the presentation of the data?**
+
+I would firstly get rid of the map of North America to focus on the core message. Secondly, fix the x-axis to the right length, as in the original plot. The original plot was good enough to convey the necessary information, and some of the article did to appeal to the audience were effective - such as putting the huge title, changing a billion to 1,000,000,000, and adding some illustrations. 

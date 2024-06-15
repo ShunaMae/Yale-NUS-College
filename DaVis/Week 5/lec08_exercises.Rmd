@@ -1,0 +1,144 @@
+---
+title: "Lec08_exercises"
+author: "Team B"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r}
+# loading packages
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+
+(1)
+    ```{r}
+    # import data as tibble
+    dj <- as_tibble(
+      read_excel(
+        "dja-performance-report-monthly.xls",
+        skip = 5
+      )
+    )
+    ```
+
+(2) Remove columns 
+    ```{r}
+    dj <- dj[, 2:3]
+    ```
+
+
+(3) change column names
+    ```{r}
+    # use dplyr
+    dj <- dj |>
+      rename(
+        "date" = "Effective Date",
+        "close_value" = "Close Value"
+      )
+    dj <- na.omit(dj)
+    ```
+
+(4) what are the classes? 
+    ```{r}
+    class(dj$date)
+    class(dj$close_value)
+    ```
+
+(5) Append a column for month and year
+
+    ```{r}
+    dj <- dj |>
+      mutate(
+        # add a column for month 
+        month = mdy(dj$date) |> month(),
+        # add a column for year
+        year = mdy(dj$date) |> year()
+      )
+    dj
+    ```
+
+```{r}
+
+```
+
+
+(6) Check if all months are consecutive
+    ```{r}
+    FALSE %in% 
+      # if within the same year
+      ((lead(dj$month) - dj$month == 1 &
+                    lead(dj$year) == dj$year) |
+      # if they are from different years 
+      (lead(dj$month - dj$month == -11 &
+              lead(dj$year) - dj$year == 1)))
+    ```
+
+(7)
+
+(8)
+
+```{r}
+diff(c(1,3,5,7,9,10), lag = 1, differences = 1)
+```
+
+```{r}
+diff <- append(diff(dj$close_value, lag = 1, differences = 1),NA, after = 0)
+prev <- head(append(dj$close_value, NA, after = 0),-1)
+dj <- cbind(dj, diff,prev)
+dj <- dj |> mutate(rel_change_pct = diff / prev * 100)
+
+```
+
+```{r}
+dj
+```
+
+(9)
+```{r}
+# Remove first row because it contains NA
+ggplot(dj[-1, ], aes(mdy(date), rel_change_pct)) +
+  geom_line()
+
+```
+```{r}
+d_10 <- dj |> 
+  arrange(rel_change_pct)
+
+head(d_10)
+tail(d_10)
+
+```
+```{r}
+d_11 <- dj|> 
+  mutate(month_abb = month.abb[month])
+ggplot(d_11[-1, ], aes(month_abb, rel_change_pct))+
+  geom_boxplot()
+```
+
+
+```{r}
+d_13 <- dj |> 
+  group_by(month) 
+d_10 <- na.omit(d_13)
+summarise(d_13, median = median(rel_change_pct))
+```
+
+```{r}
+kruskal.test(rel_change_pct ~ month, data = dj)
+
+```
+

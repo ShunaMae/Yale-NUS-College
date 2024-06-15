@@ -1,0 +1,216 @@
+---
+title: "week09_davis_codes"
+author: "shuna"
+date: "3/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, messag= FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+1. Relation between tibbles, data-frames and lists 
+(a) Create a tibble 
+```{r}
+musicians_tbl <- tibble(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beetles", "Beetles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+
+musicians_tbl
+```
+
+(b) data frame
+```{r}
+musicians_df <- data.frame(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beetles", "Beetles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+musicians_df
+```
+
+(c) list
+```{r}
+musicians_list <- list(
+  name = c("Keith", "John", "Paul"),
+  band = c("Stones", "Beetles", "Beetles"),
+  instrument = c("guitar", "guitar", "bass")
+)
+str(musicians_list)
+```
+
+(4) 
+
+```{r}
+data <- list(musicians_tbl, musicians_df, musicians_list)
+```
+
+```{r}
+class(musicians_tbl)
+class(musicians_df)
+class(musicians_list)
+```
+
+```{r}
+map_at(data, function(x) class(x))
+```
+
+```{r}
+is_tibble(musicians_tbl)
+is_tibble(musicians_df)
+is_tibble(musicians_list)
+```
+
+
+
+```{r}
+is.data.frame(musicians_tbl)
+is.data.frame(musicians_df)
+is.data.frame(musicians_list)
+```
+
+```{r}
+is.list(musicians_tbl)
+is.list(musicians_df)
+is.list(musicians_list)
+```
+
+tibble and data frame are lists. 
+
+
+(e) Compare the return values of attribute() when applied to tibble, data frame, and list 
+
+```{r}
+attributes(musicians_tbl)
+attributes(musicians_df)
+attributes(musicians_list)
+
+```
+
+tibble and data frame have three attributes, namely class, row.names and names, but list only has one attribute, name. 
+
+(f) 
+
+```{r}
+musicians_df[1:2,]
+musicians_tbl[1:2,]
+#musicians_list[1:2,]
+#musicians_list[,1:2]
+```
+
+
+(g)
+
+```{r}
+class(musicians_df) <- NULL
+row.names(musicians_df) <- NULL
+
+class(musicians_tbl) <- NULL
+row.names(musicians_tbl) <- NULL
+```
+
+
+```{r}
+identical(musicians_list, musicians_tbl)
+identical(musicians_list, musicians_df)
+identical(musicians_df, musicians_tbl)
+```
+
+```{r}
+nycflights13::flights
+```
+
+(a)
+
+(1)
+```{r}
+map_dbl(mtcars, mean)
+```
+
+
+(ii)
+
+```{r}
+map_chr(nycflights13::flights, function(x) typeof(x))
+```
+
+(iii)
+
+```{r}
+map_lgl(forcats::gss_cat, is.factor)
+```
+
+(iv)
+```{r}
+map_dbl(iris, function(x) length(unique(x)))
+map_dbl(iris, n_distinct)
+```
+
+(b)
+
+```{r}
+pmap(list(10, 1:10, 2:11), runif)
+```
+`pmap()` iterates over multiple arguments simultaneously. In this case, `pmap()` takes three arguments, n, min, and max, and run `runif()` using these arguments. 
+
+The `runif()` function generates random deviates of the uniform distribution. Using n, min, max, we can generate n number of random samples within the range that is defined by the min and max argument. 
+
+In the actual code, the first 10 specifies the number of random deviates generated from the uniform distribution. The second 1:10 specifies the minimum of the deviates, and 2:11 specifies the maximum of the deviates. So the code generates 10 random samples for each min and max pair (10 times). 
+
+
+(c)
+
+```{r}
+beaver1
+```
+
+```{r}
+map_dfr(
+  list(beaver1, beaver2),
+  function(dfr) {
+    glm(activ ~ temp, data = dfr, family = binomial) |>
+      pluck(coef)
+  }
+)
+```
+
+```{r}
+map2_dfr(
+  list(beaver1,beaver2),
+  ~. glm(.x$activ ~ .x$temp, data = dfr, family = binomial) |> pluck(coef)
+)
+
+
+```
+
+
+```{r}
+starwars
+```
+
+(a)
+```{r}
+colnames(starwars)
+```
+
+(b)
+```{r}
+starwars |>
+  filter(map_lgl(starships, ~ "Millennium Falcon" %in% .)) |>
+  select(name) |>
+  pull()
+```
+
+
+```{r}
+starwars |>
+  map_chr(films, unique)exp_ma
+```
+

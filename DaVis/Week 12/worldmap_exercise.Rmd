@@ -1,0 +1,230 @@
+---
+title: "Lesson 20"
+author: "Team Red"
+date: '2022-04-05'
+output: 
+  prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
+  toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for this exercise.
+
+```{r, warning = FALSE}
+library(countrycode)
+library(readxl)
+library(sf)
+library(tidyverse)
+library(tmap)
+library(rmapshaper)
+```
+
+(1) Code from the exercise about relational data.
+
+    ```{r}
+    gdp_per_cap <- read_excel(
+      "API_NY.GDP.PCAP.KD_DS2_en_excel_v2_3731742.xls",
+      skip = 3
+    )
+    life_exp <- read_excel(
+      "API_SP.DYN.LE00.IN_DS2_en_excel_v2_3731513.xls",
+      skip = 3
+    )
+
+    # Next function can pivot any of the World Bank tibbles
+    pivot_longer_wb <- function(tb, name) {
+      tb |>
+        select(-starts_with("Indicator")) |>
+        pivot_longer(
+          matches("^\\d{4}$"), # String with exactly 4 digits
+          names_to = "year",
+          values_to = {{ name }},
+          names_transform = list(year = as.integer)
+        )
+    }
+    wb <-
+      Hmisc::llist(life_exp, gdp_per_cap) |>
+      imap(pivot_longer_wb) |>
+      reduce(left_join, by = c("Country Name", "Country Code", "year")) |>
+      semi_join(codelist, by = c("Country Code" = "iso3c"))
+    ```
+    
+(2) Import the country borders as `sf` objects. 
+
+```{r}
+import_and_simplify <- function(zip_file) {
+  zip_file |>
+    unzip() |>
+    str_subset(".shp$") |>
+    read_sf() |>
+    rmapshaper::ms_simplify()
+  }
+
+country_borders <- import_and_simplify("wb_countries_admin0_10m.zip")
+```
+
+
+
+
+
+
+(3) Norway and France have invalid country codes in the column `ISO_A3`. Chnage them to NOR and FRA, respectively. 
+```{r}
+country_borders <- country_borders |>
+  mutate(ISO_A3 = case_when(
+    FORMAL_EN == "French Republic" ~ "FRA",
+    FORMAL_EN == "Kingdom of Norway" ~ "NOR",
+    TRUE ~ ISO_A3
+  )
+)
+```
+
+(4) Create an `sf` object called countries that contains the columns:
+
+- name
+- code 
+- gdp_per_capita
+- life_Exp
+- geometry
+
+```{r}
+countries <- country_borders |>
+  inner_join(wb, by = c("ISO_A3" = "Country Code")) |>
+  filter(year == 2015) |>
+  select(
+    name = "Country Name",
+    code = "ISO_A3",
+    gdp_per_cap,
+    life_exp,
+    geometry
+  )
+
+all(st_is_empty(countries) == FALSE)
+# no geometry is empty
+```
+
+##### 5. Are any countries or land amsses missing? 
+
+```{r}
+data(World)
+tm_shape(World) + 
+  tm_polygons(col = "red")+
+  tm_shape(countries) +
+  tm_polygons() 
+```
+
+Some regions/land masses are missing, such as Western Saharan, Antarctica, and Kerguelen Islands. Missing regions are shown in red on the map 
+
+
+##### 6. Add the missing polygons 
+```{r}
+land_mass <- import_and_simplify("wb_land_10m.zip")
+
+tm_shape(land_mass) + 
+  tm_polygons("grey")+
+  tm_shape(countries) +
+  tm_polygons("grey") 
+```
+
+##### 7. What is the current projection of the map? Is it an equal-area projection? 
+
+```{r}
+st_crs(countries)$proj4string
+```
+
+longitude/latitude is an equidistant projection.
+
+
+##### 8. 
+
+
+```{r}
+# https://cran.r-project.org/web/packages/tmap/tmap.pdf
+
+tm_shape(land_mass, projection = "+proj=eck4") +
+  tm_polygons() +
+  tm_shape(countries, projection = "+proj=eck4") +
+  tm_polygons(
+    col = c("gdp_per_cap", "life_exp"),
+    title =
+      c(
+        "GDP per capita \n(US$, PPP 2015)",
+        "Life Expectancy at birth \n(years)"
+      ),
+    palette = list("OrRd", "BuGn"),
+    breaks = list(
+      c(
+        -Inf,
+        1000,
+        2000,
+        5000,
+        10000,
+        20000,
+        50000,
+        Inf
+      ),
+      c(
+        -Inf,
+        60,
+        65,
+        70,
+        75,
+        80,
+        85,
+        Inf
+      )
+    ),
+    labels = list(
+      c(
+        "Less than 1,000",
+        "1,000 to 2,000",
+        "2,000 to 5,000",
+        "5,000 to 10,000",
+        "10,000 to 20,000",
+        "20,000 to 50,000",
+        "50,000 or more"
+      ),
+      c(
+        "Less than 60",
+        "60 to 65",
+        "65 to 70",
+        "70 to 75",
+        "75 to 80",
+        "80 to 85",
+        "85 or more"
+      )
+    )
+  ) +
+  tm_layout(
+    main.title = "Wealth and Health by Country in 2015",
+    main.title.size = 1.5,
+    legend.title.size = 1,
+    legend.text.size = 0.8,
+    legend.position = c("left", "top"),
+    inner.margins = c(0.01, 0.3, 0.01, 0.01),
+    bg.color = "lightblue",
+    earth.boundary = TRUE,
+    space.color = "white",
+    frame = FALSE
+  ) +
+  tm_text(
+    "code",
+    size = "AREA",
+    root = 5,
+    remove.overlap = TRUE,
+    size.lim = c(0.3, 0.5)
+  ) +
+  tm_credits(
+    text = c("", "Source: World Bank"),
+    size = 0.9,
+    position = c(0.01, 0.02)
+  )
+```
+
+
+

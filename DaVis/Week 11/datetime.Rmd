@@ -1,0 +1,65 @@
+---
+title: "Date and times reading"
+author: "shuna"
+date: "3/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+```
+
+```{r}
+today()
+now()
+```
+
+```{r}
+ymd("2017-01-31")
+ymd(20170301, tz = "UTC")
+```
+
+```{r}
+flights |>
+  select(year, month, day, hour, minute) |>
+  mutate(departure = make_datetime(year, month, day, hour, minute))
+```
+
+```{r}
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+
+flights_dt <- flights %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>% 
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  ) %>% 
+  select(origin, dest, ends_with("delay"), ends_with("time"))
+
+flights_dt
+#> # A tibble: 328,063 x 9
+#>   origin dest  dep_delay arr_delay dep_time            sched_dep_time     
+#>   <chr>  <chr>     <dbl>     <dbl> <dttm>              <dttm>             
+#> 1 EWR    IAH           2        11 2013-01-01 05:17:00 2013-01-01 05:15:00
+#> 2 LGA    IAH           4        20 2013-01-01 05:33:00 2013-01-01 05:29:00
+#> 3 JFK    MIA           2        33 2013-01-01 05:42:00 2013-01-01 05:40:00
+#> 4 JFK    BQN          -1       -18 2013-01-01 05:44:00 2013-01-01 05:45:00
+#> 5 LGA    ATL          -6       -25 2013-01-01 05:54:00 2013-01-01 06:00:00
+#> 6 EWR    ORD          -4        12 2013-01-01 05:54:00 2013-01-01 05:58:00
+#> # … with 328,057 more rows, and 3 more variables: arr_time <dttm>,
+#> #   sched_arr_time <dttm>, air_time <dbl>
+```
+```{r}
+overnight
+```
+

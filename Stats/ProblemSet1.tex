@@ -1,0 +1,1089 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\title{Problemset1}
+\author{Shuna}
+\date{12 February, 2022}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Problemset1},
+  pdfauthor={Shuna},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{problem-set-1}{%
+\subsection{Problem set 1}\label{problem-set-1}}
+
+\hypertarget{question-1}{%
+\subsubsection{Question 1}\label{question-1}}
+
+\hypertarget{part-1}{%
+\paragraph{Part 1}\label{part-1}}
+
+\hypertarget{set-ups}{%
+\paragraph{Set ups}\label{set-ups}}
+
+A test for this disease is highly accurate but not quite perfect. It
+correctly identifies 95\% of patients with the disease but also
+incorrectly concludes that 1\% of the noninfected samples have the
+disease.
+
+You get a positive result - what is frequency of the disease in the
+population would mean that
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  you have \textgreater50\% chance of having the disease
+\item
+  you have \textgreater99\% chance of having the disease
+\end{enumerate}
+
+\textbf{Answers}
+
+Let Event \(D\) the probability of having the disease (which is what's
+asked in the question).
+
+Let Event \(T\) the probability of being tested positive.
+
+\(P(T)\) can be expressed as below:
+
+\[
+P(T) = P(D) \times 0.95 + \left(1-P(D)\right)\times 0.01
+\] Then, \(P(T|D)\) denotes the probability of a positive result given
+having the disease, therefore \(P(T|D) = 0.95\).
+
+\(P(D|T)\) denotes the probability of both events happening, which is
+\(0.5\) in \texttt{(a)} and \(0.99\) in \texttt{(b)}.
+
+Applying the Bayes Theorem, we get the following equation:
+
+\[
+P(D|T) = \frac{P(T|D)\times{P(D)}}{P(T)}
+\]
+
+\hypertarget{a-you-have-50-chance-of-having-the-disease}{%
+\subparagraph{(a) you have \textgreater50\% chance of having the
+disease}\label{a-you-have-50-chance-of-having-the-disease}}
+
+\[
+\begin{align}
+&0.5 < \dfrac{0.95\times P\left( D\right) }{0.95\times P\left( D\right) +\left( 1-P\left( D\right) \right) \times 0.01} \\
+\Leftrightarrow\ &0.5 < \dfrac{0.95\times P\left( D\right) }{0.01+0.94\times P\left( D\right) } \\
+\Leftrightarrow \ &0.5 < \dfrac{0.95\times P\left( D\right) }{\dfrac{1}{100}\left( 1+94\times P\left( D\right) \right) } \\
+\Leftrightarrow \  &0.5 < \dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } \\ 
+\Leftrightarrow\  &95\times P\left( D\right) < 0.5\left( 1+94\times P\left( D\right) \right) \\
+\Leftrightarrow\ &P\left( D\right) > \dfrac{1}{96} 
+\end{align}
+\]
+
+The frequency of the disease is less than 0.0104167 in the population.
+
+\hypertarget{b-you-have-99-chance-of-having-the-disease}{%
+\subparagraph{(b) you have \textgreater99\% chance of having the
+disease}\label{b-you-have-99-chance-of-having-the-disease}}
+
+\[
+\begin{align}
+\dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } > 0.99 \\
+\Leftrightarrow\ P(D) > \frac{0.99}{95 - 0.99 \times {94}}
+\end{align}
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FloatTok{0.99} \SpecialCharTok{/}\NormalTok{ (}\DecValTok{95} \SpecialCharTok{{-}} \FloatTok{0.99}\SpecialCharTok{*}\DecValTok{94}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.5103093
+\end{verbatim}
+
+The frequency of the disease is more than \(0.5103093\) in the
+population.
+
+\hypertarget{part-2}{%
+\paragraph{Part 2}\label{part-2}}
+
+A test for a different disease is highly accurate but not quite perfect.
+It correctly identifies 80\% of patients with the disease but also
+incorrectly concludes that 20\% of the noninfected samples have the
+disease.
+
+Instead of getting a positive result, you actually get a \emph{negative}
+result - at what frequency of the disease in the population do you have
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  greater than 25\% chance of having the disease
+\item
+  greater than 50\% chance of having the disease
+\end{enumerate}
+
+\hypertarget{question-2}{%
+\subsubsection{Question 2}\label{question-2}}
+
+Patients diagnosed with pancreatic cancer are asked about they smoke.
+Patients without pancreatic carcinoma are also asked about if they
+smoke.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{data }\OtherTok{=} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{c}\NormalTok{(}\DecValTok{80}\NormalTok{, }\DecValTok{40}\NormalTok{, }\DecValTok{40}\NormalTok{, }\DecValTok{50}\NormalTok{), }\AttributeTok{ncol=}\DecValTok{2}\NormalTok{, }\AttributeTok{nrow=}\DecValTok{2}\NormalTok{)}
+\FunctionTok{colnames}\NormalTok{(data)}\OtherTok{=} \FunctionTok{c}\NormalTok{(}\StringTok{"pancreatic cancer"}\NormalTok{, }\StringTok{"no pancreatic cancer"}\NormalTok{)}
+\FunctionTok{row.names}\NormalTok{(data)}\OtherTok{=} \FunctionTok{c}\NormalTok{(}\StringTok{"smoker"}\NormalTok{, }\StringTok{"no smokers"}\NormalTok{)}
+\NormalTok{data}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##            pancreatic cancer no pancreatic cancer
+## smoker                    80                   40
+## no smokers                40                   50
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  what is the probability that a patient is a smoker?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(}\DecValTok{80}\SpecialCharTok{+}\DecValTok{40}\NormalTok{) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{80}\SpecialCharTok{+}\DecValTok{40}\SpecialCharTok{+}\DecValTok{40}\SpecialCharTok{+}\DecValTok{50}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.5714286
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  what is the probability that a patient has pancreatic cancer?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{(}\DecValTok{80} \SpecialCharTok{+} \DecValTok{40}\NormalTok{) }\SpecialCharTok{/}\NormalTok{ (}\DecValTok{80}\SpecialCharTok{+}\DecValTok{40}\SpecialCharTok{+}\DecValTok{40}\SpecialCharTok{+}\DecValTok{50}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.5714286
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  what is the probability that a patient has pancreatic cancer given
+  they are a smoker?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{80} \SpecialCharTok{/}\NormalTok{ (}\DecValTok{80}\SpecialCharTok{+}\DecValTok{40}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.6666667
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  what is the probability that a patient is a non-smoker given that they
+  have pancreatic cancer?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{40} \SpecialCharTok{/}\NormalTok{ (}\DecValTok{40} \SpecialCharTok{+} \DecValTok{80}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.3333333
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  is having cancer independent from smoking status
+\end{enumerate}
+
+Let P(A) be the probability of a patient being a smoker.
+
+Let P(B) be the probability of a patient having pancreatic cancer.
+
+If two events are independent,
+\(P\left( A\cap B\right) =P\left( A\right) \times P\left( B\right)\).
+
+\[
+P(A) = \frac{80+40}{80+40+40+50} = 0.5714286 \\
+P(B) = \frac{80+40}{80+40+40+50} = 0.5714286 \\
+P(A\cap B) = \frac{80}{80+40+40+50} = 0.3809524
+\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FloatTok{0.5714286} \SpecialCharTok{\^{}} \DecValTok{2}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.3265306
+\end{verbatim}
+
+\hypertarget{question-3}{%
+\subsubsection{Question 3}\label{question-3}}
+
+what type of variable is:
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  Birthweight classified as low, not low
+\end{enumerate}
+
+Binary variables
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  Birthweight classified as low, medium, high
+\end{enumerate}
+
+Ordinal variables
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Delivery type classified as cesarean, natural, induced
+\end{enumerate}
+
+Categorical variables
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  Birthweight in grams
+\end{enumerate}
+
+Continuous Variables
+
+\hypertarget{question-4}{%
+\subsubsection{Question 4}\label{question-4}}
+
+In a random sample of 4000 people, the average height is 150 cm, and the
+variance is 36. Height is normally distributed.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  one individual was 180 cm \ldots. how many SDs above average were
+  they?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{abs}\NormalTok{(}\DecValTok{180{-}150}\NormalTok{) }\SpecialCharTok{/} \DecValTok{36}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.8333333
+\end{verbatim}
+
+b). another individal was 140 cm tall \ldots{} how many SDs are they
+away from the mean?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{abs}\NormalTok{(}\DecValTok{140{-}150}\NormalTok{) }\SpecialCharTok{/} \DecValTok{36}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.2777778
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  Another individual was 1.4 SDs below the average height. How tall are
+  they?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{150} \SpecialCharTok{{-}}\NormalTok{ (}\FloatTok{1.4} \SpecialCharTok{*} \DecValTok{36}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 99.6
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  If an indivdiual was within 1.96 SDs of average height, what is the
+  shortest they could have been and what is the tallest?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{=} \FloatTok{1.96} \SpecialCharTok{*} \DecValTok{36}
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The tallest is \%g cm"}\NormalTok{, }\DecValTok{150} \SpecialCharTok{+}\NormalTok{ x)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The tallest is 220.56 cm"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The shortest is \%g cm"}\NormalTok{, }\DecValTok{150} \SpecialCharTok{{-}}\NormalTok{ x)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The shortest is 79.44 cm"
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  what is so special about 1.96 SDs?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{quantile}\NormalTok{(}\FunctionTok{rnorm}\NormalTok{(}\DecValTok{4000}\NormalTok{, }\DecValTok{150}\NormalTok{, }\DecValTok{36}\NormalTok{), }\FloatTok{0.025}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     2.5% 
+## 79.42341
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{quantile}\NormalTok{(}\FunctionTok{rnorm}\NormalTok{(}\DecValTok{4000}\NormalTok{, }\DecValTok{150}\NormalTok{, }\DecValTok{36}\NormalTok{), }\FloatTok{0.975}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    97.5% 
+## 221.1078
+\end{verbatim}
+
+It is special because they match the 95\% confidence interval range.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  how would you describe individuals who are
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{height }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(height)\{}
+\NormalTok{  x }\OtherTok{\textless{}{-}}  \FunctionTok{abs}\NormalTok{(}\DecValTok{150} \SpecialCharTok{{-}}\NormalTok{ height) }\SpecialCharTok{/} \DecValTok{36}
+\NormalTok{  y }\OtherTok{\textless{}{-}} \DecValTok{0}
+  \ControlFlowTok{if}\NormalTok{ (height }\SpecialCharTok{\textgreater{}} \DecValTok{150}\NormalTok{)\{}
+\NormalTok{    y }\OtherTok{\textless{}{-}}  \StringTok{"above"}
+\NormalTok{  \}}
+  \ControlFlowTok{else}\NormalTok{\{}
+\NormalTok{    y }\OtherTok{\textless{}{-}}  \StringTok{"below"}
+\NormalTok{  \}}
+  \FunctionTok{sprintf}\NormalTok{(}\StringTok{"The individual is \%.2f SDs \%s average height."}\NormalTok{, x, y)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\roman{enumi})}
+\tightlist
+\item
+  170cm tall
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{height}\NormalTok{(}\DecValTok{170}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The individual is 0.56 SDs above average height."
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\roman{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  120cm tall
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{height}\NormalTok{(}\DecValTok{120}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The individual is 0.83 SDs below average height."
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\roman{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  155cm tall
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{height}\NormalTok{(}\DecValTok{155}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The individual is 0.14 SDs above average height."
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\roman{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  90cm tall
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{height}\NormalTok{(}\DecValTok{90}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The individual is 1.67 SDs below average height."
+\end{verbatim}
+
+\hypertarget{question-5}{%
+\subsubsection{Question 5}\label{question-5}}
+
+the attached figure (psfig1.pdf) shows the number of metastatic events
+per patient. what is the mean?
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{patients }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{50}\NormalTok{,}\DecValTok{30}\NormalTok{,}\DecValTok{20}\NormalTok{,}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{)}
+\NormalTok{lesions }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{,}\DecValTok{4}\NormalTok{)}
+
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{5}\NormalTok{)\{}
+\NormalTok{  s }\OtherTok{\textless{}{-}}  \DecValTok{0}
+\NormalTok{  s }\OtherTok{\textless{}{-}}\NormalTok{ s }\SpecialCharTok{+}\NormalTok{ (patients[i]}\SpecialCharTok{*}\NormalTok{lesions[i])}
+\NormalTok{  ans }\OtherTok{\textless{}{-}}\NormalTok{ s }\SpecialCharTok{/} \FunctionTok{sum}\NormalTok{(patients)}
+\NormalTok{\}}
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The mean is \%.2f"}\NormalTok{, ans)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The mean is 0.33"
+\end{verbatim}
+
+\hypertarget{question-6}{%
+\subsubsection{Question 6}\label{question-6}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pbc }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"pbc.tsv"}\NormalTok{, }\AttributeTok{sep =} \StringTok{"}\SpecialCharTok{\textbackslash{}t}\StringTok{"}\NormalTok{)}
+\NormalTok{pbc }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{\textquotesingle{}m\textquotesingle{}}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+The file pbc.tsv is a tsv file containing information from Mayo Clinic
+trial in primary biliary cirrhosis (PBC) of the liver conducted between
+1974 and 1984. A total of 424 PBC patients over this interval met
+eligibility criteria for the randomized placebo controlled trial of the
+drug D-penicillamine
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.50}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.50}}@{}}
+\toprule
+\begin{minipage}[b]{\linewidth}\raggedright
+var
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+description
+\end{minipage} \\
+\midrule
+\endhead
+age & in years \\
+albumin & serum albumin (g/dl) \\
+alk.phos & alkaline phosphotase (U/liter) \\
+ascites & presence of ascites \\
+ast & aspartate aminotransferase, once called SGOT (U/ml) \\
+bili & serum bilirunbin (mg/dl) \\
+chol & serum cholesterol (mg/dl) \\
+copper & urine copper (ug/day) \\
+edema & 0 no edema, 0.5 untreated or successfully treated, 1 edema
+despite diuretic therapy \\
+hepato & presence of hepatomegaly or enlarged liver \\
+id & case number \\
+platelet & platelet count \\
+protime & standardised blood clotting time \\
+sex & m/f \\
+spiders & blood vessel malformations in the skin \\
+stage & histologic stage of disease (needs biopsy) \\
+status & status at endpoint, 0/1/2 for censored, transplant, dead \\
+time & number of days between registration and the earlier of death,
+transplantion, or study analysis in July, 1986 \\
+trt & 1/2/NA for D-penicillmain, placebo, not randomised \\
+trig & triglycerides (mg/dl) \\
+\bottomrule
+\end{longtable}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\tightlist
+\item
+  Describe the distribution of patient age?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ pbc, }\FunctionTok{aes}\NormalTok{(age))}\SpecialCharTok{+}
+  \FunctionTok{geom\_histogram}\NormalTok{(}\AttributeTok{color =} \StringTok{\textquotesingle{}black\textquotesingle{}}\NormalTok{,}
+                 \AttributeTok{fill =} \StringTok{\textquotesingle{}white\textquotesingle{}}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+\end{verbatim}
+
+\includegraphics{ProblemSet1_files/figure-latex/unnamed-chunk-25-1.pdf}
+not a normal distribution
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  What kind of distribution does the levels of cholesterol follow?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ pbc, }\FunctionTok{aes}\NormalTok{(chol))}\SpecialCharTok{+}
+  \FunctionTok{geom\_histogram}\NormalTok{(}\AttributeTok{color =} \StringTok{\textquotesingle{}black\textquotesingle{}}\NormalTok{,}
+                 \AttributeTok{fill =} \StringTok{\textquotesingle{}white\textquotesingle{}}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+\end{verbatim}
+
+\begin{verbatim}
+## Warning: Removed 134 rows containing non-finite values (stat_bin).
+\end{verbatim}
+
+\includegraphics{ProblemSet1_files/figure-latex/unnamed-chunk-26-1.pdf}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  What is the median absolute deviation (MAD) of bilirunbin levels in
+  this sample of patients?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{a }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{nrow}\NormalTok{(pbc))\{}
+\NormalTok{  a[i] }\OtherTok{\textless{}{-}} \FunctionTok{abs}\NormalTok{(pbc}\SpecialCharTok{$}\NormalTok{bili[i] }\SpecialCharTok{{-}} \FunctionTok{mean}\NormalTok{(pbc}\SpecialCharTok{$}\NormalTok{bili))}
+\NormalTok{\}}
+\FunctionTok{median}\NormalTok{(a)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 2.320813
+\end{verbatim}
+
+What does MAD measure?
+
+It is a measure of variability of a univariate distribution.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  What is the probability of a patient having an edema given that they
+  are male?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+       \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"m"} \SpecialCharTok{\&}\NormalTok{ edema }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+         \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"m"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.06818182
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  What is the probability of being on D-penicillamine given that you are
+  female?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%} 
+           \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"f"} \SpecialCharTok{\&}\NormalTok{trt }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%} 
+         \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"f"}\NormalTok{))}
+
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The probability of being on D{-}penicillamine given that you are female is \%.4f"}\NormalTok{, x)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The probability of being on D-penicillamine given that you are female is 0.3663"
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  Is being on D-penicillamine independent from sex?
+\end{enumerate}
+
+Let \(P(F)\) be the probability of a patient being a female.
+
+Let \(P(D)\) be the probability of a patient being on D-penicillamine.
+
+\(P(F \cap D)\) is the probability of a patient being a female and on
+D-penicillamine.
+
+If \(P(F) \times P(D) = P(F \cap D)\), then two events are independent.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# P(F)}
+\NormalTok{P\_f }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"f"}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+\CommentTok{\# P(D)}
+\NormalTok{P\_d }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(trt }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/}
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+\CommentTok{\# P(F and D)}
+\NormalTok{P\_fd }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"f"} \SpecialCharTok{\&}\NormalTok{ trt }\SpecialCharTok{==} \DecValTok{1}\NormalTok{))}\SpecialCharTok{/}
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+
+\NormalTok{P\_f }\SpecialCharTok{*}\NormalTok{ P\_d}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.338202
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{P\_fd}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.3277512
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  What is the probability of being male and being older than 50 or being
+  female and older than 50?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+       \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"m"} \SpecialCharTok{\&}\NormalTok{ age }\SpecialCharTok{\textgreater{}} \DecValTok{50}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+\NormalTok{y }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+           \FunctionTok{filter}\NormalTok{(sex }\SpecialCharTok{==} \StringTok{"f"} \SpecialCharTok{\&}\NormalTok{ age }\SpecialCharTok{\textgreater{}} \DecValTok{50}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The probability of being male and being older than 50 is \%.4f and the probability of being female and being older than 50 is \%.4f"}\NormalTok{, x,y)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The probability of being male and being older than 50 is 0.0742 and the probability of being female and being older than 50 is 0.4593"
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{6}
+\tightlist
+\item
+  What is the probability that a patient has ascites?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+       \FunctionTok{filter}\NormalTok{(ascites }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The probability of a patient having ascites is \%.4f"}\NormalTok{, g)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The probability of a patient having ascites is 0.0574"
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{7}
+\tightlist
+\item
+  What type of variable is edema?
+\end{enumerate}
+
+Nominal Variable
+
+\begin{enumerate}
+\def\labelenumi{\roman{enumi})}
+\tightlist
+\item
+  What is the probability of having a albumin level above 200 and a
+  platelet count above 400?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Q\_i }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+              \FunctionTok{filter}\NormalTok{(albumin }\SpecialCharTok{\textgreater{}} \DecValTok{200} \SpecialCharTok{\&}\NormalTok{ platelet }\SpecialCharTok{\textgreater{}} \DecValTok{400}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+
+\FunctionTok{sprintf}\NormalTok{(}\StringTok{"The probability of having a albumin level above 200 and a platelet count above 400 is \%g"}\NormalTok{, Q\_i)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "The probability of having a albumin level above 200 and a platelet count above 400 is 0"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{quantile}\NormalTok{(pbc}\SpecialCharTok{$}\NormalTok{albumin)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     0%    25%    50%    75%   100% 
+## 1.9600 3.2425 3.5300 3.7700 4.6400
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{9}
+\tightlist
+\item
+  Is having spiders independent from disease stage?
+\end{enumerate}
+
+Let \(P(S)\) be the probability of having spiders.
+
+Let \(P(d_x)\) be the probability of being on the \(x\)th stage of the
+disease
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# P(S)}
+\NormalTok{P\_s }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+       \FunctionTok{filter}\NormalTok{(spiders }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc)}
+
+\ControlFlowTok{for}\NormalTok{ (x }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{)\{}
+\NormalTok{  compare }\OtherTok{=} \FunctionTok{c}\NormalTok{()}
+\NormalTok{  P\_dx }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+                 \FunctionTok{filter}\NormalTok{(stage }\SpecialCharTok{==}\NormalTok{ x)) }\SpecialCharTok{/}
+    \FunctionTok{nrow}\NormalTok{(pbc)}
+\NormalTok{  P\_s\_dx }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+                   \FunctionTok{filter}\NormalTok{(spiders }\SpecialCharTok{==} \DecValTok{1} \SpecialCharTok{\&} 
+\NormalTok{                            stage }\SpecialCharTok{==}\NormalTok{ x)) }\SpecialCharTok{/}
+    \FunctionTok{nrow}\NormalTok{(pbc)}
+  
+\NormalTok{  k }\OtherTok{\textless{}{-}} \FunctionTok{sprintf}\NormalTok{(}\StringTok{"For the stage \%g, the P(S\&d\%g) is \%.4f and P(S)*P(dx) is \%.4f."}\NormalTok{, x, x,P\_s\_dx, P\_s }\SpecialCharTok{*}\NormalTok{ P\_dx)}
+  \FunctionTok{print}\NormalTok{(k)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "For the stage 1, the P(S&d1) is 0.0024 and P(S)*P(dx) is 0.0108."
+## [1] "For the stage 2, the P(S&d2) is 0.0215 and P(S)*P(dx) is 0.0474."
+## [1] "For the stage 3, the P(S&d3) is 0.0718 and P(S)*P(dx) is 0.0798."
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi})}
+\setcounter{enumi}{10}
+\tightlist
+\item
+  What is the probability that a patient has spiders given that they are
+  on D-penicillmain
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+       \FunctionTok{filter}\NormalTok{(spiders }\SpecialCharTok{==} \DecValTok{1} \SpecialCharTok{\&}
+\NormalTok{                trt }\SpecialCharTok{==} \DecValTok{1}\NormalTok{)) }\SpecialCharTok{/} 
+  \FunctionTok{nrow}\NormalTok{(pbc }\SpecialCharTok{\%\textgreater{}\%}
+         \FunctionTok{filter}\NormalTok{(trt }\SpecialCharTok{==} \DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.2848101
+\end{verbatim}
+
+\hypertarget{question-7}{%
+\subsubsection{Question 7}\label{question-7}}
+
+Bob takes a sample of 100 women from a community aged 50-65, and Alice
+takes a sample of 1000 women from a community aged 50-65.
+
+Which investigator will have the largest standard error \ldots{} why?
+
+\textbf{Answer} Standard error is a measure of the deviation of the
+sample means from the population mean. It can be calculated by the
+equation
+
+\[
+\textit{standard error} = \frac{sd}{\sqrt{n}}
+\] Given that two investigators take samples from the same population,
+the standard deviation is fixed. Therefore, the standard error of Bob's
+sample will be \(\dfrac{sd}{\sqrt{100}} = 0.1 \times sd\), and that of
+Alice's sample will be
+\(\dfrac{sd}{\sqrt{1000}}\fallingdotseq 0.032 \times sd\). Hence Bob
+will have larger standard error.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sessionInfo}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## R version 4.1.2 (2021-11-01)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 22000)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.1252 
+## [2] LC_CTYPE=English_United States.1252   
+## [3] LC_MONETARY=English_United States.1252
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] forcats_0.5.1   stringr_1.4.0   dplyr_1.0.7     purrr_0.3.4    
+## [5] tidyr_1.1.4     tibble_3.1.6    tidyverse_1.3.1 ggplot2_3.3.5  
+## [9] readr_2.1.1    
+## 
+## loaded via a namespace (and not attached):
+##  [1] tidyselect_1.1.1 xfun_0.29        haven_2.4.3      colorspace_2.0-2
+##  [5] vctrs_0.3.8      generics_0.1.1   htmltools_0.5.2  yaml_2.2.1      
+##  [9] utf8_1.2.2       rlang_0.4.12     pillar_1.6.4     glue_1.6.0      
+## [13] withr_2.4.3      DBI_1.1.2        dbplyr_2.1.1     modelr_0.1.8    
+## [17] readxl_1.3.1     lifecycle_1.0.1  munsell_0.5.0    gtable_0.3.0    
+## [21] cellranger_1.1.0 rvest_1.0.2      evaluate_0.14    labeling_0.4.2  
+## [25] knitr_1.37       tzdb_0.2.0       fastmap_1.1.0    fansi_1.0.0     
+## [29] highr_0.9        broom_0.7.11     Rcpp_1.0.7       scales_1.1.1    
+## [33] backports_1.4.1  jsonlite_1.7.2   farver_2.1.0     fs_1.5.2        
+## [37] hms_1.1.1        digest_0.6.29    stringi_1.7.6    grid_4.1.2      
+## [41] cli_3.1.0        tools_4.1.2      magrittr_2.0.1   crayon_1.4.2    
+## [45] pkgconfig_2.0.3  ellipsis_0.3.2   xml2_1.3.3       reprex_2.0.1    
+## [49] lubridate_1.8.0  rstudioapi_0.13  assertthat_0.2.1 rmarkdown_2.11  
+## [53] httr_1.4.2       R6_2.5.1         compiler_4.1.2
+\end{verbatim}
+
+\end{document}

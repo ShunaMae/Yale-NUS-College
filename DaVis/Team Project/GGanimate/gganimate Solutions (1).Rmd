@@ -1,0 +1,396 @@
+---
+title: "gganimate Solutions"
+author: "Team Blue"
+date: "4/13/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, fig.align = "center")
+```
+
+We will need the following packages for our exercises.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+library(gapminder)
+library(gifski)
+library(scales)
+```
+
+# Exercise 1: Measles heat map using transition_time
+
+Recall from earlier in the semester when we worked on the measles assignment.
+Our assignment from last time was to construct a grid plot of incidence of measles cases over time, and conduct a comparison of the incidence before and after when the vaccines were introduced.
+
+For the sake of brevity and time, our intention today with this exercise is to use the transition_time() element of the gganimate package to enhance a geom_point plot to show the incidence of measles cases over time. 
+
+Below you will find a quick-and-dirty geom_point plot of measles cases.
+
+```{r}
+measles <- read_csv("measles_for_ggplot2.csv")
+
+ggplot(measles, aes(year, incidence)) +
+  geom_point(aes(colour = state)) +
+  labs(
+    title = "Measles cases in the United States over time by state",
+    caption = "Source: Project Tycho"
+  ) +
+  scale_y_log10(limits = c(2e-4, NA), breaks = 10^(-2:4), labels = prettyNum) +
+  geom_vline(xintercept = 1963, size = 1) +
+  annotate(
+    geom = "text", label = "Introduction of Vaccines",
+    x = 1950, y = 10000, hjust = -0.45, vjust = -1
+  )
+```
+
+Your task is to build upon the above code. 
+
+a) Convert the above code from a static plot to an animated plot, using the transition_time() element of the gganimate package. 
+
+b) Add a subtitle to the code with a frame-time element so we know which year each animation refers to, in order to make a good comparison.
+
+    The resulting plot should see the geom_points moving vertically as the measles incidence changes and horizontally as the year changes
+
+    Note: the code can take around 90 seconds to run, so be sure of your answer before you go ahead and run, otherwise you may risk running out of time! You may also wish to work on other exercises while the code runs to save time.
+
+```{r}
+# Solution to a) and b)
+ggplot(measles, aes(year, incidence)) +
+  geom_point(aes(colour = state)) +
+  labs(
+    title = "Measles cases in the United States over time by state",
+    subtitle = "Year: {frame_time}",
+    caption = "Source: Project Tycho"
+  ) +
+  transition_time(year) +
+  scale_y_log10(limits = c(2e-4, NA), breaks = 10^(-2:4), labels = prettyNum) +
+  geom_vline(xintercept = 1963, size = 1) +
+  annotate(
+    geom = "text", label = "Introduction of Vaccines",
+    x = 1950, y = 10000, hjust = -0.45, vjust = -1
+  )
+```
+
+c) Comment on your plot. What are its advantages and disadvantages?  What can be done to improve the plot? You are not expected to implement these improvements into the R code, please just write them down in bullet point format
+
+Advantages could include
+-   The animated plot is much tidier than the static plot
+-   The animated plot clearly shows the general effect of vaccines on measles 
+incidence
+-   The log10 scale enables us to view cases very easily
+-   The line at year 1963 helps us to identify the cause of reduction in measles
+incidence cases
+
+Disadvantages could include
+-   The log10 scale distorts just how much vaccines have reduced incidence
+-   It's quite difficult to view which state is which given the fast pace of animation
+-   Similarly, it is very difficult to track the trend of each state
+-   Missing values occur in many years and there is nothing to tell us when it
+    occurs. They simply are blank. This can be rectified by introducing another
+    geom_point element, perhaps in white, to denote missing values
+-   The area below the 0.01 incidence rate is quite large
+-   Including the transition_wake() function would help to identify trends for
+each state
+-   Colours of states are quite similar to one another
+
+# Exercise 2: Singapore population pyramid
+
+We use the following the dataset for this exercise.
+
+```{r}
+data <- read_csv("data.csv")
+```
+
+A few weeks back, we worked on creating a faceted bar graph visualizing the Singapore resident population between 1970 and 2020. The code for that graph is here.
+
+```{r fig.height=7, fig.width=10}
+ggplot(data, aes(pop2, age, fill = sex)) +
+  geom_col() +
+  facet_wrap(~year, ncol = 4) +
+  labs(
+    title = "Singapore Resident Population between 1970 and 2020",
+    x = "Population",
+    y = "Age (years)",
+    caption = "Source: Department of Statistics Singapore"
+  ) +
+  theme(legend.position = c(0.9, 0.2)) +
+  scale_fill_manual(name = "Sex", values = c("steelblue3", "red3"), labels = c("female", "male")) +
+  scale_x_continuous(labels = ~ comma(abs(.)))
+```
+
+Do the following questions using `gganimate` commands.
+
+a) Show transitions between each year, without intermediate states.
+
+```{r, fig.align='center', fig.height=7, fig.width=10}
+# Solution
+static_plot<- 
+  ggplot(data, aes(pop2, age, fill = sex)) +
+  geom_col() +
+  labs(
+    title = "Singapore Resident Population between 1970 and 2020",
+    x = "Population",
+    y = "Age (years)",
+    caption = "Source: Department of Statistics Singapore"
+  ) +
+  theme(legend.position = c(0.9, 0.2)) +
+  scale_fill_manual(name = "Sex", values = c("steelblue3", "red3"), labels = c("female", "male")) +
+  scale_x_continuous(labels = ~ comma(abs(.)))
+
+static_plot + transition_manual(year)
+```
+
+b) Show transitions between each year, with intermediate states. Add subtitle with year of each state shown. 
+
+```{r, fig.align='center', fig.height=7, fig.width=10}
+# Solution
+static_plot + transition_states(year, transition_length = 4, state_length = 1) +
+  labs(
+    subtitle ='Year: {closest_state}'
+  ) 
+
+#or
+
+static_plot + transition_time(as.integer(year))
+```
+
+c) Furthermore, add a shadow such that the points have a wake of points with the data from the last 5% of frames.
+
+```{r, fig.align='center', fig.height=7, fig.width=10}
+# Solution
+# Creating the plot
+static_plot + transition_states(year, transition_length = 4, state_length = 1) +
+  labs(
+    subtitle ='Year: {closest_state}'
+  ) +
+  shadow_wake(wake_length = 0.05)
+```
+
+d) How do the animations add more value than the static, faceted plot?
+
+Easier to visualize changes between the years, for each age group. 
+
+# Exercise 3: Change of GDP and life expectancy of countries with time
+
+In a previous class, we made a similar plot to the one below using the `gapminder` dataset. The code for this plot is adopted from the Preston Curve assignment.
+
+```{r fig.width = 6, fig.height = 5, out.width = '70%'}
+data(gapminder)
+gapminder_2002 <- filter(gapminder, year == 2002)
+
+ggplot(gapminder_2002, aes(
+  gdpPercap,
+  lifeExp,
+  size = pop,
+  color = continent
+)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Wealth and Health by Country in 2002",
+    x = "GDP per capita (US$)",
+    y = "Life expectancy (years)",
+    caption = "Source: World Bank"
+  ) +
+  scale_x_log10(labels = dollar, minor_breaks = 2:9 %o% 10^(2:6)) +
+  scale_size_area(
+    name = "Population",
+    breaks = 10^(6:9),
+    labels = c("1 million", "10 million", "100 million", "1 billion"),
+    max_size = 20
+  ) +
+  scale_colour_brewer(name = "Continent", palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 4)))
+```
+
+However, the above plot only shows the country statistics for a particular year. In this exercise, we are interested to understand how all the country statistics change with time. The plot below provides a good example.
+
+```{r echo = FALSE, fig.width = 6, fig.height = 5, out.width = '70%'}
+ggplot(filter(gapminder, country %in% c("China", "Indonesia", "Malaysia", "Philippines", "Singapore", "United States")), aes(
+  gdpPercap,
+  lifeExp,
+  size = pop,
+  color = country
+)) +
+  geom_point(alpha = 0.5) +
+  scale_x_log10(labels = dollar, minor_breaks = 2:9 %o% 10^(2:6)) +
+  scale_size_area(
+    name = "Population",
+    breaks = 10^(6:9),
+    labels = c("1 million", "10 million", "100 million", "1 billion"),
+    max_size = 20
+  ) +
+  scale_colour_brewer(name = "Country", palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 4))) +
+  geom_line(size = 0.5, aes(group = country)) +
+  transition_reveal(year) +
+  view_follow() +
+  labs(
+    title = "Wealth and Health by Country in {frame_along}",
+    x = "GDP per capita (US$)",
+    y = "Life expectancy (years)",
+    caption = "Source: World Bank"
+  )
+```
+
+a) Make a plot of the gapminder data similar to the original Preston Curve above. However, this time, include data for all the years available (not just for the year 2002 as above). You can use the above code as a template for this plot.
+
+```{r}
+# Solution
+g <- ggplot(gapminder, aes(
+  gdpPercap,
+  lifeExp,
+  size = pop,
+  color = continent
+)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Wealth and Health by Country",
+    x = "GDP per capita (US$)",
+    y = "Life expectancy (years)",
+    caption = "Source: World Bank"
+  ) +
+  scale_x_log10(labels = dollar, minor_breaks = 2:9 %o% 10^(2:6)) +
+  scale_size_area(
+    name = "Population",
+    breaks = 10^(6:9),
+    labels = c("1 million", "10 million", "100 million", "1 billion"),
+    max_size = 20
+  ) +
+  scale_colour_brewer(name = "Continent", palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 4)))
+g
+```
+
+b) There are too many countries on the plot to make meaningful observations. The plot might be more useful if we pick just a few countries. Let us choose the following countries: 
+
+    * China
+    * Indonesia
+    * Malaysia
+    * Philippines
+    * Singapore
+    * United States
+
+    Remake the above plot with only these countries. Instead of coloring by continent, color by country.
+
+```{r}
+# Solution
+gapminder_filtered <- filter(gapminder, country %in% c("China", "Indonesia", "Malaysia", "Philippines", "Singapore", "United States"))
+
+g <- ggplot(gapminder_filtered, aes(
+  gdpPercap,
+  lifeExp,
+  size = pop,
+  color = country
+)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "Wealth and Health by Country",
+    x = "GDP per capita (US$)",
+    y = "Life expectancy (years)",
+    caption = "Source: World Bank"
+  ) +
+  scale_x_log10(labels = dollar, minor_breaks = 2:9 %o% 10^(2:6)) +
+  scale_size_area(
+    name = "Population",
+    breaks = 10^(6:9),
+    labels = c("1 million", "10 million", "100 million", "1 billion"),
+    max_size = 20
+  ) +
+  scale_colour_brewer(name = "Continent", palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 4)))
+g
+```
+
+c) Now, show the points move and change shape as years progress. The objective is to make the points move and change smoothly from their initial to final position. Use one of the `transition_*()` functions to make the points animated.
+
+```{r}
+# Solution
+g <- g + transition_time(year)
+g
+```
+
+d) Now we want to show the trend of the countries with time.
+
+    (i) Your plot should show the points move with time. It may also be useful to keep track of the path of the point movements. Add another geom to the plot to show the paths of the points. 
+
+    Hint: Which geom would we use in this case to show a trend?
+
+    (ii) In the same code, add a corresponding transition to your graph. The objective is to make the points move and change smoothly from their initial to final position, while also capturing the trend with time. Refer back to the tutorial. Which `transition_*()` is suitable here? Add this `transition_*()` function after you add the geom for the line.
+    
+    Hint: Which transition is suitable to show gradual changes in time?
+
+    This provides a great example of how multiple transitions can be combined in the same plot.
+
+```{r}
+# Solution
+g <- g +
+  geom_line(size = 0.5, aes(group = country)) +
+  transition_reveal(year)
+g
+```
+
+e) At the moment, our axis are static. This makes it difficult to observe the initial changes of the country pathways. It will be more useful to be able to make the axis dynamic and show all the points given at the current moment, slowly growing to include the full pathways. Use one of the `view_*()` functions to achieve this effect in our plot.
+
+```{r}
+# Solution
+g <- g + view_follow()
+g
+```
+
+f) Our plot currently does not show the year for which the points are at a location. We want to use one of the label variables to include the year in our title. The tutorial introduced two labelling variables that can be used for this purpose. However, label variables differ for which `transition_*()` function we are using. Use the [gganimate cheatsheet](https://ugoproto.github.io/ugo_r_doc/pdf/gganimate.pdf) to identify the correct label variable to use for `transition_reveal()`, our latest `transition_*()` function, and incorporate it into the plot title to show the current year.
+
+```{r}
+# Solution
+g <- g + labs(
+  title = "Wealth and Health by Country in {frame_along}",
+  x = "GDP per capita (US$)",
+  y = "Life expectancy (years)",
+  caption = "Source: World Bank"
+)
+```
+
+g) Please display your final plot here with adjusted figure dimensions and any other changes you think are suitable.
+
+```{r fig.width = 6, fig.height = 5, out.width = '70%'}
+# Solution
+g
+```
+
+h) Shown below is a static plot for the tasks above. Compare the static plot with your final, animated plot. Which one is better, and why? 
+
+```{r echo = FALSE, fig.width = 6, fig.height = 5, out.width = '70%'}
+ggplot(filter(gapminder, country %in% c("China", "Indonesia", "Malaysia", "Philippines", "Singapore", "United States")), aes(
+  gdpPercap,
+  lifeExp,
+  size = pop,
+  color = country,
+  group = country
+)) +
+  geom_point(alpha = 0.5) +
+  scale_x_log10(labels = dollar, minor_breaks = 2:9 %o% 10^(2:6)) +
+  scale_size_area(
+    name = "Population",
+    breaks = 10^(6:9),
+    labels = c("1 million", "10 million", "100 million", "1 billion"),
+    max_size = 20
+  ) +
+  scale_colour_brewer(name = "Country", palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 4))) +
+  geom_line(size = 0.5) +
+  labs(
+    title = "Wealth and Health by Country from 1952 to 2007",
+    x = "GDP per capita (US$)",
+    y = "Life expectancy (years)",
+    caption = "Source: World Bank"
+  )
+```
+
+Solution:
+- The static plot is difficult to understand and is not coherent because of too many points and lines.
+- In the static plot, it is a bit difficult to visualise and compare difference between countries.
+- The animated plot is better because it clearly shows how the countries change with time.
+- We can more clearly observe that GDP per capita and lif expectancy generally increase with time.
+- We can also easily compare the trends of different countries, for example we can see the rapid rise of China.

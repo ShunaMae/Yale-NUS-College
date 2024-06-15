@@ -1,0 +1,218 @@
+---
+title: "test_analysis"
+author: "shuna"
+date: "2023-03-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(hms)
+library(nlme)
+library(nortest)
+library(lme4)
+library(DHARMa)
+library(MASS)
+```
+
+do we treat distance as a factor, or continuous vairable? 
+
+## function
+
+```{r}
+public_holidays <- as.Date(c("2022-12-31", "2023-01-01","2023-01-02", "2023-01-03", "2023-01-27", "2023-01-28", "2023-01-29", "2023-01-30", "2023-01-31", "2023-02-10", "2023-02-13", "2023-03-01"))
+
+prep_data <- function(df){
+  df |>
+    mutate(
+      transect = as.double(substr(FOLDER, 2,2)),
+      distance = case_when(
+        substr(FOLDER, 4, 4) == "5" ~ 50,
+        substr(FOLDER, 4, 4) == "1" ~ 100,
+        TRUE ~ 200
+        ),
+      time_sec = as.numeric(TIME) + OFFSET,
+      time_day = as_hms(time_sec),
+      to_classify = weekdays(DATE),
+      Date = as.Date(DATE, format = "%m/%d/%Y"),
+      days = case_when(
+        Date %in% public_holidays ~ "off_day",
+        to_classify == "Saturday" ~ "off_day",
+        to_classify == "Sunday" ~ "off_day",
+        TRUE ~ "weekday")
+    ) |>
+    dplyr::select(
+      DATE, top_match = `TOP1MATCH*`, top_dist = TOP1DIST,
+      transect, distance, time_day, days, DURATION
+    )
+}
+
+RJ <- prep_data(read_csv("data/gallus_clusters.csv"))
+AK <- prep_data(read_csv("data/koel_clusters.csv"))
+```
+
+# Red junglefowl
+
+```{r}
+RJ_analysis <- RJ |>
+  ## filter for the top_match
+  filter(top_match == "chicken") |>
+  ## filter for the disrtance from the cluster 
+  filter(top_dist <= 0.8646)
+```
+
+## duration analysis
+```{r}
+RJ_duration_model <- lme(DURATION ~ distance * days, random = ~1|transect, data = RJ_analysis)
+
+## diagnostic plot
+
+### variance for the dataset 
+plot(RJ_duration_model, resid(.,scaled = T) ~ fitted(.) | transect, abline = 0, lty = 2)
+plot(RJ_duration_model)
+
+### normality 
+qqnorm(RJ_duration_model, abline = c(0, 1), lty = 2)
+qqnorm(RJ_duration_model, ~resid(., type = "p") | transect , abline = c(0,1) , lty = 2)
+
+### large enough sample size always reject the null hypothesis? 
+ad.test(RJ_analysis$DURATION)
+hist(RJ_analysis$DURATION)
+```
+
+```{r}
+summary(RJ_duration_model)
+```
+```{r}
+RJ_duration_model.1 <- lme(DURATION ~ distance + days, random = ~1|transect, data = RJ_analysis)
+summary(RJ_duration_model.1)
+RJ_duration_model.2<- lme(DURATION ~ distance, random = ~1|transect, data = RJ_analysis)
+summary(RJ_duration_model.2)
+```
+
+
+## dawn chorus 
+
+
+https://link-springer-com.libproxy1.nus.edu.sg/chapter/10.1007/978-3-030-39200-0_3 
+
+```{r}
+RJ_chorus <- RJ_analysis |>
+  filter(time_day <= as.hms("10:00:00", format = "%h%m:%s"))  |>
+  group_by(transect, distance, days) |>
+  summarise(n = n()) 
+```
+
+```{r}
+RJ_chorus_model.1 <- glmer(n ~ distance * days + (1|transect), 
+                         data = RJ_chorus, family = poisson)
+## rescale variables 
+RJ_chorus_model.2 <- glmer(n ~ scale(distance) * days + (1|transect), 
+                         data = RJ_chorus, family = poisson)
+
+plot(simulateResiduals(RJ_chorus_model.2))
+## problem with residuals 
+
+RJ_chorus_model.3 <- glmer.nb(n ~ scale(distance) * days + (1|transect), data = RJ_chorus)
+
+plot(simulateResiduals(RJ_chorus_model.3))
+
+summary(RJ_chorus_model.3)
+```
+### simplification
+
+```{r}
+RJ_chorus_model.4 <- glmer.nb(n ~ scale(distance) + days + (1|transect), data = RJ_chorus)
+summary(RJ_chorus_model.4)
+```
+
+# Asian Koel 
+  
+```{r}
+AK_analysis <- AK |>
+  filter(top_match == "Koel") |>
+  filter(top_dist <= 1) 
+```
+
+
+## duration 
+
+```{r}
+AK_duration_model <- lme(DURATION ~ distance * days, random = ~1|transect, data = AK_analysis)
+
+## diagnostic plot
+
+### variance for the dataset 
+plot(AK_duration_model, resid(.,scaled = T) ~ fitted(.) | transect, abline = 0, lty = 2)
+plot(RJ_duration_model)
+
+### normality 
+qqnorm(AK_duration_model, abline = c(0, 1), lty = 2)
+qqnorm(AK_duration_model, ~resid(., type = "p") | transect , abline = c(0,1) , lty = 2)
+
+### large enough sample size always reject the null hypothesis? 
+ad.test(log(AK_analysis$DURATION))
+hist(log(AK_analysis$DURATION))
+
+AK_duration_model.2 <- lme(log(DURATION) ~ distance * days, random = ~1|transect, data = AK_analysis)
+summary(AK_duration_model.2)
+
+AK_duration_model.3 <- lme(log(DURATION) ~ distance + days, random = ~1|transect, data = AK_analysis)
+summary(AK_duration_model.3)
+
+```
+
+## dawn chorus 
+
+```{r}
+AK_chorus <- AK_analysis |>
+  filter(time_day <= as.hms("10:00:00", format = "%h%m:%s"))  |>
+  group_by(transect, distance, days) |>
+  summarise(n = n()) 
+```
+
+```{r}
+AK_chorus_model.1 <- glmer(n ~ distance * days + (1|transect), 
+                         data = AK_chorus, family = poisson)
+## rescale variables 
+AK_chorus_model.2 <- glmer(n ~ scale(distance) * days + (1|transect), 
+                         data = AK_chorus, family = poisson)
+
+plot(simulateResiduals(AK_chorus_model.2))
+## problem with residuals 
+
+AK_chorus_model.3 <- glmer.nb(n ~ scale(distance) * days + (1|transect), data = AK_chorus)
+
+plot(simulateResiduals(AK_chorus_model.3))
+# problem not solved 
+
+AK_chorus_model.4 <- glmmPQL(n ~ scale(distance) * days, random = ~1|transect, 
+                             data = AK_chorus, family = quasipoisson)
+```
+
+```{r}
+summary(AK_chorus_model.4)
+## interaction not significant 
+
+AK_chorus_model.5 <- glmmPQL(n ~ scale(distance) + days, random = ~1|transect, 
+                             data = AK_chorus, family = quasipoisson)
+summary(AK_chorus_model.5)
+
+AK_chorus_model.6 <- glmmPQL(n ~ days, random = ~1|transect, 
+                             data = AK_chorus, family = quasipoisson)
+summary(AK_chorus_model.6)
+```
+
+# Summary 
+
+## Junglefowl 
+distance is significantly related to duration and dwn chorus 
+
+## Asian Koel 
+distance and type of day are significantly associated with the duration of the call, 
+no association found for the dawn chorus. 
+
+
+

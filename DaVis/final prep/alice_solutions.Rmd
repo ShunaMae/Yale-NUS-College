@@ -1,0 +1,271 @@
+---
+title: "Solutions: Character strings in 'Alice in Wonderland'"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  bookdown::pdf_document2:
+  number_sections: false
+toc: false
+urlcolor: blue
+header-includes: 
+  - \usepackage{hyperref}
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for these exercises:
+
+```{r}
+library(tidyverse)
+```
+
+I also need the **tm**, **ggwordcloud** and **knitr** packages.
+However, because each of those packages is only used once, I avoid loading the
+whole package with `library()` and, instead, use the `::` operator where it is
+needed.
+
+(1) 
+
+    ```{r}
+    alice <- read_file("11-0.txt")
+    ```
+    
+    The vector `alice` has exactly one element.
+    
+    ```{r}
+    length(alice)
+    ```
+    
+    This element contains `r format(str_length(alice), big.mark = ",")` characters.
+    
+    ```{r}
+    str_length(alice)
+    ```
+    
+    Here are the first 50 characters.
+    
+    ```{r}
+    str_sub(alice, end = 50)
+    ```
+
+(2) I will use the following helper function, called
+    `str_split_and_flatten()`, a few times in these solutions.
+    It takes a character vector `v` and a string pattern, which may be a
+    regular expression, as argument and returns all pieces of `v` after
+    `str_split()` as a vector.
+    
+    ```{r}
+    str_split_and_flatten <- function(v, pattern) {
+      v |>
+        str_split(pattern) |>
+        flatten_chr()
+    }
+    alice <- str_split_and_flatten(alice, "\r\n")
+    head(alice)
+    ```
+
+(3) It is a matter of taste where exactly to draw the boundary between novel
+    and front matter.
+    For example, in the code below, I remove the Table of Contents, but it
+    would be equally justifiable to keep it.
+    The remaining tasks do not strongly depend on the exact choice.
+
+    ```{r}
+    alice_start <- str_which(alice, "^CHAPTER I\\.$")
+    alice_end <- str_which(alice, "THE END")
+    alice <- alice[alice_start:alice_end]
+    head(alice)
+    tail(alice)
+    ```
+
+(4) In the next code chunk, I use the regular expression `"\\s+"` so that the
+    text is split at one or multiple whitespaces.
+
+    ```{r}
+    alice <- str_split_and_flatten(alice, "\\s+")
+    head(alice)
+    ```
+
+(5)
+
+    ```{r}
+    find_longest_words <- function(v) {
+      v[str_length(v) == max(str_length(v))]
+    }
+    find_longest_words(alice)
+    ```
+
+    The longest string in `alice` is a combination of words glued together by
+    em-dashes.
+    It would generally make sense to split strings at em-dashes.
+(6) In the code chunk below, the character in the argument of `str_split()` is
+    an em-dash, not a hyphen.
+    On a U.S.\ Mac keyboard, an em-dash is produced with the keyboard
+    combination 'Option-shift-minus'.
+
+    ```{r}
+    alice <- str_split_and_flatten(alice, "—")
+    find_longest_words(alice)
+    ```
+
+    The symbol between `waistcoat` and `pocket` is a hyphen, not an em-dash.
+    It makes sense to treat hyphenated strings as a single word.
+    However, we should remove punctuation symbols (e.g.\ underscores) at
+    the beginning or end of words.
+(7) The return value of the next pipeline answers whether the longest word
+    (at this point of the code) ends with a punctuation symbol.
+
+    ```{r}
+    alice |>
+      find_longest_words() |>
+      str_detect("[:punct:]$")
+    ```
+
+(8) Remove all punctuation symbols at the end of strings.
+
+    ```{r}
+    alice <- str_remove(alice, "[:punct:]+$")
+    ```
+
+    The next pipeline returns the answer to: 'Is there any word ending with
+    a punctuation symbol?'
+
+    ```{r}
+    alice |>
+      str_detect("[:punct:]$") |>
+      any()
+    ```
+
+    What are now the longest words?
+
+    ```{r}
+    alice |>
+      find_longest_words() |>
+      unique()
+    ```
+
+(9) The next pipeline returns the answer to: 'Is there any word starting with
+    a punctuation symbol?'
+
+    ```{r}
+    alice |>
+      str_detect("^[:punct:]") |>
+      any()
+    ```
+
+    Which words are these? Here are the first few examples.
+
+    ```{r}
+    alice |>
+      str_subset("^[:punct:]") |>
+      head()
+    ```
+
+(10)
+    Remove all punctuation symbols at the start of strings.
+
+    ```{r}
+    alice <- str_remove(alice, "^[:punct:]+")
+    ```
+
+    The next pipeline returns the answer to: 'Is there any word starting with
+    a punctuation symbol?'
+
+    ```{r}
+    alice |>
+      str_detect("^[:punct:]") |>
+      any()
+    ```
+
+(11)
+    Remove empty strings.
+    Equivalently, we only keep those strings that contain at least one
+    character.
+
+    ```{r}
+    alice <- str_subset(alice, ".")
+    ```
+
+(12)
+    Change all curly quotes `’` to straight quotes `'`.
+
+    ```{r}
+    alice <- str_replace_all(alice, "’", "'")
+    ```
+
+(13) The next code chunk is based on information from
+     <https://stackoverflow.com/questions/44530029/how-to-ignore-case-when-using-str-detect>.
+
+     ```{r}
+     alice |>
+       str_subset(regex("^drink$", ignore_case = TRUE)) |>
+       unique()
+     ```
+
+     Conventionally, letter case indicates either emphasis or the position of
+     a word in a sentence.
+     However, changing letter case does not change the word.
+     An exception would be proper names that would otherwise look like common
+     words; for example, 'Brown' in 'Charlie Brown' is different from the word
+     'brown'.
+(14)
+
+    ```{r}
+    alice <- str_to_lower(alice)
+    head(alice)
+    ```
+
+(15)
+
+    ```{r}
+    most_common_words <- function(v, n_words) {
+      tibble(word = v) |>
+        count(word, name = "frequency") |>
+        slice_max(order_by = frequency, n = n_words)
+    }
+    most_common_words(alice, 5)
+    ```
+
+    It is unsurprising to see these words in the output.
+    They are common words in English, not only in 'Alice's Adventures in
+    Wonderland'.
+(16)
+
+    ```{r}
+    alice <- alice[!(alice %in% tm::stopwords())]
+    ```
+
+(17)
+
+    ```{r}
+    most_common_words(alice, 10)
+    ```
+
+(18)
+
+    ```{r fig.align='center'}
+    set.seed(42)
+    alice_tibble <- most_common_words(alice, 200)
+    ggplot(alice_tibble, aes(label = word, size = frequency)) +
+      ggwordcloud::geom_text_wordcloud() +
+      theme_minimal()
+    ```
+
+    The next code chunk saves the word cloud as a PDF and crops the margins.
+
+    ```{r}
+    ggsave("alice_cloud.pdf")
+    knitr::plot_crop("alice_cloud.pdf")
+    ```
+    
+(19)
+    The most common word 'said' indicates that the novel is in past tense and
+    contains direct speech from the characters.
+    This feature is common in 19th century English literature.
+    The main character 'Alice' appears often in the text, indicating that the
+    novel is written from a third-person (i.e.\ an omniscient narrator's)
+    perspective.
+    Some words in the word cloud relate to some of the more exotic characters
+    (e.g.\ 'rabbit', 'hatter' and 'gryphon').

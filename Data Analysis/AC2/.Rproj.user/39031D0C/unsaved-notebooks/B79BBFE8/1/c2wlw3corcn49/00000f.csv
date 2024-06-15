@@ -1,0 +1,5 @@
+"0","RGR_data |>"
+"0","  ggplot(aes(sqrt(RGR))) +"
+"0","  geom_histogram(color = ""white"") +"
+"0","  theme_classic() +"
+"0","  labs(x = ""Relative Growth Rate (%)"")"

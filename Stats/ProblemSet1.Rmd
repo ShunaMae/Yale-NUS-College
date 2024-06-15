@@ -1,0 +1,548 @@
+---
+title: "Problemset1"
+author: "Shuna"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE, fig.align = 'center')
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+
+read.csv("pbc.tsv", sep = "\t")
+```
+
+## Problem set 1 
+
+### Question 1
+
+#### Part 1
+
+#### Set ups 
+A test for this disease is highly accurate but not quite perfect. It correctly identifies 95% of patients with the disease but also incorrectly concludes that 1% of the noninfected samples have the disease. 
+
+You get a positive result - what is frequency of the disease in the population would mean that
+
+a) you have >50% chance of having the disease 
+b) you have >99% chance of having the disease 
+
+
+**Answers**
+
+Let $P(D)$ be the probability of having the disease (which is what's asked in the question). 
+
+Let $P(T)$ be the probability of being tested positive. 
+
+Being tested positive is consisted of two cases, one is you have the disease and get the positive result, and the other is you don't have the disease but get the positive result. 
+
+Combining these two, $P(T)$ can be expressed as below:
+
+$$
+P(T) = P(D) \times 0.95 + \left(1-P(D)\right)\times 0.01
+$$
+
+$P(T|D)$ denotes the probability of a positive result given having the disease, therefore $P(T|D) = 0.95$. 
+
+$P(D|T)$ denotes the probability of having the disease given getting the positive result, which is $0.5$ in `(a)` and $0.99$ in `(b)`. 
+
+Applying the Bayes Theorem, we get the following equation:
+
+$$
+P(D|T) = \frac{P(T|D)\times{P(D)}}{P(T)}
+$$
+
+##### (a) you have >50% chance of having the disease 
+
+
+
+$$
+\begin{align}
+&0.5 < \dfrac{0.95\times P\left( D\right) }{0.95\times P\left( D\right) +\left( 1-P\left( D\right) \right) \times 0.01} \\
+\Leftrightarrow\ &0.5 < \dfrac{0.95\times P\left( D\right) }{0.01+0.94\times P\left( D\right) } \\
+\Leftrightarrow \ &0.5 < \dfrac{0.95\times P\left( D\right) }{\dfrac{1}{100}\left( 1+94\times P\left( D\right) \right) } \\
+\Leftrightarrow \  &0.5 < \dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } \\ 
+\Leftrightarrow\  & 0.5\left( 1+94\times P\left( D\right) \right) < 95\times P\left( D\right) \\
+\Leftrightarrow\ &P\left( D\right) > \dfrac{1}{96} 
+\end{align}
+$$
+
+
+
+The frequency of the disease is more than `r round(1/96, digits = 4)` in the population. 
+
+##### (b) you have >99% chance of having the disease
+
+Substitute 0.99 to the inequality in the previous question. 
+
+$$
+\begin{align}
+0.99 < \dfrac{95\times P\left( D\right) }{1+94\times P\left( D\right) } \\
+\Leftrightarrow\ P(D) > \frac{0.99}{95 - 0.99 \times {94}}
+\end{align}
+$$
+
+
+The frequency of the disease is more than `r round(0.99 / (95 - 0.99*94), digits = 4)` in the population. 
+
+
+#### Part 2
+
+A test for a different disease is highly accurate but not quite perfect. It correctly identifies 80% of patients with the disease but also incorrectly concludes that 20% of the noninfected samples have the disease. 
+
+Instead of getting a positive result, you actually get a _negative_ result - at what frequency of the disease in the population do you have 
+
+a) greater than 25% chance of having the disease 
+b) greater than 50% chance of having the disease 
+
+**Answers** 
+
+Let $P(D)$ be the probability of having the disease and $P(N)$ be the probability of getting the negative result. 
+
+$P(D|N)$ denotes the probability of having the disease given the negative result. 
+$P(N|D)$ denotes the probability of getting the negative result given having the disease. 
+
+$P(N)$ can be calculated by summing two probabilities; the probability of getting the negative result despite having the disease, and the probability of getting the negative result and not having the disease.
+
+Following the example above, by using the Bayes theorem, we get 
+
+$$
+P(D|N) = \frac{P(N|D) \times {P(D)}}{P(N)} \\
+= \frac{0.2 \times P(D)}{P(D)\times 0.2 + (1-P(D))\times 0.8}.
+$$
+
+##### (a) what frequency of the disease in the population does one have greater than 25% chance of having the disease? 
+
+$$
+\begin{align}
+0.25 <& \frac{0.2 \times P(D)}{P(D)\times 0.2 + (1-P(D))\times 0.8} \\
+\Leftrightarrow 0.25 <& \frac{0.2 \times P(D)}{P(D)\times 0.2 + (0.8 - 0.8 \times P(D)} \\ 
+\Leftrightarrow 0.25 <& \frac{0.2 \times P(D)}{0.8 - 0.6 \times P(D)} \\ 
+\Leftrightarrow 0.25 <& \frac{P(D)}{4 - 3 \times P(D)} \\
+\end{align}
+$$
+
+Since $P(D) \leq 1$, 
+
+$$
+\Rightarrow 4 - 3\times P(D) < 4 \times P(D) \\
+\Leftrightarrow 7 \times P(D) > 4 \\
+\Leftrightarrow P(D) > \frac{4}{7}
+$$
+
+The frequency is greater than `r round(4/7, digits = 4)`. 
+
+##### (b) what frequency of the disease in the population does one have greater than 50% chance of having the disease?
+
+Substituting 0.5 to equations above: 
+$$
+\begin{align}
+0.5 <& \frac{P(D)}{4 - 3 \times P(D)} \\ 
+\Leftrightarrow 4 - 3& \times P(D) < 2 \times P(D) \\ 
+\Leftrightarrow &P(D) > \frac{4}{5}
+\end{align}
+$$
+The frequency is greater than `r 4/5`.
+
+### Question 2 
+
+Patients diagnosed with pancreatic cancer are asked about they smoke. Patients without pancreatic carcinoma are also asked about if they smoke. 
+
+```{r, include = FALSE}
+data = matrix(c(80, 40, 40, 50), ncol=2, nrow=2)
+colnames(data)= c("pancreatic cancer", "no pancreatic cancer")
+row.names(data)= c("smoker", "no smokers")
+data
+```
+
+a) what is the probability that a patient is a smoker? -> `r round((80+40) / sum(data), digits = 4)`
+
+
+b) what is the probability that a patient has pancreatic cancer? -> `r (80 + 40) / sum(data)`
+
+
+c) what is the probability that a patient has pancreatic cancer given they are a smoker? -> `r round(80 / (80+40), digits = 4)`
+
+
+d) what is the probability that a patient is a non-smoker given that they have pancreatic cancer? -> `r round(40/(40+80), digits = 4)`
+
+
+e) is having cancer independent from smoking status?
+
+Let P(A) be the probability of a patient being a smoker. 
+
+Let P(B) be the probability of a patient having pancreatic cancer. 
+
+If two events are independent, $P\left( A\cap B\right) = P\left( A\right) \times P\left( B\right)$. 
+
+$$
+P(A) = \frac{80+40}{80+40+40+50} \\
+P(B) = \frac{80+40}{80+40+40+50} \\
+P(A\cap B) = \frac{80}{80+40+40+50}
+$$
+Calculate $P(A) \times P(B) - P(A\cap B)$
+
+```{r}
+is_smoker = (80+40)/sum(data)
+has_pancreatic_cancer = (80+40)/sum(data)
+smoker_and_cancer = 80 / sum(data)
+is_smoker + has_pancreatic_cancer - smoker_and_cancer
+```
+
+Since $P(A) \times P(B) - P(A\cap B) \neq 0$, we conclude that these two events are not independent. 
+
+
+### Question 3 
+
+what type of variable is:
+
+a) Birthweight classified as low, not low: Binary variables
+
+
+b) Birthweight classified as low, medium, high: Ordinal variables
+
+
+c) Delivery type classified as cesarean, natural, induced: Categorical variables
+
+
+d) Birthweight in grams: Continuous Variables
+
+
+### Question 4
+
+In a random sample of 4000 people, the average height is 150 cm, and the variance is 36. Height is normally distributed.  
+
+a) one individual was 180 cm .... how many SDs above average were they?
+
+    ```{r}
+    abs(180-150) / sqrt(36)
+    ```
+
+b) another individal was 140 cm tall ... how many SDs are they away from the mean?
+    ```{r}
+    round(abs(140-150) / sqrt(36), digits = 2)
+    ```
+
+c) Another individual was 1.4 SDs below the average height. How tall are they?
+
+    ```{r}
+    sprintf("%g cm", 150 - (1.4 * sqrt(36)))
+    ```
+
+d) If an indivdiual was within 1.96 SDs of average height, what is the shortest they could have been and what is the  tallest?
+
+    ```{r}
+    x = 1.96 * sqrt(36)
+    sprintf("The tallest is %g cm", 150 + x)
+    sprintf("The shortest is %g cm", 150 - x)
+    ```
+
+e) what is so special about 1.96 SDs?
+
+
+    ```{r}
+    random_pop = rnorm(n = 4000, mean = 150, sd = 6)
+    sum(150-x < random_pop & random_pop < 150+x) / length(random_pop)
+    ```
+
+
+    ```{r}
+    sprintf("shortest : %g, tallest : %g", 
+            quantile(rnorm(4000, 150, 6), 0.025),
+            quantile(rnorm(4000, 150, 6), 0.975))
+    ```
+
+the height within 1.96 SDs from the mean represents approximately 95% of the normally distributed population. Thus it matches the 95% confidence interval of the mean. 
+
+
+f) how would you describe individuals who are 
+
+```{r}
+height <- function(height) {
+  x <- (height - 150) / sqrt(36)
+  y <- 0
+  z <- 0
+  if (height > 150) {
+    y <- "above"
+  } else {
+    y <- "below"
+  }
+  if (x > 1) {
+    z <- "very tall"
+  } else if (x > 0) {
+    z <- "slightly taller than average"
+  } else if (x > -1) {
+    z <- "slightly shorter than average"
+  } else {
+    z <- "very short"
+  }
+  sprintf("The individual is %.2f SDs %s average height. In other words, this person is %s.", abs(x), y, z)
+}
+```
+
+i) 170cm tall -> `r height(170)`
+
+
+ii) 120cm tall -> `r height(120)`
+
+
+iii) 155cm tall -> `r height(155)`
+
+
+iv) 90cm tall -> `r height(90)`
+
+
+### Question 5 
+
+the attached figure (psfig1.pdf) shows the number of metastatic events per patient. what is the mean?
+
+```{r}
+patients <- c(50,30,20,10,10)
+lesions <- c(0,1,2,3,4)
+
+s <- 0
+for (i in 1:5){
+  s <- s + (patients[i]*lesions[i])
+  ans <- s / sum(patients)
+}
+sprintf("The mean is %.2f", ans)
+
+```
+
+
+### Question 6
+
+```{r, results='hide', include = FALSE}
+pbc <- read.csv("pbc.tsv", sep = "\t")
+```
+
+
+The file pbc.tsv is a tsv file containing information from Mayo Clinic trial in primary biliary cirrhosis (PBC) of the liver conducted between 1974 and 1984. A total of 424 PBC patients over this interval met eligibility criteria for the randomized placebo controlled trial of the drug D-penicillamine
+
+var | description
+---- | ----
+age |	in years
+albumin |	serum albumin (g/dl)
+alk.phos |	alkaline phosphotase (U/liter)
+ascites |	presence of ascites
+ast | aspartate aminotransferase, once called SGOT (U/ml)
+bili | serum bilirunbin (mg/dl)
+chol |serum cholesterol (mg/dl)
+copper | urine copper (ug/day)
+edema | 0 no edema, 0.5 untreated or successfully treated, 1 edema despite diuretic therapy
+hepato |	presence of hepatomegaly or enlarged liver
+id | case number
+platelet | 	platelet count
+protime |	standardised blood clotting time
+sex |	m/f
+spiders |	blood vessel malformations in the skin
+stage |	histologic stage of disease (needs biopsy)
+status |	status at endpoint, 0/1/2 for censored, transplant, dead
+time |	number of days between registration and the earlier of death, transplantion, or study analysis in July, 1986
+trt |1/2/NA for D-penicillmain, placebo, not randomised
+trig | triglycerides (mg/dl)
+
+
+a) Describe the distribution of patient age?
+    ```{r, fig.align='center', fig.width=4,fig.height=3,warning = FALSE}
+    ggplot(data = pbc, aes(age))+
+      geom_histogram(color = 'black',
+                     fill = 'white',
+                     binwidth = 5)
+
+    ```
+    ```{r}
+    summary(pbc$age)
+    ```
+
+The histogram shows that the patients' ages are roughly normally distributed. We can also confirm this by looking at the mean and the median being almost the same. The oldest patient is about 78 years old and the youngest is about 26 years old. The five number summary is shown above. 
+
+
+b) What kind of distribution does the levels of cholesterol follow? 
+
+    ```{r, fig.width=4, fig.height=3,warning = FALSE}
+    ggplot(data = pbc, aes(chol))+
+       geom_histogram(color = 'black',
+                     fill = 'white',
+                     binwidth = 100)
+
+    ```
+```{r}
+summary(pbc$chol)
+```
+Well, the histogram seems off and so are the five number summary. It has a long tail on the right that extends to 1775. What are the normal cholesterol values people get? 
+
+> "An ideal total cholesterol level is lower than 200 mg/dL. Anything between 200 and 239 mg/dL is borderline, and anything above 240 mg/dL is high." ^[Quote from <https://www.healthline.com/health/serum-cholesterol>, accessed on Feb 21st 2022.]
+
+This means, if the data is correct, over 75% of the patients have high serum cholesterol. 
+
+> "PBC patients with early disease have elevated total cholesterol likely due to high HDL-C levels. Changes in serum cholesterol levels were observed in clinical trials of OCA." ^[Quote from <https://www.dovepress.com/new-developments-in-the-treatment-of-primary-biliary-cholangitis-role--peer-reviewed-fulltext-article-TCRM>, accessed on Feb 21 2022.]
+
+This article suggests that PBC patients have generally high cholesterol. But how high it can be is out of my knowledge scope. My best guess is anything that is over 800 is likely a wrong measurement. Since the unit is mg/dl, if the cholesterol is measured with mg/L, the value would be 10 times larger than it is supposed to be. If that is the case, the max value (1775.0) will be 177.5, which is within the healthy range. Let me plot a histogram with all the values greater than 800 converted to 1/10. 
+
+```{r,fig.width=4, fig.height=3,warning = FALSE}
+chol <- na.omit(pbc[["chol"]])
+for (i in 1:length(chol)){
+  if (chol[i] > 800){
+    chol[i] = chol[i] / 10
+  }
+}
+hist(chol)
+```
+Again, I do not have enough knowledge to correctly read this histogram. However, considering the fact that the pbc patients have relatively high serum cholesterol, this distribution looks better. 
+
+```{r}
+summary(chol)
+```
+The distribution is roughly normally ditributed, slightly skewed to the right but it makes sense because they are pbc patients. 
+
+
+c) What is the median absolute deviation (MAD) of bilirunbin levels in this sample of patients? 
+ 
+    ```{r}
+    a <- c()
+    for (i in 1:nrow(pbc)){
+      a[i] <- abs(pbc$bili[i] - mean(pbc$bili))
+    }
+    median(a)
+
+    ```
+
+What does MAD measure?
+
+Mean absolute deviation is the median of distance between each data point and the mean. It measures the variability of a univariate distribution. Unlike the mean absolute deviation, median absolute deviation is robust because it gets less affected by the outliers. 
+
+
+c) What is the probability of a patient having an edema given that they are male?
+
+    ```{r}
+    nrow(pbc %>%
+           filter(sex == "m" & edema == 1)) / 
+      nrow(pbc %>%
+             filter(sex == "m"))
+    ```
+
+d) What is the probability of being on D-penicillamine given that you are female? 
+
+    ```{r}
+
+    x = nrow(pbc %>%
+               filter(sex == "f" &trt == 1)) / 
+      nrow(pbc %>% 
+             filter(sex == "f"))
+    sprintf("The probability of being on D-penicillamine given that you are     female is %.2f", x)
+
+
+    ```
+
+e) Is being on D-penicillamine independent from sex?
+
+Let $P(F)$ be the probability of a patient being a female. 
+
+Let $P(D)$ be the probability of a patient being on D-penicillamine. 
+
+$P(F \cap D)$ denotes the probability of a patient being a female and on D-penicillamine. 
+
+If $P(F) \times P(D) = P(F \cap D)$, then two events are independent. 
+
+```{r}
+# P(F)
+P_f <- nrow(pbc %>% filter(sex == "f")) /
+      nrow(pbc)
+# P(D)
+P_d <- nrow(pbc %>% filter(trt == 1)) /
+      nrow(pbc)
+# P(F and D)
+P_fd <- nrow(pbc %>% filter(sex == "f" & trt == 1)) /
+      nrow(pbc)
+
+P_f * P_d - P_fd
+```
+     
+Since $P(F)\times P(D)$ and $P(F\cap D)$ are not equal, statistically, we conclude that these events are not independent.
+
+
+f) What is the probability of being male and being older than 50 or being female and older than 50?
+
+The probability of being male and being older than 50 $\textbf{OR}$ being female and older than 50 is same as the probability of being older than 50.
+
+
+```{r}
+Qf <- nrow(pbc[pbc$age>50,]) / nrow(pbc)
+sprintf("The probability of being older than 50 is %.2f", Qf)
+```
+
+g) What is the probability that a patient has ascites?
+
+    ```{r}
+    g <- nrow(pbc %>%
+                filter(ascites == 1)) / nrow(pbc)
+    sprintf("The probability of a patient having ascites is %.4f", g)
+    ```
+
+h) What type of variable is edema?: Nominal Variable 
+
+i) What is the probability of having a copper level above 200 and a platelet count above 400?
+
+    ```{r}
+    Q_i <- nrow(pbc %>%
+              filter(copper > 200 & platelet > 400)) / nrow(pbc)
+    sprintf("The probability of having a albumin level above 200 and            platelet count above 400 is %.4f", Q_i)
+    ```
+
+j) Is having spiders independent from disease stage? 
+
+Let $P(S)$ be the probability of having spiders. 
+
+Let $P(d_x)$ be the probability of being on the $x$th stage of the disease
+
+```{r}
+# P(S)
+P_s <- nrow(pbc %>% filter(spiders == 1)) / nrow(pbc)
+for (x in 1:3) {
+  P_dx <- nrow(pbc %>%
+                 filter(stage == x)) / nrow(pbc)
+  P_s_dx <- nrow(pbc %>%
+                   filter(spiders == 1 &
+                            stage == x)) / nrow(pbc)
+  k <- sprintf("For the stage %g, the P(S&d%g) is %.4f and P(S)*P(dx) is  %.4f.", x, x, P_s_dx, P_s * P_dx)
+  print(k)
+}
+```
+
+We observe that in any of the stage of the disease, the probability of having spiders and the stage of the disease is not statistically independent.
+
+
+k) What is the probability that a patient has spiders given that they are on D-penicillmain
+
+    ```{r}
+    nrow(pbc %>% filter(spiders == 1 & trt == 1)) / 
+      nrow(pbc %>% filter(trt == 1))
+
+    ```
+
+### Question 7
+
+Bob takes a sample of 100 women from a community aged 50-65, and Alice takes a sample of 1000 women from a community aged 50-65. 
+
+Which investigator will have the largest standard error ... why?
+
+**Answer**
+Standard error is a measure of the deviation of the sample means from the population mean. It can be calculated by the equation: 
+
+$$
+\textit{standard error} = \frac{sd}{\sqrt{n}}
+$$
+Given that two investigators take samples from the same population, the standard deviation is fixed. Therefore, the standard error of Bob's sample will be $\dfrac{sd}{\sqrt{100}} = 0.1 \times sd$, and that of Alice's sample will be $\dfrac{sd}{\sqrt{1000}}\fallingdotseq 0.032 \times sd$. Hence Bob will have a larger standard error. 
+
+
+
+```{r}
+sessionInfo()
+```

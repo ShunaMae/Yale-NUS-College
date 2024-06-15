@@ -1,0 +1,119 @@
+---
+title: "vectors"
+author: "shuna"
+date: "1/19/2022"
+output: html_document
+---
+# Vectorization
+```{r}
+v1 <- 2^(1:25)/(1:25)
+v1
+```
+
+```{r}
+v2 <- (0.1^(seq(3,36, by = 3)) * 0.2^(seq(1,34, by = 3)))
+#format(v2, scientific = FALSE)
+v2
+```
+
+# Subsetting with numeric vectors
+```{r}
+x <- c(2, 3, 5, 7, 11)
+y <- rep(c(2, 4), each = 2)
+x[y]
+```
+The outputs are the elements of x taken according to the indices, indicated by y (2,2,4,4). The first two are the 2nd element in x, which is 3, and the last two are the 4th element in x, which is 7. 
+
+# Subsetting with logical vectors
+```{r}
+x <- c(1, 1, 2, 3, 5, 8)
+y <- c(FALSE, TRUE)
+x[y]
+```
+The outputs are the TRUE values, the first element in x is False according to y, and the second element is TRUE according to y. So the second element of x, 1, is in the output. This process is repeated for three times, and we get the 2nd, 4th, and 6th element of x as outputs. 
+
+# Subsetting with a character vector 
+```{r}
+x <- seq(16, 30, by = 4)
+y <- x %% 7 + 1
+LETTERS[y]
+```
+x is a vector (16,20,24,30). In y, each element in x is converted to modulus of 7 and 1 is added. Lastly, LETTERS[y] return each element in LETTERS according to the element in y (3,7,4,1) as indices. 
+
+# Alphabet with alternating upper and lower case letters
+
+```{r}
+v3 <- c(rbind(letters, LETTERS))
+v3
+```
+rbind creates a matrix that combines tow vectors by row. So rbind(letters, LETTERS)
+```{r}
+ans <- c()
+even <- seq(2,52,2)
+odd <- seq(1,52,2)
+ans[even] <- LETTERS
+ans[odd] <- letters
+ans
+```
+# Vector Recycling 
+
+## Sequence with short sub-sequences
+```{r}
+v4 <- rep(0:16, each = 4) + (1:4)
+v4
+```
+## Sequence involving exponentiation
+```{r}
+sum(1/factorial(c(1:1000)))
+```
+```{r}
+prod((4 * c(1:1000) **2) / (4 * c(1:1000)**2 - 1))
+```
+```{r}
+n <- 4 * ((1:1000) ** 2)
+pi <- 2 * prod(n/(n - 1))
+pi
+```
+
+
+
+```{r}
+library(contfrac)
+x <- convergents(c(1/c(1:1000)))
+y <- x$A / x$B
+2/y[1000] + 2
+```
+
+```{r}
+a <- c(2, rep(1, 999))
+b <- 1/1:1000
+b0 <- 2
+partials <- gconvergents(a, b, b0)
+fractions <- (partials$A/partials$B)
+fractions[1001]
+```
+```{r}
+con_frac <- function(max, base){
+  n <- 1/max
+  for (i in 1:max-1){
+    n <- (1/(1000-i))+(1/n)
+  }
+  return(n)
+}
+a <- con_frac(1000, 1)
+b <- 2/a
+2+b
+```
+
+```{r}
+n = 1000
+y = 2*1:n-1
+x = c(4, (1:(n-1))^2)
+Pi = 0
+for (i in n:1) {
+    Pi = x[i]/(y[i]+Pi)}
+
+Pi
+```
+
+

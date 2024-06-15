@@ -1,0 +1,120 @@
+---
+title: "Lecture 10"
+output: html_document
+date: '2022-03-07'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+df = data.frame(size=c(30, 35, 40, 25, 35), gfp=c(5, 8, 8, 4, 5))
+df$size - mean(df$size)
+df$gfp - mean(df$gfp)
+
+sum((df$size - mean(df$size))*(df$gfp - mean(df$gfp))) / (nrow(df) -1)
+
+df2 = data.frame(size=c(30, 35, 40, 25, 35), gfp=c(5, 8, 8, 4, 5))*2
+sum((df2$size - mean(df2$size))*(df2$gfp - mean(df2$gfp))) / (nrow(df2) -1)
+
+cov(df$size, df$gfp)
+
+```
+
+```{r}
+cor(iris$Petal.Width, iris$Petal.Length)
+cor(iris$Sepal.Width, iris$Sepal.Length)
+cor(iris[,-5])
+
+cor.test(iris$Petal.Width, iris$Petal.Length)
+cor.test(iris$Sepal.Width, iris$Sepal.Length)
+
+
+plot(iris$Sepal.Width, iris$Sepal.Length)
+```
+
+```{r}
+ds1 = read.delim("ds1.tsv", sep="\t")
+cor(ds1[,1], ds1[,2])
+
+ds2 = read.delim("ds2.tsv", sep="\t")
+cor(ds2[,1], ds2[,2])
+
+plot(ds1[,1], ds1[,2])
+plot(ds2[,1], ds2[,2])
+
+foo = rnorm(100, 0, 1)
+ds3 = data.frame(x=foo, y=foo+rnorm(100, 0.1, 1))
+cor(ds3[,1], ds3[,2])
+plot(ds3[,1], ds3[,2])
+```
+
+
+```{r}
+cor(rnorm(100, 0, 1), rnorm(100, 0, 1))
+cor(c(rnorm(100, 0, 1), c(10, 20, 30, 40)), c(rnorm(100, 0, 1), 12, 22, 33, 45))
+```
+
+
+```{r}
+library(survival)
+library(dplyr)
+
+ovarian$rx <- factor(ovarian$rx, 
+                     levels = c(1, 2), 
+                     labels = c("A", "B"))
+ovarian$resid.ds <- factor(ovarian$resid.ds, 
+                           levels = c(1, 2), 
+                           labels = c("no", "yes"))
+ovarian$ecog.ps <- factor(ovarian$ecog.ps, 
+                          levels = c(1, 2), 
+                          labels = c("good", "bad"))
+hist(ovarian$age)
+
+#ovarian <- ovarian %>% mutate(age_group = ifelse(age >=50, "old", "young"))
+#ovarian$age_group = ifelse(ovarian$age >=50,  "old", "young")
+#ovarian$age_group <- factor(ovarian$age_group)
+# create the 'fake' clinical covariate of BP and Chol
+ovarian$BP<-ovarian$age+20+rnorm(26)
+ovarian$chol<-rnorm(26,0,10)
+ovarian$chol<-ovarian$chol+abs(min(ovarian$chol))
+ovarian<-ovarian[order(ovarian$age),]
+#ovarian$BP<-rev(ovarian$BP+55)
+ovarian<-ovarian[order(ovarian$futime),]
+
+```
+
+###Run the linear regression of age vs BP and Chol
+```{r linear regression}
+
+regs<-lm(BP ~ age,data=ovarian)
+summary(regs)
+regs1<-regs[1]
+plot(ovarian$age,ovarian$BP,xlab="Age", ylab="Blood Pressure",pch=19,col="purple",cex=1.5)
+abline(lm(BP ~ age,data=ovarian))
+text(60,145,paste0("y = ",regs1[[1]][1],"x +  ",regs1[[1]][2]))
+text(60,143,paste0("r2 = ",summary(regs)$r.squared))
+
+
+regs2<-lm(chol ~ age,data=ovarian)
+summary(regs2)
+regs3<-regs2[1]
+plot(ovarian$age,ovarian$chol,xlab="Age", ylab="Cholesterol",pch=19,col="purple",cex=1.5)
+abline(lm(chol ~ age,data=ovarian))
+text(67,26,paste0("y = ",regs3[[1]][1],"x +  ",regs3[[1]][2]))
+text(67,23,paste0("r2 = ",summary(regs2)$r.squared))
+
+
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
+
+  

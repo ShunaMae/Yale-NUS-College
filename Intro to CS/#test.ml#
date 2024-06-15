@@ -1,0 +1,11 @@
+let list_mapi f vs_given =
+  let rec visit vs i  =
+    match vs with
+    | [] ->
+       []
+    | v :: vs' ->
+       let ih = visit vs'
+       in f i v :: ih
+  in visit vs_given 0;;
+
+          

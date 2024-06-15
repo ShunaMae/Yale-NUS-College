@@ -1,0 +1,327 @@
+---
+title: "test_analysis"
+author: "shuna"
+date: "2023-03-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(hms)
+library(nlme)
+library(nortest)
+library(lme4)
+library(DHARMa)
+library(MASS)
+```
+
+do we treat distance as a factor, or continuous vairable? 
+
+## function
+
+```{r}
+public_holidays <- as.Date(c("2022-12-31", "2023-01-01","2023-01-02", "2023-01-03", "2023-01-27", "2023-01-28", "2023-01-29", "2023-01-30", "2023-01-31", "2023-02-10", "2023-02-13", "2023-03-01"))
+
+prep_data <- function(df){
+  df |>
+    mutate(
+      transect = as.double(substr(FOLDER, 2,2)),
+      distance = case_when(
+        substr(FOLDER, 4, 4) == "5" ~ 50,
+        substr(FOLDER, 4, 4) == "1" ~ 100,
+        TRUE ~ 200
+        ),
+      time_sec = as.numeric(TIME) + OFFSET,
+      time_day = as_hms(time_sec),
+      to_classify = weekdays(DATE),
+      Date = as.Date(DATE, format = "%m/%d/%Y"),
+      days = case_when(
+        Date %in% public_holidays ~ "off_day",
+        to_classify == "Saturday" ~ "off_day",
+        to_classify == "Sunday" ~ "off_day",
+        TRUE ~ "weekday")
+    ) |>
+    dplyr::select(
+      DATE, top_match = `TOP1MATCH*`, top_dist = TOP1DIST,
+      transect, distance, time_day, days, DURATION
+    )
+}
+#RJ <- prep_data(read_csv("gallus_clusters.csv"))
+BB <- prep_data(read_csv("data/BB_clusters.csv"))
+#DR <- prep_data(read_csv("drongo_clusters.csv"))
+```
+
+# BB
+
+```{r}
+BB_analysis <- BB |>
+  ## filter for the top_match
+  filter(top_match == "Straw-headed Bulbul") |>
+  ## filter for the distance from the cluster 
+  filter(top_dist <= 0.917)
+```
+
+## duration analysis
+```{r}
+BB_analysis <- BB |>
+  mutate(dist = as.factor(distance))
+
+BB_duration_model <- lme(DURATION ~ distance * days, random = ~1|transect, data = BB_analysis)
+BB_duration_model <- lme(DURATION ~ dist * days, random = ~1|transect, data = BB_analysis)
+summary(BB_duration_model)
+## diagnostic plot
+
+### variance for the dataset 
+plot(BB_duration_model, resid(.,scaled = T) ~ fitted(.) | transect, abline = 0, lty = 2)
+plot(BB_duration_model)
+# a pattern of residuals decreasing as fitted values increase is observed
+
+### normality 
+qqnorm(BB_duration_model, abline = c(0, 1), lty = 2)
+qqnorm(BB_duration_model, ~resid(., type = "p") | transect , abline = c(0,1) , lty = 2)
+# distribution is not normal
+
+### large enough sample size always reject the null hypothesis? 
+ad.test(BB_analysis$DURATION)
+hist(BB_analysis$DURATION)
+```
+
+```{r}
+summary(BB_duration_model)
+BB_analysis |>
+  ggplot(aes(x = days, y = DURATION, color = as.factor(distance))) +
+  geom_boxplot()
+
+BB_analysis |>
+  ggplot(aes(x = days, y = DURATION)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(2, 4))
+
+BB_analysis |>
+  ggplot(aes(x = distance, y = DURATION, color = days)) +
+  geom_boxplot() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+BB_duration_model.1 <- lme(DURATION ~ distance + days, random = ~1|transect, data = BB_analysis)
+
+bp <- 100
+# 50 - 100
+b1 <- function(x, bp) ifelse(x <= bp, x, 0)
+b1(BB_analysis$distance, 100)
+# 100 - 200
+b2 <- function(x, bp) ifelse(x < bp, 0, x)
+b2(BB_analysis$distance, 100)
+
+# interaction
+BB_duration_model.2 <- lmer(DURATION ~ b1(distance, 100) * days + b2(distance, 100) * days + (1|transect), data = BB_analysis)
+summary(BB_duration_model.2)
+plot(BB_duration_model.2)
+# the interaction is changing the relationship between days and duration of call. the effect size is small
+# base on p-values, shouldnt remove. base on AIC, should remove
+# add in point about the effect size being small when intepreting the results
+# go ahead with biological intuition
+```
+
+```{r}
+BB_duration_model.2 <- glmer.nb(DURATION ~ b1(distance, 100) * days + b2(distance, 100) * days + (1|transect), data = BB_analysis)
+summary(BB_duration_model.2)
+```
+
+```{r}
+plot(BB_duration_model.2)
+
+# parallel
+BB_duration_model.3 <- lmer(DURATION ~ b1(distance, 100) + b2(distance, 100) + days + (1|transect), data = BB_analysis)
+summary(BB_duration_model.3)
+plot(BB_duration_model.3)
+
+AIC(BB_duration_model.2, BB_duration_model.3)
+
+### variance for the dataset 
+plot(BB_duration_model.2, resid(.,scaled = T) ~ fitted(.) | transect, abline = 0, lty = 2)
+plot(BB_duration_model.2)
+# a pattern of residuals decreasing as fitted values increase is observed
+
+### normality 
+qqnorm(BB_duration_model.2, abline = c(0, 1), lty = 2)
+qqnorm(BB_duration_model.2, ~resid(., type = "p") | transect , abline = c(0,1) , lty = 2)
+# distribution is not normal
+```
+
+```{r}
+
+BB_duration_model.4 <- glmmPQL(DURATION ~ distance * days, random = ~1|transect, data = BB_analysis, family = quasi)
+summary(BB_duration_model.4)
+
+BB_duration_model.5 <- glmmPQL(DURATION ~ distance + days, random = ~1|transect, data = BB_analysis, family = quasi(link = "identity", variance = "constant"))
+summary(BB_duration_model.3)
+
+# BB_duration_model.2<- lme(DURATION ~ distance, random = ~1|transect, data = BB_analysis)
+# summary(BB_duration_model.2)
+
+# duration decreases as distance increases
+```
+
+
+## dawn chorus 
+
+
+https://link-springer-com.libproxy1.nus.edu.sg/chapter/10.1007/978-3-030-39200-0_3 
+
+```{r}
+BB_chorus <- BB_analysis |>
+  filter(time_day <= as.hms("10:00:00", format = "%h%m:%s"))  |>
+  group_by(transect, distance, days) |>
+  summarise(n = n()) 
+```
+
+```{r}
+# there isnt a clear cut off for relationship 
+# split the data set to 50-100, and 200
+BB_chorus_model.1 <- glmer(n ~ b1(distance, 100) * days + b2(distance, 100) * days + (1|transect), 
+                         data = BB_chorus, family = poisson)
+## rescale variables 
+BB_chorus_model.2 <- glmer(n ~ scale(b1(distance, 100)) * days + scale(b2(distance, 100)) * days + (1|transect), data = BB_chorus, family = poisson)
+
+plot(simulateResiduals(BB_chorus_model.2))
+
+# no problems detected
+
+BB_chorus_model.3 <- glmer(n ~ scale(distance) + days + (1|transect), 
+                         data = BB_chorus, family = poisson)
+
+plot(simulateResiduals(BB_chorus_model.3))
+
+# parallel model - 
+BB_chorus_model.4 <- glmer(n ~ scale(b1(distance, 100)) + scale(b2(distance, 100)) + days + (1|transect), 
+                         data = BB_chorus, family = poisson)
+
+plot(simulateResiduals(BB_chorus_model.4))
+
+## problem with residuals 
+
+# BB_chorus_model.3 <- glmer.nb(n ~ scale(distance) * days + (1|transect), data = BB_chorus)
+# 
+# plot(simulateResiduals(BB_chorus_model.3))
+# 
+summary(BB_chorus_model.2)
+summary(BB_chorus_model.3)
+summary(BB_chorus_model.4)
+# As you increase the distance by one, the expected number of calls increases by a factor of exp(-0.15199) = 0.8589%.
+
+# number of calls made decreases as distances increases
+exp(0.49426)
+# On weekdays, the number of calls is 1.64 greater than the number of calls on weekends
+exp(3.1032-0.21103)
+
+exp(3.1032-0.35943)
+
+# we observe a decrease in the number of calls from distance 200 - 100m and distance 100m - 50m.
+exp(3.1032)
+```
+
+# Drongo
+  
+```{r}
+DR_analysis <- DR |>
+  filter(top_match == "drongo") |>
+  filter(top_dist <= 0.5529) 
+```
+
+
+## duration 
+
+```{r}
+DR_duration_model <- lme(DURATION ~ distance * days, random = ~1|transect, data = DR_analysis)
+
+## diagnostic plot
+
+### variance for the dataset 
+plot(DR_duration_model, resid(.,scaled = T) ~ fitted(.) | transect, abline = 0, lty = 2)
+plot(DR_duration_model)
+
+### normality 
+qqnorm(DR_duration_model, abline = c(0, 1), lty = 2)
+qqnorm(DR_duration_model, ~resid(., type = "p") | transect , abline = c(0,1) , lty = 2)
+
+### large enough sample size always reject the null hypothesis? 
+ad.test(log(DR_analysis$DURATION))
+hist(log(DR_analysis$DURATION))
+
+DR_duration_model.2 <- lme(log(DURATION) ~ distance * days, random = ~1|transect, data = DR_analysis)
+summary(DR_duration_model.2)
+
+DR_duration_model.3 <- glmmPQL(DURATION ~ distance * days, random = ~1|transect, data = DR_analysis, family = quasi)
+summary(DR_duration_model.3)
+
+# 
+# DR_duration_model.3 <- lme(log(DURATION) ~ distance + days, random = ~1|transect, data = DR_analysis)
+# summary(DR_duration_model.3)
+```
+
+## dawn chorus 
+
+```{r}
+DR_chorus <- DR_analysis |>
+  filter(time_day <= as.hms("10:00:00", format = "%h%m:%s"))  |>
+  group_by(transect, distance, days) |>
+  summarise(n = n()) 
+```
+
+```{r}
+DR_chorus_model.1 <- glmer(n ~ distance * days + (1|transect), 
+                         data = DR_chorus, family = poisson)
+## rescale variables 
+DR_chorus_model.2 <- glmer(n ~ scale(distance) * days + (1|transect), 
+                         data = DR_chorus, family = poisson)
+
+plot(simulateResiduals(DR_chorus_model.2))
+## problem with residuals and outliers
+
+DR_chorus_model.3 <- glmer.nb(n ~ scale(distance) * days + (1|transect), data = DR_chorus)
+
+plot(simulateResiduals(DR_chorus_model.3))
+# problems solved 
+```
+
+```{r}
+summary(DR_chorus_model.3)
+## interaction not significant 
+
+DR_chorus_model.4 <-  glmer.nb(n ~ scale(distance) + days + (1|transect), data = DR_chorus)
+summary(DR_chorus_model.4)
+# weekday not significant
+
+DR_chorus_model.5 <-  glmer.nb(n ~ scale(distance) + (1|transect), data = DR_chorus)
+summary(DR_chorus_model.5)
+
+# DR_chorus_model.5 <- glmmPQL(n ~ scale(distance), random = ~1|transect, 
+#                              data = DR_chorus, family = quasipoisson)
+# summary(DR_chorus_model.5)
+```
+
+# Summary 
+
+## Junglefowl 
+distance is significantly related to duration and dawn chorus 
+
+## Asian Koel 
+distance and type of day are significantly associated with the duration of the call, 
+no association found for the dawn chorus. 
+
+## Bulbul
+distance and type of day are significantly related to both duration and dawn chorus
+
+## Drongo
+distance and type of day are significantly related to duration of the call.
+distance is significantly related to dawn chorus
+
+```{r}
+library(segmented)
+
+```
+

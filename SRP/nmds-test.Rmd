@@ -1,0 +1,505 @@
+---
+title: "R Notebook"
+author: "Shuna Maekawa"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+# import data 
+```{r, message=FALSE, warning=FALSE}
+#load the packages 
+library(tidyverse)
+library(tibble)
+library(ggplot2)
+library(vegan)
+library(gganimate)
+library(gifski)
+library(transformr)
+library(infer)
+library(patchwork)
+library(dplyr)
+library(plyr)
+library(cluster)    
+library(factoextra) 
+library(dendextend)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+#import data from the working directory 
+oph <- read.csv("HornbillID.csv")
+```
+
+
+```{r}
+variables <- oph%>%
+  select(ID,side,sex)
+
+variables <- rename(variables, c("side"="side_dis", "sex"="sex_dis")) 
+```
+
+# data wrangling 
+```{r, message=FALSE, warning=FALSE}
+
+#replace categorical variables with numerical variables \
+oph$side[oph$side == "r"] <- as.numeric("0")
+oph$side[oph$side == "l"] <- as.numeric("1")
+oph$sex[oph$sex == "m"] <- as.numeric("0")
+oph$sex[oph$sex == "f"] <-  as.numeric("1")
+
+oph$side <- as.numeric(oph$side)
+oph$sex <- as.numeric(oph$sex)
+
+#replace NA with 0
+oph <- oph %>%
+  replace(is.na(.), 0)
+```
+
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# see the data structure 
+glimpse(oph)
+```
+
+# data analysis 
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# NMDS 
+nmds <- oph %>%
+  # exclude non-numerical variables 
+  select(-id,-name, -hornbill, -ID)%>%
+  metaMDS(., distance="jaccard", k=3, trymax=50, trace = 2) 
+```
+
+```{r, message=FALSE, warning=FALSE, results = "hide"}
+# see the data structure 
+glimpse(nmds)
+```
+
+# data visualization 
+```{r, message=FALSE, warning=FALSE}
+#plot the raw result 
+plot(nmds)
+```
+```{r, message=FALSE, warning=FALSE}
+# shepherd plot 
+# original dissimilarities are quite well preserved by the reduced dimensions
+stressplot(nmds)
+```
+```{r, message=FALSE, warning=FALSE}
+# add nmds scores to the original data
+test <-  nmds %>% 
+  #extract nmds scores 
+  scores(., choices = c(1:3), display=c("sites")) %>%
+  #convert the nmds scores in a dataframe 
+  data.frame(.) %>%
+  bind_cols(oph, .) %>%
+  left_join(variables)
+```
+
+## all individuals
+```{r, message=FALSE, warning=FALSE}
+# plot the entire nmds 
+p1 <-  ggplot() +
+  geom_point(data = test, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)
+
+
+p1
+```
+
+## Sex
+
+### males
+```{r, message=FALSE, warning=FALSE}
+#male vs female 
+male <- test %>% 
+  filter(sex == 0)
+
+p2 <-  ggplot() +
+  geom_point(data = male, 
+             aes(x=NMDS1, y=NMDS2, colour = name, shape = side_dis), 
+             size = 3,
+             position = "jitter")+
+  labs(title = "Male")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2
+  
+```
+
+### females
+```{r,message=FALSE, warning=FALSE}
+#male vs female 
+female <- test %>% 
+  filter(sex == 1)
+
+p3 <-  ggplot() +
+  geom_point(data = female, 
+             aes(x=NMDS1,
+                 y=NMDS2,
+                 colour = name,
+                 shape= side_dis), 
+             size = 3)+
+  labs(title = "Female")+
+  theme(plot.title = element_text(hjust = 0.5))
+ 
+p3
+```
+
+## Sides
+
+### Right
+```{r,message=FALSE, warning=FALSE}
+#side
+right <- test %>% 
+  filter(side == 0)
+
+p4 <-  ggplot() +
+  geom_point(data = right, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Right")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p4
+```
+
+### Left
+```{r}
+#side
+left <- test %>% 
+  filter(side == 1)
+
+p5 <-  ggplot() +
+  geom_point(data = left, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Left")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+p5
+```
+
+## Each individual
+
+### Oliver
+```{r}
+#individual
+Oliver <- test %>% 
+  filter(name == "oliver")
+
+p6 <-  ggplot() +
+  geom_point(data = Oliver, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Oliver")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Oliver,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p6
+```
+
+### Toby
+```{r}
+#individual
+Toby <- test %>% 
+  filter(name == "toby")
+
+p7 <-  ggplot() +
+  geom_point(data = Toby, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Toby")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Toby,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p7
+```
+
+### Rachel 
+```{r}
+#individual
+Rachel <- test %>% 
+  filter(name == "rachel")
+
+p8 <-  ggplot() +
+  geom_point(data = Rachel, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Rachel")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Rachel,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p8
+```
+
+### Finn
+```{r}
+#individual
+Finn <- test %>% 
+  filter(name == "finn")
+
+p9 <-  ggplot() +
+  geom_point(data = Finn, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Finn")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Finn,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=3,vjust=1)
+
+
+p9
+```
+
+### Samantha 
+```{r}
+#individual
+Samantha <- test %>% 
+  filter(name == "samantha")
+
+p10 <-  ggplot() +
+  geom_point(data = Samantha, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Samantha")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Samantha,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p10
+```
+
+### Leo
+```{r}
+#individual
+Leo <- test %>% 
+  filter(name == "leo")
+
+p11 <-  ggplot() +
+  geom_point(data = Leo, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Leo")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Leo,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p11
+```
+### Aurora
+
+```{r}
+#individual
+Aurora <- test %>% 
+  filter(name == "aurora")
+
+p12 <-  ggplot() +
+  geom_point(data = Aurora, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Aurora")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Aurora,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p12
+```
+
+### Tristan 
+```{r}
+#individual
+Tristan <- test %>% 
+  filter(name == "tristan")
+
+p13 <-  ggplot() +
+  geom_point(data = Tristan, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Tristan")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Tristan,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p13
+```
+
+### Will 
+
+```{r}
+#individual
+Will <- test %>% 
+  filter(name == "will")
+
+p14 <-  ggplot() +
+  geom_point(data = Will, 
+             aes(x=NMDS1, y=NMDS2, colour = id), 
+             alpha = 0.7)+
+  labs(title = "Will")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(data= Will,
+            aes(x=NMDS1,y=NMDS2,label=hornbill),size=2.5,vjust=1)
+
+
+p14
+```
+
+# ANOSIM Test
+
+## all hornbills
+```{r}
+#make community matrix - extract columns with abundance information, turn data frame into matrix
+all_test = test[,5:27]
+all_matrix= as.matrix(all_test)
+
+anosim_all = anosim(all_matrix, test$id, distance = "bray", permutations = 9999)
+anosim_all
+```
+
+
+## male hornbills
+
+```{r}
+
+male_test = male[,5:27]
+male_matrix = as.matrix(male_test)
+
+anosim_male = anosim(male_matrix, male$id, distance = "bray", permutations = 9999)
+anosim_male
+```
+
+## female hornbills
+```{r}
+
+female_test = female[,5:27]
+female_matrix = as.matrix(female_test)
+
+anosim_female = anosim(female_matrix, female$id, distance = "bray", permutations = 9999)
+anosim_female
+
+
+```
+
+# Clustering Analysis 
+
+## Agglomerative Hierarchical Clustering
+
+```{r}
+# exclude unnecessary columns 
+hclust <- oph 
+rownames(hclust) <- hclust$hornbill
+hclust <- hclust %>%
+  select(-id, -name, -ID, -hornbill)
+
+#convert table to dataframe 
+hclust.df <- as.data.frame(hclust)
+hclust.df <- scale(hclust.df)
+
+# Dissimilarity matrix
+hclust_dis <- dist(hclust.df, method = "euclidean")
+
+# Hierarchical clustering using Complete Linkage
+hclust_link <- hclust(hclust_dis, method = "complete" )
+
+# Plot the obtained dendrogram
+plot(hclust_link, cex = 0.6, hang = -1)
+```
+
+```{r}
+# Compute with agnes
+hc2 <- agnes(hclust.df, method = "complete")
+
+# Agglomerative coefficient
+hc2$ac
+## 0.8534745
+
+# methods to assess
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+# function to compute coefficient
+ac <- function(x) {
+  agnes(hclust.df, method = x)$ac
+}
+
+map_dbl(m, ac)
+
+```
+
+```{r}
+hc3 <- agnes(hclust.df, method = "ward")
+pltree(hc3, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+```
+
+## Divisive Hierarchical Clustering
+
+```{r}
+# compute divisive hierarchical clustering
+hc4 <- diana(hclust.df)
+
+# Divise coefficient; amount of clustering structure found
+hc4$dc
+## 0.8428457
+
+# plot dendrogram
+pltree(hc4, cex = 0.6, hang = -1, main = "Dendrogram of diana")
+```
+
+```{r}
+# Ward's method
+hc5 <- hclust(hclust_dis, method = "ward.D2" )
+
+# Cut tree into 4 groups
+sub_grp1 <- cutree(hc5, k = 17)
+sub_grp2 <- cutree(hc5, k = 9)
+
+# Number of members in each cluster
+table(sub_grp1)
+
+table(sub_grp2)
+
+```
+
+```{r}
+plot(hc5, cex = 1)
+rect.hclust(hc5, k = 17, border = 2:5)
+```
+
+```{r}
+# Convert hclust into a dendrogram and plot
+hc6 <- as.dendrogram(hc5)
+
+nodePar <- list(lab.cex = 0.6, pch = c(NA, 19), 
+                cex = 0.7, col = "blue")
+plot(hc6,  
+     xlab = "Height",
+     nodePar = nodePar,
+     horiz = TRUE)
+```
+
+```{r}
+# Zoom in to the dendrogram
+plot(hc6, xlim = c(10,-4), ylim = c(1,15),
+     horiz = TRUE,
+     nodePar = nodePar, 
+     xlab = "Height")
+```
+
+### Cluster plot
+
+```{r}
+fviz_cluster(list(data = hclust.df, cluster = sub_grp2), geom = c("point"))
+
+```
+

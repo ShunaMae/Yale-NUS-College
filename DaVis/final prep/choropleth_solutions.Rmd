@@ -1,0 +1,247 @@
+---
+title: "Solutions: Choropleth maps of country-level statistics"
+subtitle: "YSC2210 - DAVis with R"
+author: "Michael T. Gastner"
+output:
+  pdf_document:
+    citation_package: natbib
+urlcolor: blue
+header-includes: 
+    - \usepackage{hyperref}
+bibliography: preston.bib
+biblio-style: natbib
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+I need the following packages for this exercise.
+
+```{r}
+library(countrycode)
+library(readxl)
+library(sf)
+library(tidyverse)
+library(tmap)
+```
+
+(1)
+    Code from the exercise about relational data.
+
+    ```{r}
+    gdp_per_cap <- read_excel(
+      "data/API_NY.GDP.PCAP.KD_DS2_en_excel_v2_3731742.xls",
+      skip = 3
+    )
+    life_exp <- read_excel(
+      "data/API_SP.DYN.LE00.IN_DS2_en_excel_v2_3731513.xls",
+      skip = 3
+    )
+
+    # Next function can pivot any of the World Bank tibbles
+    pivot_longer_wb <- function(tb, name) {
+      tb |>
+        select(-starts_with("Indicator")) |>
+        pivot_longer(
+          matches("^\\d{4}$"), # String with exactly 4 digits
+          names_to = "year",
+          values_to = {{ name }},
+          names_transform = list(year = as.integer)
+        )
+    }
+    wb <-
+      Hmisc::llist(life_exp, gdp_per_cap) |>
+      imap(pivot_longer_wb) |>
+      reduce(left_join, by = c("Country Name", "Country Code", "year")) |>
+      semi_join(codelist, by = c("Country Code" = "iso3c"))
+    ```
+
+(2)
+
+    ```{r}
+    import_and_simplify <- function(zip_file) {
+      zip_file |>
+        unzip() |>
+        str_subset(".shp$") |>
+        read_sf() |>
+        rmapshaper::ms_simplify()
+    }
+    country_borders <-
+      import_and_simplify("data/wb_countries_admin0_10m.zip")
+    ```
+    
+(3)
+
+    ```{r}
+    country_borders <-
+      country_borders |>
+      mutate(ISO_A3 = case_when(
+        NAME_EN == "Norway" ~ "NOR",
+        NAME_EN == "France" ~ "FRA",
+        TRUE ~ ISO_A3
+      ))
+    ```
+    
+(4)
+
+    ```{r}
+    countries <-
+      country_borders |>
+      inner_join(wb, by = c("ISO_A3" = "Country Code")) |>
+      filter(year == 2015) |>
+      select(
+        name = "Country Name",
+        code = "ISO_A3",
+        gdp_per_cap,
+        life_exp,
+        geometry
+      ) |>
+      print()
+    ```
+
+    We check whether there are any empty geometries.
+    
+    ```{r}
+    any(st_is_empty(countries))
+    ```
+    
+    In my case, there are no empty geometries.
+    You may find empty geometries if you pursue another strategy to merge
+    `countries` with `country_borders`.
+    
+(5)
+
+    ```{r}
+    tm_shape(countries) +
+      tm_polygons()
+    ```
+    
+    Western Sahara (claimed by Morocco), Aksai Chin, Arunachal Pradesh
+    (both disputed between India and China) and Antarctica are not on this
+    map.
+    
+(6)
+
+    ```{r}
+    land <- import_and_simplify("data/wb_land_10m.zip")
+    tm_shape(land) +
+      tm_polygons() +
+      tm_shape(countries) +
+      tm_polygons()
+    ```
+
+(7)
+    The projection of the map above is the projection of the `sf` object
+    `land` because `land` is the argument when `tm_shape()` is called for the
+    first time.
+    
+    ```{r}
+    st_crs(land)$proj4string
+    ```
+    
+    The coordinate reference system is a plain longitude-latitude grid, which
+    is not an equal-area projection.
+    
+(8) The following URL contains information about generating a logarithmic
+    scale:
+    <https://github.com/mtennekes/tmap/issues/128>.
+    However, for me the suggested solution (`style = "log10_pretty"`) results
+    in too few bins.
+    Therefore, I set the breaks manually in the next code chunk.
+
+    ```{r fig.width=10, fig.height=8, fig.align='centre'}
+    choropleth <- tm_shape(land, projection = "+proj=eck4") +
+      tm_polygons(col = "grey") +
+      tm_shape(countries) +
+      tm_polygons(
+        c("gdp_per_cap", "life_exp"),
+        border.col = "grey30",
+        palette = list("Oranges", "Greens"),
+        breaks = list(
+          c(-Inf, 1000, 2000, 5000, 10000, 20000, 50000, Inf),
+          c(-Inf, 60, 65, 70, 75, 80, 85, Inf)
+        ),
+        colorNA = "grey",
+        title = c(
+          "GDP per capita\n(US$, PPP 2015)",
+          "Life expectancy at birth\n(years)"
+        ),
+        lwd = 0.5
+      ) +
+      tm_text("code", size = "AREA", col = "black") +
+      tm_credits(
+        c("", "Source: World Bank"),
+        position = c("left", "bottom")
+      ) +
+      tm_layout(
+        bg.color = "lightblue",
+        frame = FALSE,
+        inner.margins = c(0.00, 0.15, 0.01, 0.01),
+        earth.boundary = TRUE,
+        space.color = "white",
+        main.title = "Wealth and Health by Country in 2015"
+      )
+    choropleth
+    ```
+
+    Run the next code chunk to export the map to a file.
+    
+    ```{r}
+    tmap_save(
+      choropleth,
+      "images/choropleth_map.pdf",
+      width = 10,
+      height = 8
+    )
+
+    # Crop white space around the map
+    knitr::plot_crop("images/choropleth_map.pdf")
+    ```
+    
+(9)
+    By comparing the two maps, we notice an overall tendency that per-capita
+    GDP and average life expectancy are correlated.
+    Most countries that are poor and have a short average life expectancy are
+    in central Africa.
+    Afghanistan is the only comparable country outside Africa, with similarly
+    low per-capita GDP and short life expectancy.
+    Western Europe is home to many of the wealthiest and longest-living
+    nations.
+    The group of top performing countries also includes the USA, Canada,
+    Australia and New Zealand.
+    Most Latin American countries are in the midrange for both metrics.
+    Asia is very heterogeneous: Afghanistan is at the low end of the spectrum,
+    whereas Japanese and South Koreans enjoy very wealthy and long lives.
+
+(10)
+    Geographic maps show clearly where countries are located, whereas the
+    colour code in figure \ref{fig:gapminder} can only imply coarse-grained
+    locations.
+    For example, green bubbles represent all countries in Asia, which spans a
+    huge area.
+    However, the scatter plot contains information about population
+    size (represented by the areas of the bubble) that is not present on
+    our choropleth maps.
+    We could have overlaid proportional symbol maps on top of the choropleth
+    maps, using bubbles with an area representing population size centred on
+    the countries' centroids.
+    However, the bubbles would have obstructed the country labels and many of
+    the boundaries.
+    A more elegant solution than a proportional symbol map would be a
+    cartogram in which each country appears with an area in proportion to its
+    population.
+    R currently does not have a mature package for cartogram construction.
+
+    Another disadvantage of the faceted maps is that viewers must shift their
+    gaze between two spatially separated facets to recognise that there is a
+    correlation between per-capita GDP and life expectancy.
+    An interactive map in which viewers can toggle between the two variables
+    would alleviate the problem, but that technique does not work on printed
+    maps.
+    The correlation is more directly obvious in the scatter plot because the
+    two variables are on the coordinate axes.
+    
+```{r gapminder, echo=FALSE, fig.cap='\\label{fig:gapminder}Scatter plot of life expectancy vs.\ GDP per capita by country.'}
+knitr::include_graphics("images/gg_preston_curve.pdf")
+```

@@ -1,0 +1,101 @@
+---
+title: "standard expression"
+author: "shuna"
+date: "5/3/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(stringr)
+```
+
+
+# splitting strings 
+
+## split by space
+```{r}
+x <- c("Here is one sentence.", "Here is another.")
+str_split(x, " ")
+```
+
+## split by letters 
+```{r}
+str_split(x, "n")
+```
+
+## split each letter
+```{r}
+str_split(x, "")
+str_split(x, pattern = "")
+```
+```{r}
+library(tidyverse)
+homicides <- read_lines("homicides.txt")
+```
+
+
+```{r}
+homicide_split <- str_split(homicides, ", ")
+toNumber <- function(x, i) {
+  as.numeric(x[i])
+}
+
+homicide_coord <- tibble(
+  lat = map_dbl(homicide_split, toNumber, 1),
+  lon = map_dbl(homicide_split, toNumber, 2)
+)
+head(homicide_coord)
+```
+# combine strings
+
+```{r}
+str_c("co", "m", "bine")
+str_c("co", "m", "bine", sep = " ")
+str_c("co", "m", "bine", sep = ";")
+```
+
+# vectorized string
+
+```{r}
+str_c("postal code : ", 10:20)
+```
+
+# Extraction 
+```{r}
+x
+# from 9 onwards, excluding the last character 
+str_sub(x, 9, -2)
+```
+# replace 
+```{r}
+str_sub(x, 9, -2) <- str_c("sentence ", c("A", "B"))
+x
+```
+
+
+```{r}
+str_replace(x, pattern = "Here", replacement = "this")
+```
+
+# search 
+```{r}
+# which state contains ia? 
+str_subset(state.name, "ia")
+```
+
+```{r}
+# with indices 
+str_which(state.name, "ia")
+```
+
+# lower/upper
+```{r}
+str_to_lower(x)
+str_to_upper(x)
+```
+
+

@@ -1,0 +1,470 @@
+---
+title: "Lec06_exercises"
+author: "shuna"
+date: "1/28/2022"
+output: html_document
+---
+
+```{r, message=FALSE, include=FALSE}
+library(dplyr)
+library(bsts)
+library(microbenchmark)
+```
+
+## Days of the week in the Shire calendar 
+
+### a) Converting a Gregorian day of the week into the Shire day of the week
+
+#### if_else
+```{r}
+shire_day_from_gregorian_if_else <- function(day){
+  if_else(day == "Monday",
+          "Sterday", 
+          if_else(day =="Tuesday",
+                  "Sunday",
+                  if_else(day == "Wednesday", 
+                          "Monday",
+                          if_else(
+                            day =="Thursday",
+                            "Trewsday",
+                            if_else(
+                              day =="Friday",
+                              "Hevensday",
+                              if_else(
+                                day == "Saturday",
+                                "Mersday",
+                                if_else(
+                                  day == "Sunday",
+                                  "Highday",
+                                  NA_character_
+                                )
+                              )
+                            )
+                          ))))
+}
+```
+
+## case_when
+```{r}
+shire_day_from_gregorian_case_when <- function(day){
+  case_when(
+    day == "Monday" ~ "Sterday",
+    day == "Tuesday" ~ "Sunday",
+    day == "Wednesday" ~ "Monday",
+    day == "Thursday" ~ "Trewsday",
+    day == "Friday" ~ "Hevensday",
+    day == "Saturday" ~ "Mersday",
+    day == "Sunday" ~ "Highday",
+    TRUE ~ NA_character_
+  )
+}
+```
+
+## recode 
+```{r}
+shire_day_from_georgian_recode <- function(day) {
+  dplyr::recode(day, 
+                "Monday" = "Sterday", 
+                "Tuesday" = "Sunday", 
+                "Wednesday" = "Monday", 
+                "Thursday" = "Trewsday", 
+                "Friday" = "Hevensday", 
+                "Saturday" = "Mersday", 
+                "Sunday" = "Highday",
+                .default = NA_character_
+                )
+  }
+```
+
+```{r}
+recoding <- function(element, A, B){
+  for (i in element){
+    for (j in 1:length(A)){
+      if i == A[j]{
+        B[j]
+      }
+    }
+  }
+
+
+```
+
+```{r}
+gregorian <- c( 
+  "Monday", 
+  "Tuesday", 
+  "Wednesday", 
+  "Thursday", 
+  "Friday", 
+  "Saturday", 
+  "Sunday" 
+) 
+shire <- c( 
+  "Sterday", 
+  "Sunday", 
+  "Monday", 
+  "Trewsday", 
+  "Hevensday", 
+  "Mersday", 
+  "Highday" 
+) 
+ 
+recoding(weekday.names, gregorian, shire)
+```
+
+
+### b) Test the result
+```{r,message=FALSE}
+shire_day_from_gregorian_if_else(weekday.names)
+shire_day_from_gregorian_case_when(weekday.names)
+shire_day_from_georgian_recode(weekday.names)
+```
+They all return the same result. 
+
+```{r}
+shire_day_from_gregorian_if_else("ugh")
+shire_day_from_gregorian_case_when("ugh")
+shire_day_from_georgian_recode("ugh")
+```
+All three functions works properly for the NA value. 
+
+
+## Measuring run-times with the microbenchmarck package 
+
+### b) Compare the run-time of five functions 
+
+```{r}
+abs_with_if_else <- function(x){
+  # return x if x is 0 or positive
+  # return -x if x is negative
+  dplyr::if_else(x >= 0, x, -x)
+}
+
+abs_with_subsetting <- function(x){
+  # extract indices of x that are negative
+  neg <- (x < 0)
+  # replace them with -x[i]
+  x[neg] <- -x[neg]
+  # return x
+  x
+}
+
+abs_with_data_type_conversion <- function(x){
+  # if x is 0 or positive, 
+  # ((x>0) - (x<0)) yields TRUE - FALSE, 
+  # which is converted to 1 - 0 = 1
+  # 1 * x returns x 
+  
+  # if x is negative, 
+  # ((x>0) - (x<0)) yields FALSE - TRUE, 
+  # which is converted to 0 - 1 = -1
+  # (-1) * x returns -x
+  ((x > 0) - (x < 0)) * x
+}
+
+abs_with_for_loop <- function(x) {
+  # for every element in x
+  for (i in seq_along(x)) {
+    # if x[i] is negative
+    if (x[i] < 0) {
+      # replace it with -x[i]
+      x[i] <- -x[i]
+    }
+  }
+  x
+}
+```
+
+```{r}
+# random long series of numbers 
+num = rnorm(n = 1000000, mean = 0, sd = 3)
+```
+
+```{r}
+# comparison
+microbenchmark(abs(num), 
+               abs_with_if_else(num),
+               abs_with_subsetting(num), 
+               abs_with_data_type_conversion(num),
+               abs_with_for_loop(num))
+```
+### c) Oomments on the result 
+
+Among the five function, `abs()` is the fastest, thus writing our own codes to calculate the absolute value is not worth it. For other type of function, we should use data type conversion if possible, followed by sub-setting, and then for loop. `if_else()` seems to be the slowest among the four. 
+
+
+# Comparing two functions for calculating Pythagorean sums 
+
+
+
+```{r}
+pythag_1 <- function(a, b) {
+  # applying the normal theorem 
+  sqrt(a**2 + b**2)
+}
+
+
+pythag_2 <- function(a, b) {
+  # absolute values of two inputs 
+  absa <- abs(a)
+  absb <- abs(b)
+  # pmax()/pmin() takes multiple vectors as arguments
+  # return maximum for pmax() and minimum for pmin() 
+  p <- pmax(absa, absb)
+  q <- pmin(absa, absb)
+  ratio <- q / p
+  ratio[is.nan(ratio)] <- 1
+  # calculation shown below
+  p * sqrt(1.0 + ratio**2)
+}
+```
+
+$$
+p \times {\sqrt{1.0 + \left(\frac{q}{p}\right)^2}} \\
+= \sqrt{p^{2}\times \left(1.0 + \dfrac{q^2}{p^2}\right) } \\
+= \sqrt{p^2 + q^2}
+$$
+
+
+#### a) What is the purpose of is.nan(ratio)? 
+
+is.nan(ratio) is for the case where `a=0` and `b=0`. `q/p` yields NaN, so we need to replace it with an integer. 
+
+#### b) Compare the run-time 
+
+```{r}
+microbenchmark(pythag_1(4*10**2000, 9**100), pythag_2(4*10**2000, 9**100))
+```
+The second function takes about seventeen times longer to yield the result. 
+
+```{r}
+.Machine$integer.max
+```
+
+# Floating-point accuracy 
+
+
+```{r}
+equal_or_not <- function(x,y){
+  x = as.numeric(formatC(x, digits = nchar(x), format = "f"))
+  y = as.numeric(formatC(y, digits = nchar(y), format = "f"))
+  if_else(x == y, TRUE, FALSE)
+}
+```
+
+```{r}
+equal_or_not(0.123+0.2, 0.323)
+```
+
+```{r}
+0.1 + 0.2 == 0.3
+```
+<https://floating-point-gui.de/basic/>
+
+```{r}
+all.equal((0.1+0.2), 0.3)
+```
+
+
+``` {r setup, include=FALSE, echo=FALSE}
+library(dplyr)
+library(bsts)
+library(microbenchmark)
+```
+
+# Days of the week in Shire calendar
+# Using if_else 
+
+```{r}
+shire_day_from_gregorian_if_else <- function(day){
+  if_else(day == "Monday",
+          "Sterday", 
+          if_else(day =="Tuesday",
+                  "Sunday",
+                  if_else(day == "Wednesday", 
+                          "Monday",
+                          if_else(
+                            day =="Thursday",
+                            "Trewsday",
+                            if_else(
+                              day =="Friday",
+                              "Hevensday",
+                              if_else(
+                                day == "Saturday",
+                                "Mersday",
+                                if_else(
+                                  day == "Sunday",
+                                  "Highday",
+                                  NA_character_
+                                )
+                              )
+                            )
+                          )
+                        )
+                  )
+          )
+}
+```
+# using case_when
+
+```{r}
+shire_day_from_gregorian_case_when <- function(g_day) {
+  dplyr::case_when(
+    g_day == "Monday" ~ "Sterday",
+    g_day == "Tuesday" ~ "Sunday",
+    g_day == "Wednesday" ~ "Monday",
+    g_day == "Thursday" ~ "Trewsday",
+    g_day == "Friday" ~ "Hevensday",
+    g_day == "Saturday" ~ "Mersday",
+    g_day == "Sunday" ~ "Highday",
+    TRUE ~ NA_character_
+  ) 
+}
+```
+# using recode() 
+
+```{r}
+shire_day_from_gregorian_recode <- function(day) {
+  dplyr::recode(day, 
+                "Monday" = "Sterday", 
+                "Tuesday" = "Sunday", 
+                "Wednesday" = "Monday", 
+                "Thursday" = "Trewsday", 
+                "Friday" = "Hevensday", 
+                "Saturday" = "Mersday", 
+                "Sunday" = "Highday",
+                .default = NA_character_
+                )
+  }
+```
+# If the function argument is not the name of a Gregorian weekday, the function should return NA. Which 
+#of these three functions would you stylistically prefer?
+
+# recode() would be our preference. We do not 
+
+
+# Testing the result
+```{r}
+shire_day_from_gregorian_if_else(weekday.names)
+shire_day_from_gregorian_case_when(weekday.names)
+shire_day_from_gregorian_recode(weekday.names)
+```
+# Testing NA values 
+```{r}
+shire_day_from_gregorian_if_else("Hello")
+shire_day_from_gregorian_case_when("Yay")
+shire_day_from_gregorian_recode("Hello")
+```
+
+
+# Measuring run-times with the microbenchmark package
+```{r}
+abs_with_if_else <- function(x){
+  # return x if x is 0 or positive
+  # return -x if x is negative
+  dplyr::if_else(x >= 0, x, -x)
+}
+
+abs_with_subsetting <- function(x){
+  # extract indices of x that are negative
+  neg <- (x < 0)
+  # replace them with -x[i]
+  x[neg] <- -x[neg]
+  # return x
+  x
+}
+
+abs_with_data_type_conversion <- function(x){
+  # if x is 0 or positive, 
+  # ((x>0) - (x<0)) yields TRUE - FALSE, 
+  # which is converted to 1 - 0 = 1
+  # 1 * x returns x 
+  
+  # if x is negative, 
+  # ((x>0) - (x<0)) yields FALSE - TRUE, 
+  # which is converted to 0 - 1 = -1
+  # (-1) * x returns -x
+  ((x > 0) - (x < 0)) * x
+}
+
+abs_with_for_loop <- function(x) {
+  # for every element in x
+  for (i in seq_along(x)) {
+    # if x[i] is negative
+    if (x[i] < 0) {
+      # replace it with -x[i]
+      x[i] <- -x[i]
+    }
+  }
+  x
+}
+```
+# Comparing two functions for calulating Pythagorean sums
+```{r}
+pythag_1 <- function(a, b) {
+  # applying the normal theorem 
+  sqrt(a**2 + b**2)
+}
+
+
+pythag_2 <- function(a, b) {
+  # absolute values of two inputs 
+  absa <- abs(a)
+  absb <- abs(b)
+  # pmax()/pmin() takes multiple vectors as arguments
+  # return maximum for pmax() and minimum for pmin() 
+  p <- pmax(absa, absb)
+  q <- pmin(absa, absb)
+  ratio <- q / p
+  ratio[is.nan(ratio)] <- 1
+  # justification shown below
+  p * sqrt(1.0 + ratio**2)
+}
+```
+
+
+# Bit of explanation of how pythag2 function works
+$$
+p \times {\sqrt{1.0 + \left(\frac{q}{p}\right)^2}} \\
+= \sqrt{p^{2}\times \left(1.0 + \dfrac{q^2}{p^2}\right) } \\
+= \sqrt{p^2 + q^2}
+$$
+
+## What is the purpose of is.nan(ratio) in the second-to-last line of pythag2()’s function body? 3a
+
+
+# 
+# 3b
+## Compare the run-times of pythag1() and pythag2() with the microbenchmark package. Use identical input consisting of long numeric vectors. Summarise your observation as a comment in the R script.
+
+```{r}
+a <- rnorm(1e5)
+b <- rnorm(1e5)
+
+microbenchmark::microbenchmark(
+  pythag1(a, b),
+  pythag2(a, b)
+)
+```
+
+# 3c
+
+# 3d
+
+```{r}
+round(0.1 + 0.2) == 0.3
+all.equal(0.1 + 0.2, 0.3)
+all.equal(0.1 + 0.2, 0.3, tolerance = .Machine$double.eps)
+all.equal(0.2, 0.3, tolerance = 0.2)
+all.equal(1.1, 10.1, tolerance = 20)
+```
+
+The default value of tolerance is close to 1.5e-8 (according to the help page). By modifying this value, we can have any two numbers considered equal. Thus, since (0.1 + 0.2) cannot be represented accurately in binary, all that all.equal does is compare the two values, and ensuring they are within the tolerance.
+This will work:
+
+```{r}
+is.na(0/0)
+```
+In the case where both `a` and `b` are 0, `p` and `q` will also be 0. Then, for the ratio, $\frac{q}{p}$ will yield NaN. Any operation involving NaN outputs NaN, so we need to replace it with an integer. 
+
+

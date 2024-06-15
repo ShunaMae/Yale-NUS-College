@@ -1,0 +1,254 @@
+---
+title: "General Social Survey"
+author: "Team B"
+date: "2/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+```{r, message= FALSE}
+library(tidyverse)
+library(kableExtra)
+library(formattable)
+```
+
+
+# Exercise 1: About the 'Race' of respondents
+    
+## a  what are the levels of `gss_cat$race`?
+
+```{r}
+levels(gss_cat$race)
+```
+
+We see that there are four levels in `gss_cat$race`.
+
+(b) tabulate the frequency of the `races` with `table()`
+
+```{r}
+table(gss_cat$race)
+```
+
+Additionally, we can see the frequency of each level. "Not applicable" seems to be, well, *not applicable*; that is, none of our data fall in that category. (?) 
+
+(c) Now, we can create our own function `nice_table()` to display a nice table.
+
+```{r}
+nice_table <- function(col, name) {
+  # col refers to the name of the column in the data set 
+  # name refers to the column name to be printed  
+  table(gss_cat[, col]) |>
+    # convert it to a data frame 
+    as.data.frame() |>
+    # create a new column for frequency 
+    mutate(Freq = color_bar("lightgreen")(Freq)) |>
+    kbl(
+      # edit a column name 
+      col.names = c(name, "Frequency"),
+      align = c("l", "r"),
+      escape = FALSE
+    ) |>
+    kable_styling(c("striped", "condensed"), full_width = FALSE)
+}
+
+# Check if the function works
+nice_table("race", "Race")
+```
+
+(d) Create a new column `gss_cat$race_drop_unused` that ahs the same data as `gss_cat$race`, but drop the unused level. 
+
+```{r}
+gss_cat$race_drop_unused <- droplevels(gss_cat$race)
+
+# Check if the unused level "Not applicable" has been dropped
+!"Not applicable" %in% levels(gss_cat$race_drop_unused)
+```
+
+(e) Now, we can form a `nice_table` again!
+
+```{r}
+nice_table("race_drop_unused", "Race")
+```
+
+(f) Sort the levels in the order of frequency. 
+
+It may be better to organize our data by frequency. The `forcats` package provides a function for this: `fct_infreq()`. This will sort the levels based on the frequency they appear in. Thus, we can form a *nicer* `nice_table`.
+
+```{r}
+gss_cat$race_drop_unused <- fct_infreq(gss_cat$race_drop_unused)
+
+# Check if the levels have been ordered
+nice_table("race_drop_unused", "Race")
+```
+
+# Exercise 2: Investigating the reported income 
+
+(a) What are the levels? 
+
+```{r}
+levels(gss_cat$rincome)
+```
+
+(b) tabulate the frequency of the income levels with the `nice_table()`.
+
+```{r}
+nice_table("rincome", "Income")
+```
+
+(c) 
+
+From the above table output, we realise that there is an inconsistent use of "-", and "to". Further, the levels are of unequal size. Finally, it may be a good idea to add commas to the numbers.
+
+```{r}
+levels(gss_cat$rincome_reformatted)
+
+gss_cat$rincome_reformatted <- gss_cat$rincome |>
+  # merge different factors 
+  fct_collapse(
+    "$5,000 - 9,999" = c(
+      "$8000 to 9999",
+      "$7000 to 7999",
+      "$6000 to 6999",
+      "$5000 to 5999"
+    ),
+    "$4,999 or less" = c(
+      "$4000 to 4999",
+      "$3000 to 3999",
+      "$1000 to 2999",
+      "Lt $1000"
+    )
+  ) |>
+  # reorder the factor levels 
+  fct_relevel(c(
+    "$25000 or more",
+    "$20000 - 24999",
+    "$15000 - 19999",
+    "$10000 - 14999",
+    "$5000 - 9999",
+    "$4999 or less",
+    "No answer",
+    "Don't know",
+    "Refused",
+    "Not applicable"
+  ))
+
+# plot a table 
+nice_table("rincome_reformatted", "Income")
+```
+
+```{r}
+gss_cat[["rincome"]] <- fct_recode(gss_cat[["rincome"]],
+                      "Not applicable" = "No answer",
+                      "Not applicable"= "Don't know",
+                      "Not applicable" = "Refused",
+                      "$25,000 or more"= "$25000 or more",
+                      "$20,000 to 24,999" = "$20000 - 24999",
+                      "$15,000 to 19,999" = "$15000 - 19999",
+                      "$10,000 to 14,999" = "$10000 - 14999",
+                      "$5,000 to 9,999" = "$8000 to 9999", 
+                      "$5,000 to 9,999" = "$7000 to 7999", 
+                      "$5,000 to 9,999" = "$6000 to 6999",
+                      "$5,000 to 9,999" = "$5000 to 5999",
+                      "$1,000 to 4,999" = "$4000 to 4999",
+                      "$1,000 to 4,999" = "$3000 to 3999",
+                      "$1,000 to 4,999" = "$1000 to 2999",
+                      "Less than $1,000" = "Lt $1000")
+
+gss_cat[["rincome"]] <- fct_shift(fct_drop(gss_cat[["rincome"]]), n = 1)
+
+nice_table("rincome", "Income")
+```
+
+
+# Exercise 3: About the 'Political Association' of respondents
+
+## a.
+
+```{r}
+levels(gss_cat$partyid)
+```
+
+## b.
+
+```{r}
+gss_cat$partyid_aggregated <- fct_collapse(gss_cat$partyid,
+  "Republican" = c(
+    "Strong republican",
+    "Not str republican"
+  ),
+  "Independent" = c(
+    "Ind,near rep",
+    "Independent",
+    "Ind,near dem"
+  ),
+  "Democrat" = c(
+    "Not str democrat",
+    "Strong democrat"
+  ),
+  "Other" = c("Other party"),
+  "Missing" = c(
+    "Don't know",
+    "No answer"
+  )
+) |>
+  fct_infreq()
+```
+
+## c.
+
+```{r}
+nice_table("partyid_aggregated", "Party affiliations")
+```
+
+# Exercise 4: About the 'Religious Association' of respondents
+## a.
+
+```{r}
+gss_cat$is_protestant <- fct_collapse(gss_cat$relig,
+  "Protestant" = c("Protestant"),
+  other_level = "Other"
+)
+```
+
+(b)
+## b.
+
+```{r}
+gss_cat$has_denom <- fct_collapse(gss_cat$denom,
+  "No answer" = c("No answer"),
+  "No denomination" = c("No denomination"),
+  "Not applicable" = c("Not applicable"),
+  "Don't know" = c("Don't know"),
+  other_level = "Has a denomination"
+) |> fct_relevel(c(
+  "Has a denomination", "No denomination", "Not applicable",
+  "Don't know", "No answer"
+))
+```
+
+(c)
+## c.
+
+```{r}
+data <- gss_cat[, c("is_protestant", "has_denom")]
+data <- as.data.frame.matrix(table(data$has_denom, data$is_protestant))
+
+
+data |>
+  mutate(
+    Protestant = color_bar("lightgreen")(Protestant),
+    Other = color_bar("lightgreen")(Other)
+  ) |>
+  kbl(
+    col.names = c("Protestant", "Other"),
+    align = c("r"),
+    escape = FALSE
+  ) |>
+  kable_styling(
+    c("striped", "condensed"),
+    full_width = FALSE
+  )
+```

@@ -1,0 +1,99 @@
+---
+title: "iris"
+author: "shuna"
+date: "1/14/2022"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+data(iris)
+```
+
+
+```{r}
+nrow(iris)
+ncol(iris)
+```
+
+```{r}
+unique(iris$Species)
+```
+
+## How many samples in each species
+```{r}
+table(iris$Species)
+```
+# mean of all 
+```{r}
+mean(iris$Sepal.Length)
+```
+# mean per species
+```{r}
+iris %>% 
+  group_by(Species)%>%
+  summarise(mean = mean(Sepal.Length))
+```
+
+```{r}
+ggplot(data = iris, aes(x = Species, y = Sepal.Length))+
+  geom_boxplot(fill = "Lightgreen")+
+  labs(x = "Species",
+       y = "Sepal Length (cm)",
+       title = "Anderson's Iris Data")+ 
+  theme(plot.title = element_text(hjust = 0.5))+ 
+  scale_y_continuous(breaks=seq(0,8,0.5))
+```
+
+
+```{r}
+boxplot(data = iris, 
+        Sepal.Length ~ Species,
+        col = "lightgreen",
+        xlab = "Species",
+        ylab = "Sepal Length (cm)",
+        main = "Anderson's Iris Data",
+        las = 1)
+
+grid(nx = NA, ny = NULL)
+```
+
+```{r}
+ggplot(data = iris, aes(x = Sepal.Length))+
+  geom_histogram(color = "black", fill = "grey", binwidth = 0.2)+
+  facet_wrap(ncol = 1, ~Species)+
+  labs(x = "Sepal Length (cm)",
+        y = "Frequency")+
+  scale_x_continuous(breaks=seq(2,9,1))+
+  scale_y_continuous(breaks=seq(0,13,2))
+```
+```{r}
+iris
+```
+```{r}
+ytick <- seq(0,13, by = 2)
+ytick
+```
+
+```{r}
+par(mfrow = c(3,1))
+
+
+setosa <- iris[iris$Species == "setosa", ]
+versicolor <- iris[iris$Species == "versicolor",]
+virginica <- iris[iris$Species == "virginica",]
+
+hist(data = setosa, 
+     x = setosa$Sepal.Length)
+hist(data = versicolor, 
+     x = versicolor$Sepal.Length)
+hist(data = virginica, 
+     x = virginica$Sepal.Length)
+text()
+
+
+```
+

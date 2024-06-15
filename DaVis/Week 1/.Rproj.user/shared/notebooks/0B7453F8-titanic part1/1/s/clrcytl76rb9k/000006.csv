@@ -1,0 +1,6 @@
+"0","Qm <- titanic %>%"
+"0","  group_by(class)%>%"
+"0","  summarise(alive = sum(survived == ""TRUE""),"
+"0","            dead = sum(survived == ""FALSE""))"
+"0",""
+"0","Qm"

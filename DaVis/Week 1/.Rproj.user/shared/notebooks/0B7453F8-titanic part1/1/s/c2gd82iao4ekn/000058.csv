@@ -1,0 +1,8 @@
+"0",""
+"0","barplot(survived, "
+"0","        beside = TRUE, "
+"0","        xlab = ""Class"","
+"0","        main = ""People on Titanic"", "
+"0","        col = c(""lightgreen"", ""mediumpurple""),"
+"0","        las = 1"
+"0","        )"

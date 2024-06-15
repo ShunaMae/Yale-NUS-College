@@ -1,0 +1,531 @@
+---
+title: "Exam"
+output:
+  pdf_document: default
+  html_document: default
+date: '2022-05-06'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+library(tidyverse)
+library(survival)
+library(survminer)
+library(tidyverse)
+library(xtable)
+library(car)
+library(GGally)
+```
+
+### Statistics for Life Sciences 
+
+#### Question 1 
+
+We have measured blood pressure in a sample of 16 individuals (assume that blood pressure is normally pressure) and found that the mean blood pressure is 100 and the standard deviation is 6.
+
+What is the standard error of the mean? (1 point)
+```{r}
+sd = 6
+n = 16
+standard_error = sd / n ^ 0.5
+standard_error
+```
+
+What is the 95% confidence interval for $\mu$ based on this sample? (1 point)
+
+```{r}
+error = qnorm(0.975) * standard_error
+lower_b = 100 - error
+upper_b = 100 + error 
+
+lower_b
+upper_b
+```
+
+What does this confidence interval mean? How do we interpret this? (3 points)
+
+It means that, given the population is normally distributed, the true mean of the mother population lies between 97.06 and 102.94 with 95 out of 100 chance. 
+
+
+#### Question 2 
+
+A $\chi^2$ test of independence for a 2 by 4 contingency table has how many degrees of freedom? (1 point)
+
+```{r, eval=FALSE}
+7
+```
+
+
+#### Question 3
+
+What would be the most appropriate probability distribution for describing each of the following random variables, and __why__?: 
+
+a - Tumour size - (1 point)
+
+Since it is the size of the tumor, I expect it to be a numerical continuous scale. Therefore, the appropriate probability distribution is a **normal distribution**. 
+
+b - Whether a tumour is benign or malignant - (1 point) 
+
+Let p be the probability of a tumor being benign - then the probability of a tumor being malignant is 1-p. Therefore, the appropriate probability distribution is a **bernoulli distribution**. 
+
+c - Number of people with a malignant tumour out of 20 patients with tumour - (1 point)
+
+By the central limit theorem, with enough replications of the trial, we expect the probability distribution to resemble **a normal distribution**. 
+
+d - Number of newly diagnosed cancer patients in one month - (1 point)
+
+Since it is an event occurring in a fixed span of time with a constant mean rate, the appropriate probability distribution is a poisson distribution. 
+
+#### Question 4
+
+What is the difference between Type I and Type II errors? (3 points)
+
+
+A type I error is a false positive while type II error is false negative. Type I error occurs when we reject the null hypothesis when the alternative hypothesis is true, and type II error occurs when we fail to reject the null hypothesis when the alternative hypothesis is false. 
+
+#### Question 5
+
+What is the difference between R-squared and adjusted R-squared? How do you interpret these numbers? (3 points)
+
+R-squared value is a measure of fitness that indicates how much variation in the sample is explained by the model. Adjusted R-squared value is a modified version of it, with some penalties given based on the number of predictors in the model. This is useful because when we increase the number of predictors, the model tend to get better(sometimes even over-fitted). Adjusted value consider the probability of the improvement is made by chance. In genenal, if we are using multiple predictors in a model, we should refer to the adjusted value. 
+
+
+#### Question 6
+
+In survival analysis, it is often necessary to take into account the censoring of individuals/subjects. 
+
+a - What does __right censoring__ refer to? And why might an individual/subject be right censored?  (2 points)
+
+Censoring happens when we don't know the exact time-to-event, but we have some information about the event time. There are three kinds of censoring, namely right, interval, and left. The right censoring is needed when we do not know when the event occurred. Such example could be a patient dropping out of the study, or the event could occur after the collection period. In this case, the event x occurs sometime t (collection end) < x < inf. 
+
+b - What does __interval censoring__ refer to? And why might an individual/subject be interval censored? (2 points)
+
+The interval censoring is needed when we only know an event occurred in an interval of time. This is seen usually when **when exactly** the event happened is unknown. For example, a subject could have an event during a vacation and we don't know when exactly the subject had it but have an idea of start and end date of the vacation. 
+
+#### Question 7 
+
+What is the difference between the survival function and the hazard function? (2 points) 
+
+Survival function shows us the probability of a subject surviving past a certain time. The hazard function is the instantaneous death rate (the probabiltiy of a subject dying in a next minute or so)
+
+
+#### Question 8
+
+Why is the significance level of a test equal to the probability of making a Type I error? (2 points)
+
+As mentioned in the confidence interval part, the significance level is set to know the range of true mean (for example). If the significance level is 0.05, then 5 out of 100 times the true mean lies out of the confidence interval. Then, we would end up rejecting the null hypothesis when the null hypothesis is actually true. 
+
+
+#### Question 9 
+
+So the second rule of data analysis is always correct for multiple testing .... what are the differences between controlling for multiple testing using the __Bonferroni correction__ and __FDR__? (4 points)
+
+The bonferroni correction is used when you test the hypothesis multiple times from different approach. This means that all the testing should yield significant if you want to call it significant. FDR (short for false discovery rate) is used to correct the random events that are *discovered falsely* in experiments. This is used when we test different hypotheses and want to know which ones are likely to be true. 
+
+
+#### Question 10
+
+The power of a statistical test is determined for four different things. What are these and how does changing them (i.e. smaller or larger) affect the power of a hypothesis test? (3 points for each factor)
+
+##### Factor 1 
+
+sample size 
+- increasing the sample size gives larger power. Because with bigger sample size we should have less overlap between two significantly different populations. 
+
+##### Factor 2
+
+alpha 
+- increasing alpha (0.05 -> 0.1, for example) means that there will be bigger rejection region for the test (more strict testing). So the power increases.
+
+##### Factor 3
+
+variability 
+- the larger the variability is, the more overlap we expect between two populations. Therefore, larger variability lowers the power. 
+
+##### Factor 4
+
+effect size 
+- when the effect size is larger, that means the two populations are farther appart. This reduces the possible overlap and thus increases the power. 
+
+
+#### *Question 11
+
+A six-side dice is thrown 175 times with the following results 
+
+X | 1 | 2 | 3 | 4 | 5 | 6 | 
+-- | -- | -- | -- | -- | -- | -- |
+count | 45 | 52| 15 | 26| 22 | 15| 
+
+Is there any evidence that the die is not fair? What is the null and alternative hypothesis. Use a significance level of 0.05. (2 points)
+
+the null hypothesis is that the die is fair, with each eye appearing 1/6 of the trial. The alternative hypothesis is otherwise, one (or more) of the eye(s) are biased. 
+
+```{r}
+die <- data.frame(
+  eye = c(1,2,3,4,5,6),
+  count = c(45, 52, 15, 26, 22, 15)
+)
+die
+```
+
+#### Question 12
+
+Classifying responses into categories including “strongly agree ”, “agree” and “disagree” is an example of which type of variable or data? (1 points)
+
+ordinal variable 
+
+#### Question 13 
+
+A number of students are taking tablets to keep them awake during the night to study for their Statistics for Life Sciences exam, and counted the number of hours they slept after taking these tablets. I've been told that Drug A is not as effective as Drug B in keeping students awake to study. 
+
+What are my null and alternative hypotheses? (1 point)
+
+The null hypothesis : the drag A and drag B has the same effect (mean) in keeping students awake. 
+The alternative hypothesis : the drag A is not as effective as the drag B in keeping the students awake. 
+
+Is there any evidence to support this? (1 point)
+
+```{r}
+dat = data.frame(student = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
+                       11, 12, 13, 14, 15, 16, 17, 18, 19, 20),
+           drug = c(rep("A", 10), rep("B", 10)),
+           sleep = c( 4.6, 5.2, 4.0, 6.33, 7.72, 3.53, 5.60, 7.00, 5.20, 5.84,
+                            3.95, 4.90, 4.10, 5.75, 5.00, 4.00, 6.95, 4.96, 5.13, 3.00))
+
+# since we are not interested how different a and b is, we carry out the wilcox test. 
+
+A = c(4.6, 5.2, 4.0, 6.33, 7.72, 3.53, 5.60, 7.00, 5.20, 5.84)
+B = c(3.95, 4.90, 4.10, 5.75, 5.00, 4.00, 6.95, 4.96, 5.13, 3.00)
+
+dat |>
+  ggplot(aes(drug, sleep)) +
+  geom_boxplot()
+wilcox.test(
+  A, 
+  B, 
+  # A is less effective than B
+  alternative = "less",
+  # avoid ties
+  exact = FALSE) 
+```
+
+There is no support that the A is less effective than B. 
+
+#### Question 14 
+
+What does an F-test actually test? i.e. what is the null and alternative hypothesis for this test? (2 points)
+
+F-test is used when testing if the variance of the data is the same for different population. The null hypothesis is that the variances are same, the alternative is they are not. If we look at the documentation for the `var.test`, it says "Performs an F test to compare the variances of two samples from normal populations.". 
+
+
+#### Question 15
+
+What is a p-value? How do you interpret it / what does it mean? (4 points)
+
+p-value is the probability of seeing the observed result assmuing that the null hypothesis is true. If the p-value is smaller than alpha, we reject that null hypothesis. 
+
+#### Question 16
+
+What does the phrase _there is a significant interaction between two variables__ mean (i.e. what is an interaction) ? ( 2 points )
+
+We say there is a significant interaction between two variables when they together have a significant effect on the dependent variable, i.e., adding $\beta_0x_1x_2$ significantly improves the model. 
+
+#### Question 17 
+
+When comparing models to try to find out which one is the _best_, we need to make sure we don't have a problem with _overfitting_ .... why is overfitting a problem and what techniques can we use to help deal with this? (5 points)
+
+overfitting happens when the model is too adjusted for the given dataset. For example, by right, if we have 99 variables, we can build a model to predict 100 samples with 100% accuracy. But this model is too specific for the given data and would not be applicable to any new data. There are several ways to deal with the overfitting. 
+
+One is checking the colinearity. When two independent variables are highly correlated, adding both variables in the model does not help improve the model. We can exclude one of the two highly correlated variables. 
+
+Another way is the cross validation, where we split up the data into the train data and test data. We first build a model using the traing data, and test if the model still works with the test data. In this way, we can make sure that the model is applicable to new data. We usually do 5-fold cross validation where we split the data into test and train five times and test for all. 
+
+#### Question 18 
+
+What is the difference between sensitivity and specificity? (1 point)
+
+-- | positive | negative |
+-- | -- | -- | 
+tested positive | true positive | false positive |
+-- | -- | -- | 
+tested negative | false negative | true negative | 
+
+Sensitivity is true positive 
+Specificity is true negative 
+
+
+
+#### Question 19 
+
+In an ANOVA what is the difference between ... _within groups sum-of-squares_ and _between groups sum-of-squares_? (2 points)
+
+within groups sum_of_squares 
+$$
+\Sigma_{group} \Sigma (x - \bar\mu)^2
+$$
+This is how much variation there is within the groups. So it sums up the variance for each group. 
+
+
+between groups sum of squares 
+$$
+\Sigma(\bar x - \bar\mu)^2 \times n_{group}
+$$
+This is how much variation there is between the groups. So it considers the overall mean and calculate the variance. 
+
+
+#### Question 20 
+
+What is the difference between a Fisher's exact test and a $\chi^{2}$ test? When would you use one and not the other? (2 points)
+
+Chi-squared test uses approximation when the frequency is less than 5, and it becomes unreliable. Fisher's exact test does not use such approximation, so when we have a small sample size, the fisher's exact test could come in hnady. 
+
+#### Question 21 
+
+The number of otters found in a random area is Poisson distributed with $\lambda$=4. (3 points)
+
+a - What is the probability of observing 4 otters in a random area ? 
+
+```{r}
+dpois(x = 4, lambda = 4)
+```
+
+b - What is the probability of observing more than 6 otters? 
+
+```{r}
+1 - ppois(q = 6, lambda = 4)
+```
+c - What is the probability of observing 0 otters? 
+
+```{r}
+dpois(x = 0, lambda = 4)
+```
+
+#### Question 22
+
+An experiment measuring the levels of six specific metabolites in the blood of mice has been performed in WT mice and those treated with a drug. Because of experimental constraints this experiment had to be performed in two distinct batches. 
+
+The file _question22.txt_ contains the results from this experiment
+Metabolite - the metabolite that was measured
+batch	- experimental batch
+condition	- WT or drug treated
+value - level of the metabolite detected in blood 
+```{r}
+q22 <- read_table2("question22.txt") |>
+  mutate(Metabolite = as.factor(Metabolite),
+         batch= as.factor(batch))
+na.omit(q22)
+head(q22)
+```
+
+
+a - Considering only samples from batch 1 - which of the metabolites are significantly different between the two conditions? (5 points)
+
+```{r}
+q22_a <- q22 |>
+  filter(batch == 1) |>
+  select(-batch) |> 
+  filter(!(is.na(Metabolite) | is.na(condition) | is.na(value))) 
+p_values <- c()
+for (i in 1:6){
+  sample = q22_a |> filter(Metabolite == i)
+  
+  wt_df <- sample |> filter(condition == "WT")
+  wt <- as.vector(wt_df$value)
+  
+  trt_df <- sample |> filter(condition == "Trt")
+  trt <- as.vector(trt_df$value)
+  
+  p = wilcox.test(wt, trt)$p.value * 6
+  p_values <- c(p_values, p)
+}
+p_values
+```
+No p-values are less than 0.05, meaning no metabolites are significantly different between the two conditions. 
+
+
+b - Considering only samples from batch 2 - which of the metabolites are significantly different between the two conditions? (5 points)
+
+```{r}
+q22_b <- q22 |>
+  filter(batch == 2) |>
+  select(-batch) |> 
+  filter(!(is.na(Metabolite) | is.na(condition) | is.na(value))) 
+p_values <- c()
+for (i in 1:6){
+  sample = q22_b |> filter(Metabolite == i)
+  
+  wt_df <- sample |> filter(condition == "WT")
+  wt <- as.vector(wt_df$value)
+  
+  trt_df <- sample |> filter(condition == "Trt")
+  trt <- as.vector(trt_df$value)
+  
+  p = wilcox.test(wt, trt, exact = FALSE)$p.value * 6
+  p_values <- c(p_values, p)
+}
+p_values
+```
+No metabolites are significantly different. 
+
+
+c - Now perform a test (or set of tests) to identify which metabolites are significantly different between the two conditions while correcting/controlling for batch (5 points) **incomplete**
+
+```{r}
+for (j in 1:2){
+  q22_c <- q22 |> filter(batch == j)
+  for (i in 1:6){
+    sample = q22_c |> filter(Metabolite == i)
+    m <- lm(value ~ Metabolites, data = sample)}
+}
+
+```
+
+```{r}
+
+# 
+q22_c_model <- lm(value ~ Metabolite + batch, data = q22)
+summary(q22_c_model)
+# metabolite 1,2,3,5,6 are significantly different 
+```
+
+d - What have you done and why? (5 points)
+
+
+
+#### Question 23
+
+The file _question23_diabetes.csv_ contains information of 768 women from a population near Phoenix, Arizona, USA. The outcome (Outcome) tested was Diabetes with 258 individuals testing positive and 500 individuals testing negative, and eight different independent variables for each individual were also recorded. 
+
+* Pregnancies 
+* Glucose
+* BloodPressure
+* SkinThickness
+* Insulin
+* BMI 
+* DiabetesPedigreeFunction - a score reflecting whether members of the same family have found to be diabetic 
+* Age
+
+```{r}
+q23<- read_csv("question23_diabetes.csv")
+# no na 
+head(q23)
+```
+
+a - Which of these factors are associated with diabetes? (10 points)
+
+```{r}
+q23_a_model <- lm(Outcome ~ ., data = q23)
+summary(q23_a_model)
+# Pregnancies, blood pressure, skin thickness, BMI, and DiabetesPedigreeFunction
+```
+
+
+b - How can we interpret the coefficients estimated by your model  (5 points)
+
+positive coefficient means that they increase the probability of diabetes. 
+for example, if a patient increase one unit in Pregnancies (month?), there is 2% increase in the chance of getting diabetes. The rest follows. 
+
+#### Question 24
+
+The dataset _q24_breastcancersurvival.txt_ contains information on the recurrence of breast cancer in a cohort of patients. 
+
+RFS - or Recurrence free survival is measure of how long a patient has been free from recurrence of a tumour
+RFSstat - is a variable denoting whether this individual has been censored or not
+ER - refers to the ER positive (1) or negative (0) status of the tumour
+Grade - refers to the histological grade of the tumour
+Size - refers to the size of the tumour in centimeters
+Age - refers to the age of the patient
+CXCL12 - is the normalised expression (z-score) of the gene CXCL12 
+MMP10 - is the normalised expression (z-score) of the gene MMP10 
+
+```{r}
+q24<- read_table2("q24_breastcancersurvival.txt") |>
+  mutate(Grade = as.factor(Grade))
+head(q24)
+na.omit(q24)
+```
+
+
+a - Using Kaplan-Meier is there a significant difference in RFS with respect to Tumour Grade? Plot a Kaplan-Meier and interpret the resulting p-value from the log rank test (3 points)
+
+```{r}
+q24_a_object <- Surv(time = q24$RFS, event = q24$RFSstat)
+q24_a_fit<-survfit(q24_a_object ~ Grade, data = q24)
+ggsurvplot(q24_a_fit, data = q24, pval = TRUE)
+sd <- survdiff(Surv(RFS, ER) ~ Grade, data = q24)
+1 - pchisq(sd$chisq, length(sd$n) - 1)
+# there is not a significant difference in RFS with respect to tumor grade. 
+```
+
+
+b - Split samples into those with high expression or low expression of CXCL12. Is there a significant difference in time to recurrence between patients with high or low levels of CXCL12? What does this mean / how do you interpret it? (3 points)
+
+```{r}
+hist(q24$CXCL12)
+```
+
+
+```{r}
+q24_b <- q24 |> 
+  mutate(status = if_else(CXCL12 > mean(CXCL12), "high", "low")) 
+q24_b_fit<-survfit(q24_a_object ~ status, data = q24_b)
+ggsurvplot(q24_b_fit, data = q24_b, pval = TRUE)
+# p-value is significant, so we reject the null hypothesis 
+# the level of expression of CXCL12 does have significant effect on recurrence time 
+# if teh level is high, you are less likely to have the recurrence 
+```
+
+
+c - Split samples into those with high expression or low expression of MMP10 Is there a significant difference in time to recurrence between patients with high or low levels of MMP10? What does this mean / how do you interpret it? (3 points)
+
+```{r}
+hist(q24$MMP10)
+```
+
+
+```{r}
+q24_c <- q24 |> 
+  mutate(status = if_else(MMP10 > median(MMP10), "high", "low")) 
+q24_c_fit<-survfit(q24_a_object ~ status, data = q24_c)
+ggsurvplot(q24_c_fit, data = q24_c, pval = TRUE)
+# not significant
+# no effect whether MMP10 is high or not 
+```
+
+
+d - Try performing a Cox regression analysis on this dataset. Which of the independent variables are significantly associated with time to recurrence? (5 points)
+
+```{r}
+hist(q24$Age)
+```
+
+```{r}
+q24_d <- q24 |> 
+  # to compare
+  mutate(status_m = if_else(MMP10 > median(MMP10), "high", "low"),
+         status_c = if_else(CXCL12 > mean(CXCL12), "high", "low"),
+         status_a = if_else(Age > mean(Age), "old", "young"))
+fit.coxph <- coxph(q24_a_object ~ status_a + ER + Size + Grade + status_c+ status_m, data = q24_d)
+cox.zph(fit.coxph)
+ggforest(fit.coxph, data = q24_d)
+
+# only size is significant 
+# the confidence interval is not overlapping with the null hypothesis
+```
+
+
+
+e - How can we interpret the coefficients estimated by your model  (5 points)
+
+```{r}
+coxph(q24_a_object ~ status_a + ER + Size + Grade + status_c+ status_m, data = q24_d)
+```
+
+exp(coef) is the hazard ratio. So for the significant grade, this means that if you increase the grade by 1 you have 1.5 times more chance of having the recurrence. 
+
+#### THE END
+
+```{r}
+sessionInfo()
+
+```

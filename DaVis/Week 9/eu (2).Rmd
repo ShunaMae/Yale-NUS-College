@@ -1,0 +1,154 @@
+---
+title: "visualise eu tasks"
+author: "Team D"
+date: '2022-03-18'
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+library(tidyverse)
+library(tidygraph)
+library(ggraph)
+library(igraph)
+```
+
+#### (1) Import data
+```{r}
+eu_nodes <- read_table(
+  "email-Eu-core-department-labels.txt.gz", 
+  col_names = c("person", "depts")
+  )
+
+eu_edges <- read_table("email-Eu-core.txt.gz", col_names = c("from", "to"))
+```
+
+#### (2) Add 1 to every person identifier
+```{r}
+#edge tibble
+eu_edges <- eu_edges + 1
+
+#node tibble
+eu_nodes <- mutate(eu_nodes, person = person + 1)
+```
+
+#### (3) Assemble a `tbl_graph` called `eu_netw` from the tibbles.
+```{r}
+eu_netw <-
+  tbl_graph(
+    nodes = eu_nodes,
+    edges = eu_edges
+  ) |>
+  print()
+```
+
+#### (4) Plot the complete network with `ggraph`. Do you find the result useful? Why or why not? Does changing the layout help?
+```{r, cache=TRUE, out.width='100%', fig.width= 8, fig.height=6}
+ggraph(eu_netw, layout = "kk") +
+  geom_edge_bend(
+    alpha = 0.1,
+    arrow = arrow(length = unit(2, "mm"))
+  ) +
+  geom_node_point(colour = "brown", alpha = 0.5)
+```
+ANS: \
+The graph is not really informative. There are many overlaps of vertices in the graph, and given that all nodes are red and all edges are black, it is nearly impossible to see the which nodes are connected to each other and which nodes the edges are connected to. This makes it extremely difficult to understand any relationships from the graph above.  Additionally, the nodes do not have any labels and it is not conveyed which point refers to which `person`.
+
+Changing the layout makes does not improve the graph, this is because it does not resolve the problem of (1) lack of information for each point, (2) overlap of lines and (3) lines remain indistinguishable. The plot would also look exactly the same even we change the figure dimension. 
+
+#### (5) Contracting network
+```{r}
+contracted_eu_igraph <-eu_netw |>
+  as.igraph() |>
+  contract(eu_nodes$depts + 1)
+
+vertex_attr(contracted_eu_igraph, "depts") <- 0:(gorder(contracted_eu_igraph) - 1)
+
+contracted_directed_netw <- as_tbl_graph(contracted_eu_igraph) |>
+  convert(to_simple) |>
+  activate(edges) |>
+  mutate(weight = lengths(.tidygraph_edge_index)) |>
+  print()
+```
+
+#### (6) Make a plot of the contracted network. Do you find the results useful?
+```{r, cache=TRUE, fig.width=8, fig.height=6, out.width="80%"}
+ggraph(contracted_directed_netw, layout = "stress") +
+  geom_edge_fan(
+    aes(colour = weight, end_cap = label_rect(node2.depts)),
+    alpha = 0.5,
+    arrow = arrow(length = unit(0.2, "cm"))
+  ) +
+  geom_node_label(aes(label = depts), colour = "brown") +
+  theme(legend.position = c(1, 1), legend.justification = c(1, 1))
+```
+\
+The graph is not very informative and is not that useful. While the points are now labelled, the lines connecting the points still overlap one another, making them indistinguishable from one another.
+
+#### (7) Create an \textbf{undirected} version of `contracted_directed_netw` from task (5) and turn it into a \textbf{simple} network. Then, append a column `weight`.
+```{r}
+# Creating an undirected version of contracted_directed_netw
+contracted_undirected_netw <- contracted_directed_netw |>
+  convert(to_undirected)
+
+# Converting it into a simple network
+contracted_simple_netw <-
+  contracted_undirected_netw |>
+  convert(to_simple)
+
+# Appending the column weight
+undirected_simple_netw <- contracted_simple_netw |>
+  activate(edges) |>
+  mutate(weight = map_dbl(.orig_data, ~ sum(pull(., weight)))) |>
+  print()
+```
+
+#### (8) Obtain a new network that contains the hierarchy of the dendrogram.
+```{r}
+hierarchy <- undirected_simple_netw |>
+  convert(to_hierarchical_clusters, weights = weight) |>
+  print()
+```
+
+
+#### (9) Plot dendrogram
+```{r, fig.height=9, fig.width=4}
+layout <- create_layout(hierarchy, "dendrogram") |> print()
+
+ggraph(layout) +
+  geom_edge_elbow() +
+  geom_node_text(aes(label = depts),
+    nudge_y = -0.6
+  ) +
+  coord_flip() +
+  labs(title = "Department hierarchy") +
+  theme(
+    plot.background = element_rect(fill = "grey"),
+    panel.background = element_rect(
+      linetype = "solid",
+      fill = "grey"
+    ),
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(size = .05, colour = "gray100"),
+    title = element_text(size = 10),
+    plot.title = element_text(hjust = 1)
+  ) +
+  scale_y_continuous(breaks = seq(0, 12, 1)) +
+  scale_x_continuous(expand = expansion(0.01))
+
+# the nodes contain some missing values 
+# this is because hierarchy contains some leaf == FALSE rows 
+```
+
+#### (10) Briefly reflect on the advantages and disadvantages of representing the network data with the dendrogram of figure 1 compared to the network figure you produced in task (6).
+ANS: \
+The advantage of representing the network data with dendrogram is that the links between the nodes are explicit, effectively and clearly informing viewers which departments often email one another. This graph thus conveys information a lot more clearly as compared to the figure in task (6), where lines connecting the points are mostly indistinguishable. Another advantage of dendrogram is that there are various levels, in this case 13 levels, of which might potentially provide information regarding the hierarchical structure of departments within this network. As the figure in task 6 does not have this structure, it cannot convey such information. \
+
+The disadvantage of using a dendrogram in comparison to the figure in task 6 is that the dendrogram is undirected. This means it is unable to convey detailed information such as which department sends the emails, and the information is more generalized.
+
+#### (11) An alternative visualisation of the data is the heat map shown in figure 2. (No need to make this plot yourself.) What do you think about that way to represent the intensity of email contacts between departments?
+ANS: \
+The heat map clearly visualizes the intensity of emails contacts between the different departments, with the volume of emails communicated through the colour's shade. By distinguishing the type of email contacts though the x-axis and y-axis, detailed information is conveyed to the viewers. This enables viewers to analyze the relationship between the two departments, of which might provide an insight of the hierarchical structure in this network. However, one criticism could be about the way the plot treats the department; the axis make it seem as if the department is a continuous variable, which in reality is not the case - it is a discrete variable. 

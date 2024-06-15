@@ -1,0 +1,7 @@
+"0","boxplot(data = iris, "
+"0","        Sepal.Length ~ Species,"
+"0","        col = ""lightgreen"","
+"0","        xlab = ""Species"","
+"0","        ylab = ""Sepal Length (cm)"","
+"0","        main = ""Anderson's Iris Data"","
+"0","        las = 1)"

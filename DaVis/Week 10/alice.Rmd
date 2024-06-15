@@ -1,0 +1,151 @@
+---
+title: "alice"
+author: "Team Red"
+date: "3/25/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, fig.align = "center")
+```
+
+We will need the following packages for this exercise.
+```{r, warning = FALSE}
+library(tidyverse)
+library(tm)
+library(ggwordcloud)
+```
+
+### Import text as a single character string called `alice` and split text in `alice` into lines.
+```{r}
+alice <- read_lines("11-0.txt") |>
+  str_split("\r\n") |> 
+  unlist()
+
+str(alice)
+```
+
+### Remove text at the beginning and end of the vector `alice` that is not part of the novel and split `alice` into a vector in which each element is one word.
+```{r}
+alice_start <- str_which(alice, "CHAPTER I\\.$")
+alice_end <- str_which(alice, "THE END")
+alice <- alice[alice_start:alice_end] |>
+  str_split("\\s+") |>
+  unlist()
+```
+
+### Find the longest word in `alice`. Should these strings really be treated as single words?
+```{r}
+find_longest_words <- function(v) {
+  lngth <- str_length(v)
+  v[lngth == max(lngth)]
+}
+
+find_longest_words(alice)
+```
+\Ans
+These strings should be treated as single words because “important—unimportant—unimportant—important—” is not used as a word and is 
+instead considered a phrase when used. 
+
+### Split the elements in `alice` at em-dashes and find the longest words.
+```{r}
+alice <- str_split(alice, "—") |>
+  unlist()
+
+longest_word_2 <- find_longest_words(alice) |> print()
+```
+
+### Is there a punctuation symbol at the end of the longest word you found in the previous sub-task?
+```{r}
+str_detect(longest_word_2, "[[:punct:]]$")
+```
+
+### Remove punctuation symbols at the end of all words and confirm that there are no words in `alice` ending with a punctuation symbol. Find the longest word.
+```{r}
+alice <- str_remove_all(alice, "[[:punct:]]+$")
+
+# confirm there are no words in alice wnding with a punctuation symbol
+!any(str_detect(alice, "[[:punct:]]$"))
+
+find_longest_words(alice)
+```
+
+### Find out whether `alice` contains words starting with a punctuation symbol.
+```{r}
+any(str_detect(alice, "^[[:punct:]]"))
+```
+
+### Remove punctuation symbols from the start of all words and confirm that there are no words in `alice` starting with a punctuation symbol.
+```{r}
+alice <- str_remove_all(alice, "^[[:punct:]]+")
+
+!any(str_detect(alice, "^[[:punct:]]"))
+```
+
+Remove empty character strings from `alice`.
+```{r}
+alice <- alice[alice != ""]
+!any(alice == "")
+```
+
+### Change all curly quotes to straight quotes.
+```{r}
+alice <- str_replace_all(alice, "’", "'")
+```
+
+### Find all spellings of 'drink' with any combinations of upper and lower case letters.
+```{r}
+str_subset(alice, "^[Dd][Rr][Ii][Nn][Kk]$")
+```
+Do you think we should differentiate between words if they only differ in the letter case?
+
+\Ans No, we do not need to differentiate between words if they only differ in the letter case because they are usually used with the same meaning. Using "DRINK" may mean that one is shouting at another to drink, but this word has the same meaning as "drink". 
+
+### Turn all characters in `alice` into lower case characters.
+```{r}
+alice <- str_to_lower(alice)
+```
+
+### What are the five most frequent words in `alice`? 
+```{r}
+tibble(word = alice) |>
+  group_by(word) |>
+  summarize(count = n()) |>
+  slice_max(order_by = count, n = 5) |>
+  pull(word)
+```
+
+Are you surprised?
+No, I am not surprised because these words are common in almost every text written in English. These words do not really add much information to the text.
+
+### Remove stop words from `alice`
+```{r}
+alice <- alice[!(alice %in% stopwords())]
+```
+
+### What are the ten most frequent words now?
+```{r}
+most_frequent <- tibble(word = alice) |>
+  group_by(word) |>
+  summarize(count = n())
+
+most_frequent |>
+  slice_max(order_by = count, n = 10) |>
+  pull(word)
+```
+
+
+### Make a word cloud that shows the 200 most frequent words in `alice`.
+```{r}
+set.seed(43)
+most_frequent |>
+  slice_max(order_by = count, n = 200) |>
+  ggplot(aes(label = word, size = count)) +
+  geom_text_wordcloud() + 
+  scale_size_area(max_size = 15) +
+  theme_minimal()
+```
+
+### Briefly comment on the word cloud. What does it reveal about the content and style of 'Alice's Adventures in Wonderland'?
+
+\Ans The most used words in "Alice's Adventures in Wonderland" are "alice" and "said". This shows that the text is written in third-person, where the main character is Alice. It also reveals that the text contains a lot of dialogue, given that "said" is one of the most common words in this text. 

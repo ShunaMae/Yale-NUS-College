@@ -1,0 +1,13 @@
+"0","titanic <- read_csv(""titanic.csv"")"
+"1","[1mRows: [22m[34m2208[39m [1mColumns: [22m[34m11[39m
+"
+"1","[36m--[39m [1mColumn specification[22m [36m--------------------------------------------------------------[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (5): fam_name, given_name, gender, class, ticket
+[32mdbl[39m (5): age, pax_on_tckt, pnd, shl, pnc
+[33mlgl[39m (1): survived
+"
+"1","
+[36mi[39m Use [38;5;251m[48;5;235m[38;5;251m[48;5;235m`spec()`[48;5;235m[38;5;251m[49m[39m to retrieve the full column specification for this data.
+[36mi[39m Specify the column types or set [38;5;251m[48;5;235m[38;5;251m[48;5;235m`show_col_types = FALSE`[48;5;235m[38;5;251m[49m[39m to quiet this message.
+"

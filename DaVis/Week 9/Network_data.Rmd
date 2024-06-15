@@ -1,0 +1,437 @@
+---
+title: "Network Data"
+author: "shuna"
+date: "3/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE) 
+
+```
+
+```{r}
+library(tidyverse)
+demo_nodes <- read_csv("demo_nodes.csv")
+demo_edges <- read_csv("demo_edges.csv")
+```
+
+```{r}
+demo_nodes
+demo_edges
+```
+```{r}
+library(tidygraph)
+```
+
+```{r}
+demo_undirected_netw <- tbl_graph(
+  nodes = demo_nodes,
+  edges = demo_edges,
+  directed = FALSE
+)
+demo_undirected_netw
+```
+```{r}
+class(demo_undirected_netw)
+```
+
+```{r}
+active(demo_undirected_netw)
+```
+
+```{r}
+demo_undirected_netw |>
+  activate(edges)|>
+  as_tibble()
+```
+
+```{r}
+email_nodes <- read_csv("email_nodes.csv")
+email_edges <- read_csv("email_edges.csv")
+email_directed_netw <- tbl_graph(
+nodes = email_nodes,
+edges = email_edges
+)
+```
+
+```{r}
+library(igraph)
+```
+
+```{r}
+is_directed(email_directed_netw)
+is_directed(demo_undirected_netw)
+```
+
+
+```{r}
+# the number of nodes in the network
+gorder(demo_undirected_netw)
+# the number of edges in the network 
+gsize(demo_undirected_netw)
+
+```
+```{r}
+library(ggplot2)
+library(ggraph)
+```
+
+
+```{r}
+ggraph(demo_undirected_netw) +
+  geom_edge_link() +
+  geom_node_label(aes(label = name))
+```
+```{r}
+ggraph(demo_undirected_netw, layout = "kk") +
+  geom_edge_link() +
+  geom_node_label(aes(label = name))
+```
+
+```{r}
+layout <- create_layout(demo_undirected_netw, layout = "kk")
+ggraph(layout) +
+geom_edge_link() +
+geom_node_label(aes(label = name))
+
+layout
+```
+
+
+```{r}
+layout$y[layout$name == "K"] <- 0.5
+ggraph(layout) +
+geom_edge_link() +
+geom_node_label(aes(label = name))
+```
+
+```{r}
+library(tidyverse)
+ggraph(demo_undirected_netw, layout = "kk") +
+  geom_edge_bend(strength = 0.8) +
+  geom_node_circle(
+    aes(r = if_else(name < "G", 0.05, 0.1)),
+    fill = "green"
+  ) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  coord_equal()
+```
+
+```{r}
+set.seed(-688508752)
+email_layout <- create_layout(email_directed_netw, layout = "fr")
+email_layout$x[email_layout$name == "Hossam"] <- min(email_layout$x)
+email_layout$y[email_layout$name == "Hossam"] <- min(email_layout$y)
+ggraph(email_layout) +
+  geom_edge_fan(
+    aes(
+      label = emails,
+      end_cap = label_rect(node2.name)
+    ),
+    arrow = arrow(length = unit(2, "mm")),
+    strength = 1.5,
+    angle_calc = "along",
+    label_dodge = unit(2, "mm")
+  ) +
+  geom_edge_loop(
+    aes(label = emails, end_cap = label_rect(node2.name)),
+    arrow = arrow(length = unit(2, "mm")),
+    angle_calc = "along",
+    label_dodge = unit(2, "mm")
+  ) +
+  geom_node_label(aes(label = name, colour = location)) +
+  scale_colour_brewer(name = "Location", palette = "Dark2") +
+  theme(legend.position = c(1, 1), legend.justification = c(1, 1))
+```
+
+
+```{r}
+library(tidygraph)
+email_directed_netw |>
+  activate(nodes) |>
+  mutate(
+    continent = case_when(
+      location == "London" ~ "Europe",
+      location == "Los Angeles" ~ "North America",
+      location == "Singapore" ~ "Asia"
+    )
+  ) |>
+  activate(edges) |>
+  rename(electronic_mail = emails)
+```
+
+```{r}
+email_directed_netw <-
+email_directed_netw |>
+activate(edges) |>
+mutate(
+from_id = .N()$name[from],
+to_id = .N()$name[to]
+)
+email_directed_netw
+```
+```{r}
+email_undirected_netw <-
+email_directed_netw |>
+convert(to_undirected)
+```
+
+
+```{r}
+email_layout
+```
+
+```{r}
+set.seed(-68858752)
+email_layout <- create_layout(email_directed_netw, layout = "fr")
+email_layout$x[email_layout$name == "Hossam"] <- min(email_layout$x)
+email_layout$y[email_layout$name == "Hossam"] <- min(email_layout$y)
+ggraph(email_layout) +
+  geom_edge_fan(
+    aes(
+      label = emails,
+      end_cap = label_rect(node2.name)
+    ),
+  ) +
+  geom_edge_loop(
+    aes(label = emails, end_cap = label_rect(node2.name)),
+    arrow = arrow(length = unit(2, "mm")),
+    angle_calc = "along",
+    label_dodge = unit(2, "mm")
+  ) +
+  geom_node_label(aes(label = name, colour = location)) +
+  scale_colour_brewer(name = "Location", palette = "Dark2") +
+  theme(legend.position = c(1, 1), legend.justification = c(1, 1))
+```
+
+
+```{r}
+is_simple(email_undirected_netw)
+```
+
+```{r}
+email_simple_netw <- 
+  email_undirected_netw |>
+  convert(to_simple)
+
+email_simple_edges <- 
+  email_simple_netw |>
+  activate(edges) |>
+  as_tibble()
+
+email_simple_edges
+
+
+```
+
+```{r}
+factor_location <-
+  email_directed_netw |>
+  activate(nodes) |>
+  pull(location) |>
+  factor()
+email_contracted_netw <-
+  email_directed_netw |>
+  activate(nodes) |>
+  mutate(level_as_integer = as.integer(factor_location)) |>
+  convert(to_contracted, level_as_integer) |>
+  mutate(location = levels(factor_location)) |>
+  activate(edges) |>
+  mutate(emails = map_dbl(.orig_data, ~ sum(pull(., emails))))
+ggraph(email_contracted_netw, layout = "stress") +
+  geom_edge_fan(aes(label = emails, end_cap = label_rect(node2.location)),
+    arrow = arrow(length = unit(4, "mm")),
+    angle_calc = "along",
+    label_dodge = unit(2, "mm")
+  ) +
+  geom_node_label(aes(label = location)) +
+  scale_x_continuous(expand = expansion(c(0.1, 0.06)))
+```
+
+# Extracting information about nodes 
+
+```{r}
+email_directed_netw
+```
+
+```{r}
+email_directed_netw |>
+  activate(edges) |>
+  filter(edge_is_to(.N()$name == "Fatimah")) |>
+  select(ends_with("_id")) |>
+  as_tibble()
+```
+
+
+```{r}
+email_directed_netw |>
+  activate(edges) |>
+  filter(edge_is_incident(.N()$name == "Fatimah")) |>
+  select(ends_with("_id"))|>
+  as_tibble()
+```
+
+```{r}
+email_directed_netw |>
+  activate(nodes) |>
+  filter(node_is_adjacent(name == "Fatimah")) |>
+  pull(name)
+```
+
+By default, tidygraph considers each node to be adjacent to itself. This is why Fatimah is part of the output above although there is no edge from Fatima to herself. If we want to avoid that, we can use this 
+
+```{r}
+email_directed_netw |>
+  activate(nodes) |>
+  filter(node_is_adjacent(name == "Fatimah", include = FALSE)) |>
+  pull(name)
+```
+
+```{r}
+# those who sent email to Fatimah 
+email_directed_netw |>
+  activate(nodes) |>
+  filter(node_is_adjacent(
+    name == "Fatimah", 
+    include = FALSE,
+    mode = "in"
+  )) |>
+  pull(name)
+
+# those who received emails from Fatimah 
+email_directed_netw |>
+  activate(nodes) |>
+  filter(node_is_adjacent(
+    name == "Fatimah", 
+    include = FALSE,
+    mode = "out"
+  )) |>
+  pull(name)
+```
+
+# calculate degree and strength of a node 
+
+```{r}
+demo_undirected_netw |>
+  activate(nodes) |>
+  mutate(degree = centrality_degree()) |>
+  as_tibble()
+```
+
+We can also add argument to centrality_degree, like mode = "in", mode = "out"
+, and mode = "all" 
+
+## calculating strength
+
+```{r}
+email_directed_netw |>
+activate(nodes) |>
+mutate(
+in_strength = centrality_degree(weights = emails, mode = "in"),
+out_strength = centrality_degree(weights = emails, mode = "out"),
+strength = centrality_degree(weights = emails, mode = "all")
+) |>
+as_tibble()
+```
+
+# distance 
+
+```{r}
+email_directed_netw |>
+activate(nodes) |>
+mutate(
+distance_to_pauline = node_distance_to(name == "Pauline"),
+distance_from_pauline = node_distance_from(name == "Pauline")
+) |>
+as_tibble()
+```
+
+```{r}
+email_directed_netw |>
+  activate(nodes) |>
+  mutate(
+    neighbors = map(local_members(order = 2), ~ name[.])
+  ) |>
+  filter(name == 'Lakshmi')|>
+  pull(neighbors)
+```
+
+the diameter is the maximum of the shortest path lengths between any two nodes 
+```{r}
+diameter(email_directed_netw)
+```
+
+determine the shortest path 
+```{r}
+pauline_to_simon <-
+email_directed_netw |>
+convert(to_shortest_path, name == "Pauline", name == "Simon")
+```
+
+```{r}
+pauline_to_simon |>
+activate(nodes) |>
+as_tibble()
+```
+```{r}
+pauline_to_simon |>
+  activate(edges) |>
+  as_tibble()
+```
+
+```{r}
+email_directed_netw
+```
+
+```{r}
+shortest_paths(email_directed_netw, "Pauline", "Simon")$vpath
+```
+
+```{r}
+email_directed_netw |>
+convert(
+to_shortest_path,
+name == "Pauline",
+name == "Simon",
+weights = emails)
+```
+ggplot on page 287 
+
+
+# betweeness 
+
+
+```{r}
+email_directed_netw |>
+activate(nodes) |>
+mutate(betw = centrality_betweenness()) |>
+arrange(desc(betw)) |>
+as_tibble()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

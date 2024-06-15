@@ -1,0 +1,490 @@
+Hi guys,
+
+Thanks for your handin.  Here are some comments.
+
+----------
+
+week-10_exercises-1.ml
+
+-----
+
+Name of the group on Canvas: WEEK-10_10
+(* Exercise 01 *)
+let exercise_01 = "mandatory";;
+type comparison = Lt | Eq | Gt
+let test_compare candidate =
+let test_make_comparison candidate =
+let make_comparison v1 v2 =
+let make_comparison_compare v1 v2 =
+let compare_make_comparison v1 v2 =
+let () = assert(test_compare compare)
+let () = assert(test_compare compare_make_comparison)
+let () = assert(test_make_comparison make_comparison)
+let () = assert(test_make_comparison make_comparison_compare)
+
+all good
+
+-----
+
+(* Exercise 02 *)
+let exercise_02 = "mandatory";;
+let atoi_v0 n =
+let test_list_length_int candidate =
+let list_length_v3 vs_given =
+let () = assert(test_list_length_int list_length_v3)
+
+OK
+
+-----
+
+(* Exercise 03 *)
+let exercise_03 = "mandatory";;
+let test_list_append_int candidate =
+let list_append_v1 xs_given ys_given =
+let () = assert(test_list_append_int list_append_v1)
+
+OK
+
+-----
+
+let exercise_04 = "mandatory";;
+let test_list_map candidate =
+let list_map f xs_given =
+let () = assert(test_list_map list_map)
+
+-----
+
+(* Exercise 05 *)
+let exercise_05 = "mandatory";;
+
+let test_reverse candidate =
+->
+let test_reverse_int candidate =
+
+let reverse_v1 vs_init =
+  let rec visit vs =
+    if vs = []
+    then []
+    else let ih = visit (List.tl vs)
+         in List.append ih [List.hd vs]
+  in visit vs_init;;
+
+Naah -- better use a match-expression.
+
+-----
+
+let () = assert(test_reverse reverse_v1);;
+(* Exercise 06 *)
+let exercise_06 = "mandatory";;
+type 'a tsil = Lin | Snoc of 'a tsil * 'a;;
+
+let test_tsil_length candidate =
+->
+let test_tsil_length_int candidate =
+
+let tsil_length ts_given =
+
+good
+
+-----
+
+let () = assert (test_tsil_length tsil_length);;
+(* b *)
+let test_tsil_append candidate =
+->
+(* b *)
+let test_tsil_append_int candidate =
+let tsil_append ts1_given ts2_given =
+let () = assert (test_tsil_append tsil_append);;
+(* c *)
+let test_int_tsil_map candidate =
+let tsil_map f ts_given =
+let () = assert(test_int_tsil_map tsil_map);;
+(* d *)
+let test_tsil_reverse candidate =
+->
+let test_tsil_reverse_int candidate =
+let tsil_reverse ts_given =
+let tsil_reverse_acc ts_given =
+let () = assert (test_tsil_reverse tsil_reverse);;
+let () = assert (test_tsil_reverse tsil_reverse_acc);;
+
+all good
+
+-----
+
+(* e *)
+
+let test_tsil_of_list candidate =
+->
+let test_tsil_of_list_int candidate =
+
+let test_list_of_tsil candidate =
+->
+let test_list_of_tsil_int candidate =
+
+let tsil_of_list ls =
+let list_of_tsil ts =
+let () = assert(test_list_of_tsil list_of_tsil);;
+let () = assert(test_tsil_of_list tsil_of_list);;
+
+good but follow convention and put a space after constructors, e.g., Snoc
+
+-----
+
+(* f1 *)
+let test_tsil_length candidate =
+->
+let test_tsil_length_int candidate =
+
+let tsil_length_using_list ts =
+let () = assert(test_tsil_length tsil_length_using_list);;
+(* f2 *)
+(* List length unit test *)
+let test_list_length_int candidate =
+let list_length_using_tsil ls =
+  tsil_length (tsil_of_list ls);;
+let () = assert(test_list_length_int list_length_using_tsil);;
+(* f3 *)
+let test_int_tsil_map candidate =
+let tsil_map_using_list f ts =
+let () = assert(test_int_tsil_map tsil_map_using_list);;
+
+all good
+
+-----
+
+(* f4 *)
+(* List map unit tests for int/opt/char *)
+let test_int_list_map candidate =
+let test_int_opt_list_map candidate =
+let test_char_list_map candidate =
+
+good but unconventional naming
+
+-----
+
+let tsil_length_using_list ts =
+let () = assert(test_tsil_length tsil_length_using_list);;
+let list_length_using_tsil ls =
+let () = assert(test_list_length_int list_length_using_tsil);;
+let tsil_map_using_list f ts =
+let () = assert(test_int_tsil_map tsil_map_using_list);;
+let list_map_using_tsil f ls =
+let () = assert(test_int_opt_list_map list_map_using_tsil);;
+let () = assert(test_int_list_map list_map_using_tsil);;
+let () = assert(test_char_list_map list_map_using_tsil);;
+
+good but how about you also use tsil_transformer_of_list_transformer, list_transformer_of_tsil_transformer,
+tsil_producer_of_list_producer, list_producer_of_tsil_producer,
+tsil_consumer_of_list_consumer, and list_consumer_of_tsil_consumer?
+
+------
+
+(* g *)
+(* list_fold_right and list_fold_left for tsils *)
+let tsil_fold_right lin_case snoc_case ts_given =
+let tsil_fold_left lin_case snoc_case ts_given =
+
+good
+
+-----
+
+(* tsil_reverse_acc using tsil_fold_left *)
+(*tsil_fold_left Lin (fun d a -> Snoc(a,d)) (Snoc(Snoc(Lin, 3), 4));;
+- : int tsil = Snoc (Snoc (Lin, 4), 3) *)
+
+(* tsil_length using tsil_fold_left *)
+(* tsil_fold_left 0 (fun c a -> succ a) (Snoc(Snoc(Lin,3), 4));;
+- : int = 2 *)
+
+(*  tsil_fold_right to reverse a tsil
+# tsil_fold_right Lin (fun ih d -> tsil_append (Snoc(Lin,d)) ih) (Snoc(Snoc(Lin, 3), 4));;
+- : int tsil = Snoc (Snoc (Lin, 4), 3) *)
+
+er...  unit tests?
+
+-----
+
+(* Exercise 07 *)
+let exercise_07 = "mandatory";;
+
+let f l  =  
+  match l with 
+  | [] -> []
+  | (a, b)::tl -> [(b, a)];;
+
+good idea
+
+let mirror vs_given =
+  list_map (fun (a, b) -> (b, a)) vs_given;;
+
+good idea too, but:
+
+* if you define 2 functions that do the same, test them with one unit-test function
+
+* be more uniform in your namings of variable ("f" vs. "mirror", "l" and "tl")
+
+-----
+
+(* Exercise 08 *)
+let exercise_08 = "mandatory";;
+(* a *)
+let test_int_list_mapi candidate =
+
+let list_mapi f lst = 
+    let len = List.length lst in 
+    let rec traverse_list i lst2 =
+        if i = len then
+        []
+        else (f i (List.hd lst2)) :: traverse_list (succ i) (List.tl lst2) in
+        traverse_list 0 lst;;
+
+Yikes!
+
+* this definition is not properly indented
+
+* use the plural name convention, not lst or whatnot
+
+* there is no need to compute the length of the given list
+
+* use a match-expression
+
+(note to self: remember to ask this question at the oral exam)
+
+-----
+
+(* list_mapi (fun n v -> (n, v)) ['a'; 'b'; 'c'];;
+- : (int * char) list = [(0, 'a'); (1, 'b'); (2, 'c')] *)
+
+but no testing using test_int_list_mapi?
+
+-----
+
+(* b *)
+let test_charlistidentity candidate =
+let identity lst = list_mapi (fun u v -> v) lst;;
+let () = assert (test_charlistidentity identity);;
+(* c *)
+let test_incindex candidate =
+let increasing_func lst = list_mapi (fun u v -> u) lst;;
+let () = assert (test_incindex increasing_func);;
+
+OK but the naming is non-uniform
+
+-----
+
+(* Exercise 10 *)
+let exercise_10 = "mandatory";;
+let list_fold_right nil_case cons_case vs_given =
+
+OK
+
+-----
+
+# let test_intlistidentity candidate =
+-> so that the file loads
+let test_intlistidentity candidate =
+
+let the_following_OCaml_function xs =
+let () = assert (test_intlistidentity the_following_OCaml_function);;
+let () = assert (test_charlistidentity the_following_OCaml_function);;
+
+(I should have written "copy" rather than "identity"
+in the statement of the exercise, sorry.)
+
+-----
+
+(* Exercise 11 *)
+let exercise_11 = "mandatory";;
+let list_fold_left nil_case cons_case vs_given =
+let the_following_other_OCaml_function xs =
+let () = assert (test_reverse the_following_other_OCaml_function);;
+
+good
+
+-----
+
+(* Exercise 12 *)
+let exercise_12 = "mandatory";;
+type 'a binary_tree =
+let number_of_nodes_v1 t =
+let number_of_leaves_v1 t =
+let generate_random_binary_tree_int n =
+let test_random_binary_tree candidate =
+
+good, but what kind of identation is
+
+            let n_leaves = number_of_leaves_v1 tree and
+            n_nodes = number_of_nodes_v1 tree in
+            n_leaves = (n_nodes + 1))
+
+?
+
+-----
+
+let () = assert(test_random_binary_tree generate_random_binary_tree_int);;
+
+OK
+
+-----
+
+digital signature:
+
+val test_charlistidentity : (char list -> char list) -> bool = <fun>
+
+and
+
+val test_incindex : (char list -> int list) -> bool = <fun>
+
+and
+
+val test_decindex : (char list -> int list) -> bool = <fun>
+
+and
+
+val test_intlistidentity : (int list -> int list) -> bool = <fun>
+
+are missing
+
+----------
+
+Intro to CS Week 10-2.pdf
+
+-----
+
+front page: "Intro to CS" is missing + there is no need to be anonymous anymore
+
+title: clever (cf. Ang Lee)
+
+contents: clear but E12 is missing
+
+page numbers: OK
+
+-----
+
+Introduction
+
+very nice!
+
+-----
+
+E01
+
+very good
+
+-----
+
+E02
+
+OK
+
+-----
+
+E03
+
+OK
+
+-----
+
+E04
+
+OK
+
+-----
+
+E05
+
+OK
+
+-----
+
+E06
+
+good and in archival form
+
+-----
+
+E07
+
+good
+
+(the standard name is "swap", not "invert")
+
+-----
+
+E08
+
+good, except the definition of list_mapi, which, like list_map should follow the structure of the given list
+
+-----
+
+E09
+
+pretty good
+
+consider writing "map f" rather than "map" on top of the map arrow
+
+also, in 4 & 6, if f has type 'a -> 'b,
+this diagram illustrates polymorphism at work: in one path, an 'a list is reversed,
+but in the other path, a 'b list is reversed
+
+strings: OK
+
+conclusion: good and clear
+
+-----
+
+E10
+
+good, though (my bad) it is the list_copy function that is emulated,
+not the identity function, as the output list is = to the input list, not ==
+
+-----
+
+E11
+
+good and clear
+
+-----
+
+E12
+
+good (modulo the inconsistent layout of the let-expressions in the unit-test function)
+
+> Conclusion:
+> 
+> This exercise makes us realise an interesting property about randomly generated binary
+> trees. Its number of leaves will always be 1 greater than its number of nodes. Since a
+> randomly generated binary tree can take any binary tree form, we can conclude that for any
+> binary tree this property holds.
+
+Yes.
+
+> This relation between number of leaves and nodes is intuitive
+> as well: Ignoring the topmost leaf, every other node is accompanied with a leaf at its tail; only
+> the topmost leaf does not have an accompanied node on top of it.
+
+Huh?  A tree doesn't have a topmost leaf, and nodes don't have tails.  And what is an accompanied node?
+
+> That said, it is also helpful to bear in mind that our unit test does not fully cover all possible
+> binary trees. Strictly speaking, we have not rigorously proven that this relationship is true for
+> every single binary tree. If we want a fully rigorous proof, we may have to rely on
+> mathematics, since unit tests cannot practically cover every possible binary tree.
+
+Yup -- check out
+  https://delimited-continuation.github.io/YSC1212/2021-2022_Sem2/week-10_polymorphic-binary-trees.html#interlude
+
+-----
+
+Conclusion
+
+fine
+
+----------
+
+Overall, and with the exception of the small bits pointed out above, this is very good work.
+
+Thanks for attending Intro to CS,
+
+-- Olivier

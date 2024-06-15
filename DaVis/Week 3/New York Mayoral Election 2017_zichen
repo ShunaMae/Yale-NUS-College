@@ -1,0 +1,97 @@
+---
+title: "New York Mayoral Election 2017"
+author: "Zhang Zichen"
+date: "1/26/2022"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(kableExtra)
+library(tidyverse)
+library(scales)
+```
+
+
+### Introduction
+
+This is a line of texts.
+
+> 'Incumbent Democrat Bill de Blasio won reelection to a second term with 66.2% 
+of the vote against Republican Nicole Malliotakis.'^[https://en.wikipedia.org/wiki/2017_New_York_City_mayoral_election]
+
+
+This is another line of texts.
+
+
+### Data presented as a table
+
+```{r, echo=FALSE}
+ny_mayor <- read.csv("ny_mayor.csv")
+ny_mayor[nrow(ny_mayor) + 1, ] <- list(
+  "Total",
+  sum(ny_mayor$de_blasio),
+  sum(ny_mayor$malliotakis),
+  sum(ny_mayor$other)
+)
+
+ny_mayor %>%
+  kbl(
+    caption = "New York Mayoral Election 2017",
+    format.args = list(big.mark = ","),
+    format = "html"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "responsive"),
+    font_size = 14,
+    full_width = FALSE
+  ) %>%
+  add_header_above(
+    c(" " = 1, "Candidate" = 3),
+    font_size = 14
+  ) %>%
+  footnote(
+    general = "<small>Source: CNN</small>",
+    general_title = "",
+    fixed_small_size = TRUE,
+    escape = FALSE
+  ) %>%
+  row_spec(
+    5,
+    extra_css = c("border-bottom: 1px solid black")
+  )
+```
+
+
+### Data presented as a table
+
+```{r, fig.width=4.15, fig.height=3.3, out.width='45%', fig.align='center', echo=FALSE, message=FALSE}
+ny_mayor_long <- read_csv("ny_mayor.csv") |>
+  mutate(borough = str_replace(borough, " ", "\n")) |>
+  pivot_longer(-borough) |>
+  mutate(name = fct_rev(name))
+ggplot(ny_mayor_long, aes(borough, value, fill = name)) +
+  geom_col(position = "dodge") +
+  scale_x_discrete(limits = rev) +
+  coord_flip() +
+  scale_y_continuous(labels = label_comma()) +
+  scale_fill_manual(
+    labels = c("Other", "Malliotakis", "de Blasio"),
+    values = c("palegreen4", "firebrick2", "steelblue")
+  ) +
+  labs(
+    title = "New York Mayoral Election 2017",
+    caption = "Source: CNN",
+    x = "Borough",
+    y = "Votes",
+    fill = "Candidate"
+  ) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(legend.key.size = unit(1, "lines"))
+```
+
+
+### What is better: table or bar plot?
+

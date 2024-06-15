@@ -1,0 +1,200 @@
+---
+title: "Zachary's Karate Club"
+author: "Team Blue"
+date: "3/23/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+Loading packages.
+
+```{r}
+library(readr)
+library(tidyverse)
+library(tidygraph)
+library(igraph)
+library(ggraph)
+library(ggforce)
+```
+
+# 1. Import the data and create an undirected tbl_graph called karate_netw.
+
+```{r}
+karate_edges <- read_table(
+  "soc-karate.zip",
+  col_names = FALSE,
+  skip = 24
+)
+
+# Adding node argument to make the name "node" to make things easier
+# Adding sort argument to ensure values are calibrated
+# Adding unique argument to make sure there's no duplicates
+# data frame type is required for network to function
+
+karate_nodes <- tibble(
+  node = sort(unique(c(
+    karate_edges$X1,
+    karate_edges$X2
+  )))
+)
+karate_netw <- tbl_graph(
+  nodes = karate_nodes,
+  edges = karate_edges,
+  directed = FALSE
+)
+```
+
+# 2. How many nodes and edges are in the network?
+
+```{r}
+# Number of nodes
+karate_netw |>
+    activate(nodes) |>
+    as.tibble() |>
+    nrow()
+
+# Number of edges
+karate_netw |>
+    activate(edges) |>
+    as.tibble() |>
+    nrow()
+
+```
+
+# 3. Are there parallel edges or loops in the network?
+
+```{r}
+is_simple(karate_netw)
+```
+No, the graph is simple so there are no parallel edges or loops.
+
+# 4. Node 1 is the karate instructor. Node 34 is the club president. Add a node attribute called role to the tbl_graph with the values Instructor, President and Other.
+
+```{r}
+instructor_id <- 1
+president_id <- 34
+karate_netw <- 
+    karate_netw |>
+    activate(nodes) |> # advantage of activation is that if you insert other code in between the code will always work
+    mutate(role = case_when(
+        node == instructor_id ~ "Instructor", 
+        node == president_id ~ "President",
+        TRUE ~ "Other"
+        ))
+```
+
+# 5. Show that the two nodes with the highest degree are the president and the instructor.
+
+```{r}
+karate_netw <- 
+    karate_netw |>
+    activate(nodes) |>
+    mutate(degree = centrality_degree())
+karate_netw |>
+    activate(nodes) |>
+    as.tibble() |>
+    slice_max(degree, n = 2)
+```
+
+# 6. Find all shortest paths between the instructor and the president.
+
+```{r}
+instructor_to_president <- all_shortest_paths(karate_netw, 1, 34)
+instructor_to_president$res
+```
+
+# 7. What is the local clustering coefficient of the instructor? What is the local clustering coefficient of the president? How do you interpret these numbers?
+
+```{r}
+karate_netw <- 
+    karate_netw |>
+    activate(nodes) |>
+    mutate(cluster_coef = local_transitivity())
+karate_netw |>
+    activate(nodes) |>
+    as.tibble() |>
+    filter(role %in% c("Instructor", "President"))
+```
+
+The local clustering coefficient of a node quatifies how close the neigbouring nodes are to being a clique. 
+
+# 8. Which are the largest cliques in the network? Which nodes are in these cliques?
+
+```{r}
+large_cliques <- largest_cliques(karate_netw)
+large_cliques
+
+unique(large_cliques[[1]])
+```
+
+# 9. Confirm that the network is connected (i.e. there is only one component).
+
+```{r}
+karate_netw |>
+  activate(nodes) |>
+  mutate(component_id = group_components()) |>
+  as_tibble() |>
+  select(component_id) |>
+  unique()
+```
+Since there is only one connected component, the network is connected.
+
+# 10. Which communities does the Louvain algorithm detect? Use tidygraph to add information about the communities to karate_netw.
+
+```{r}
+karate_netw <-
+  karate_netw |>
+  activate(nodes) |>
+  mutate(community_id = group_louvain())
+karate_netw |>
+  as_tibble() |> # Extract node information as tibble
+  group_by(community_id) |>
+  group_split() |>
+  map(pluck("node"))
+```
+
+# 11. Make a plot similar to figure 1.
+
+```{r}
+karate_layout <- create_layout(karate_netw, layout = "stress")
+layout_attributes <- attributes(karate_layout)
+node_positions <- read_csv("karate_node_positions.csv")
+karate_layout <-
+  karate_layout |>
+  select(-x, -y) |>
+  left_join(node_positions, by = "node") |>
+  select(x, y, everything())
+attributes(karate_layout) <- layout_attributes
+###NOT COMPLETE###
+ggraph(karate_layout) +
+  geom_edge_link() +
+  geom_mark_hull(
+    aes(
+      x,
+      y,
+      fill = as.factor(community_id),
+      label = str_c("community ", community_id)
+    ),
+    colour = NA,
+    con.colour = "grey",
+    show.legend = FALSE
+  ) +
+  labs(
+    title = "Zachary's Karate Club",
+    subtitle = "Communities assigned by Louvain algorithm",
+    caption = "Source: https://networkrepository.com" 
+  ) +
+  geom_node_label(aes(label = node, color = role)) +
+  scale_color_brewer(name = "Role", palette = "Dark2") + 
+  geom_curve(aes(x= 0.35, y= 1.25, xend = 0.45, yend = -0.6), curvature = 0.9) +
+  annotate("text", x= 0.3, y= 1.4, label = "Observed split")
+```
+
+# 12. Briefly explain to a reader what the figure reveals about the karate-club network.
+
+The figure reveals that the groups that formed after the observed split was for the most part "predicted" by the network analysis on communties. It shows that Community 1 and 4 split with the Instructor, while Commuinty 2 and 3 went with the President. 

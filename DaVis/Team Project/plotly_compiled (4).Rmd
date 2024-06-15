@@ -1,0 +1,441 @@
+---
+title: "Plotly Tutorial"
+author: "Team Red"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      fig.width = 5, fig.height = 4)
+```
+
+
+
+Packages needed for this tutorial: 
+```{r, warning = FALSE}
+library(tidyverse)
+library(plotly)
+```
+
+## Introduction 
+The R package, **plotly** enables us to creative beautiful graphs with interactive graphics. The interactivity aspect is useful in instances where the data set we are dealing with includes a lot of text information or when there is not enough space to plot everything (i.e., data that, when plotted, looks really small and compressed). By including interactivity on the graph, users can access information more easily. For example, users can hover their cursor over a point in a bubble chart to see the exact values of the coordinates and the different aesthetics, such as country and school, that the point represents. 
+
+There are also lots of parallels between **plotly** and **ggplot2** in the sense that most of the plots that can be created with **ggplot2** can also be created with **plotly**, adding interactivity as a unique feature. 
+
+## `ggplotly()` 
+
+To get a better understanding of how **plotly** works, we can first compare it with **ggplot2**. Let us first construct a **ggplot2** object. In this example, we make use of the `mtcars` data and form a scatterplot, plotting `mpg` on the x-axis and `wt` on the y-axis.
+```{r}
+data(mtcars)
+ggplot_example <- ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+
+ggplot_example
+```
+
+We can convert `ggplot_example` into a **plotly** object by passing it as an argument to `ggplotly()`. When we hover over the different points, we see the corresponding `mpg` and `wt` value for each point. By setting the argument of `tooltip` to `"all"`, all the aesthetic mappings of a point can be seen when we hover the cursor over the point.[^1]
+```{r}
+ggplotly(p = ggplot_example, tooltip = "all")
+```
+
+The main difference between `ggplotly()` and `plot_ly()` is that we can use **ggplot2** functions when creating the plot that we pass to `ggplotly()` as it simply converts **ggplot2** objects into **plotly** objects. On the other hand, if we use `plot_ly()` in creating our plot, we can only use  **plotly** functions in doing so. 
+
+The function used to plot graphs in **plotly** is `plot_ly()`. The first input to the function has to be the data set you are working with. Then, you can allocate variable names to "visual properties (e.g., `x`, `y`, `color`, etc)". We will look at how to plot different types of plots using this function shortly.[^2]
+
+## Layout 
+The `layout()` function is an essential part in plotting graphs in **plotly** as it will be commonly used. `layout()` can add and modify different parts of the layout of your graph, including, setting the title, axis labels, axis range, plot size, etc. 
+
+```{r}
+layout(
+  plot_ly(mtcars, x = ~mpg, y = ~hp),
+  title = "Miles/(US) gallon and horsepower"
+)
+```
+
+However, when we start to plot graphs that are more complex, it may be harder to read the code in the above example. Hence, we can use the pipe function `|>` to make it easier to read and create the same graph, just insert the title into the `layout()` function as it is the only addition to the layout of our graph.[^3]
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  layout(
+    title = "Miles/(US) gallon and horsepower"
+  )
+```
+
+## Basic Charts 
+
+### Scatterplots 
+
+As seen in the previous section, `plot_ly()` will plot the data as a scatter plot if the data you input for both variables are both quantitative data. Just inputting the data and variables will you give a basic scatter plot (as seen under the section, 'Layout'). 
+
+Another way to plot a scatter plot is by using `add_markers()`, which is for indicating what kind of plot you want to produce. Alternatively, you could also type `type = "scatter", mode = "markers"` in the `plot_ly()` function, which will give you the same plot. However, this may not always be needed because `plot_ly()` will plot a scatter plot from two quantitative variables without any specification. [^4]
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_markers() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp, type = "scatter", mode = "markers") |>
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+Now, if you hover over the points, you can view their exact values as coordinates. To customize your scatter plot even further, you'll have to add a `marker` argument to `plot_ly()`.[^5]
+
+If you want to set the colors of the points according to column in the data set (e.g., make points of the same factor a certain color), pass this column name as the `color` argument in `marker`. Furthermore, if you want to manually set the different colors, you can also pass a character vector containing these colors as the `colors` argument in `marker`.
+
+```{r}
+mtcars |>
+  plot_ly(
+    x = ~mpg,
+    y = ~hp,
+    marker = list(
+      size = 10,
+      color = "red",
+      opacity = 0.5
+    )
+  ) |> # Note that plotly uses 'opacity' instead of 'alpha' to adjust the opacity of points!
+  layout(title = "Miles/(US) gallon and horsepower") 
+```
+
+### Line Charts
+
+Line charts also requires two variables of quantitative data for input. In order to change it to a line chart, we have to pipe our plot into the `add_lines()` function. 
+
+```{r}
+mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_lines() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+### Bubble Chart 
+
+Bubble charts in **plotly** are make use of the same arguments and functions for creating a scatter plot, you can either use `add_markers()` or `type = "scatter", mode = "markers"`. However, it is best if you always use `type = "scatter", mode = "markers"` as it will allow for easier customization later on. The only distinguishing detail is that we have to pass a `size` argument within the `marker` list. In addition to the coordinate values showing up when you hover over a point, if you want to add text beside it, you can pass a a column of character values as the `text` argument (i.e. `~paste("mpg:", mpg)`) in the `plot_ly()` function. [^6]
+
+The default for the parameter `fill` is `None` and it seems to cause an error. If you set size without specifying `fill`, you will see the following warning `Warning: line.width does not currently support multiple values`. To avoid that, you can assign an empty string to `fill`, as shown below. 
+
+```{r}
+mtcars |>
+  plot_ly(
+    x = ~mpg, 
+    y = ~hp,
+    type = "scatter",
+    mode = "markers",
+    size = ~wt,
+    fill = ~"",
+    # add text information to each bubble 
+    hoverinfo = "text",
+    # you can specify the data shown
+    text = ~ paste(
+      "mpg:", mpg,
+      "<br>horse power:", hp
+    ) 
+  )|>
+  layout(title = "Miles/(US) gallon and horsepower")
+```
+
+### Bar Chart
+
+In its most basic form, an interactive bar chart would show the categorical variable and its exact count when you hover over each bar.
+
+Unlike **ggplot2**, **plotly** does not support bar charts with uncounted data. This means that you would need to aggregate and count your data before attempting to create a bar chart. You would need two columns: one for the categorical variable represented by each bar and the other for the quantitative variable, typically the count, which is represented by the height of each bar.
+
+To create a simple bar plot, we use the same grammar as that of when we create scatter plots and pass the categorical variable as the `x` argument, the quantitative variable as the `y` argument, while also passing `type = "bar"` to the `plot_ly()` function.[^7]
+
+Here is one simple bar chart using the `diamonds` dataset. In this example, we visualize the number of diamonds with each type of `cut`. As, you can see we need to summarize the data before using `plot_ly()` to create the bar chart.
+
+```{r}
+diamonds |>
+  group_by(cut) |>
+  summarize(n = n()) |>
+  plot_ly(
+    x = ~cut,
+    y = ~n,
+    type = "bar"
+  )
+```
+
+We can also create dodged (side-by-side) and stacked bar charts using `plot_ly()` to visualize the count of multiple groups. To do so, we create a bar chart for one of the groups, as we have in previous example. We make sure to pass a string as the `name` argument for this group so the legend and interactive graphics show the groups that each bar represents. Then, we use `add_trace()` to add another set of bars to represent the count of another group, we pass the count of the other group as `y` and a `name`, as we have done. Lastly, we also use `layout()` to specify the type of bar chart we want and pass `barmode = 'group'` if we want a dodged bar chart or `barmode = 'stack'` if we want a stacked bar chart.
+
+In the following examples, we have visualize the number of diamonds of each cut in colors I and J. For the sake of simplicity, we only chose two groups and have provided the code we used to aggregate the data into three columns: `cut`, `I` `J`. 
+
+The first example shows a dodged bar chart and the second one shows a stacked bar chart. You can observe that aside from hovering over each bar to show the exact counts of each group, you can also interact with the legend to isolate each group and view it individually. 
+
+```{r}
+diamonds_ij <- diamonds |>
+  filter(color %in% c("I", "J")) |>
+  group_by(cut, color) |>
+  summarize(n = n()) |>
+  pivot_wider(names_from = color, values_from = n)
+
+diamonds_ij |>
+  plot_ly(x = ~cut, y = ~I, type = 'bar', name = 'I') |>
+  add_trace(y = ~J, name = 'J') |>
+  layout(barmode = 'group')
+```
+
+```{r}
+diamonds_ij |>
+  plot_ly(x = ~cut, y = ~I, type = 'bar', name = 'I') |>
+  add_trace(y = ~J, name = 'J') |>
+  layout(barmode = 'stack')
+```
+
+### Box Plot
+
+As in **ggplot2**, box plots only require one variable (quantitative) for input.
+
+To create a box plot, we can use this quantitative variable as the argument to `x` or `y`, depending on whether you want a horizontal or vertical box plot respectively. Additionally, we pass `type = "box"` to `plot_ly()`. To show the box plots of several groups, we specify the categorical variable in the `color` parameter.
+
+In the example below, we create a box plot of the `price` for diamonds of each `color`. Just like in the previous example with bar charts, you can interact with the legend to show only certain groups.[^8]
+
+```{r}
+plot_ly(diamonds, y = ~price, color = ~color, type = "box")
+```
+
+### Histogram 
+
+Similar to box plots, we use one quantitative variable as input to `plot_ly()` to create a histogram. We typically pass this column containing the variable as an argument to `x` in `plot_ly()` if we want to show the bins on the x-axis, otherwise you could pass the column as argument to `y` if you want the bins to be shown on the y-axis. We also pass `type = "histogram"` to `plot_ly()`. We can also show the y axis values as relative probabilities instead of count using `histnorm = "probability"`. To adjust the number of bins, we use `nbinsx` or `nbiny`, depending on whether you used `x` or `y`.[^9]
+
+In the example below, we visualize `price` using a histogram and scale the y-axis to show probabilities, while also setting the number of bins to 30.
+```{r}
+plot_ly(
+  diamonds, 
+  x = ~price, 
+  type = "histogram",
+  histnorm = "probability",
+  nbinsx = 30
+)
+```
+
+## Adding and Updating Traces
+A trace is a set of data with specifications for their locations on the plot. We can always add and update **plotly** objects by using `add_trace()`. With this method, we can add new features to our plots. For instance, we can add a trace to a scatterplot showing the relationship between `mpg` and `wt`.
+```{r}
+mtcars |>
+  plot_ly(
+    x = ~mpg, 
+    y = ~wt, 
+    type = "scatter", 
+    mode = "markers"
+    ) |>
+  add_trace(
+    x = c(10, 15, 20), 
+    y = c(2, 3, 4), 
+    type = "scatter",
+    mode = "markers"
+  )
+```
+
+We can also start with an empty figure then add traces to this figure. For instance, we can add three bars to an empty figure.[^10]
+```{r}
+plot_ly() |>
+  add_trace(
+    x = c("Category1", "Category2", "Category3"), 
+    y = c(5, 10, 3),
+    type = "bar"
+    )
+```
+
+## Overwriting Existing properties using `style()`
+
+If you want to overwrite some of your figure's existing properties, you can use `style()`. For example, bar charts have a `marker.color` property that controls the fill of each bar. We can use `style()` to update the color of each bar. If we are modifying properties of a trace, we will need to also pass a `traces` argument with a numerical vector containing which traces we will modify; traces are identified by the order they were added. In this case, we pass `traces = c(1)` to style to modify the first (and only) trace that we add to this bar chart.[^11]
+
+```{r}
+diamonds_ij |>
+  plot_ly(x = ~cut, y = ~I, type = 'bar', name = 'I') |>
+  add_trace(y = ~J, name = 'J') |>
+  layout(barmode = 'group') |>
+  style(marker = list(color = "navy"))|>
+  style(marker = list(color = "orange"), traces = c(1))
+```
+
+## Subplots with **plotly** 
+
+Using the function `subplot()` allows you to style multiple plots and display them
+in a singular plotting space. 
+
+`subplot()` possesses several advantages over the `par(mfrow)` parameter: 
+
+- Setting `par(mfrow)` requires you to reset the parameter again after the desired
+ subplots have been arranged, while `subplot()`does not.
+- `par(mfrow)` does not allow you to create plots of different sizes, while
+ `subplot()` offers the option for you to create multiple custom-sized subplots.
+ 
+### Creating simple subplots 
+
+Using the `mtcars` dataset again, let's stack two plots on each other. Here, both plots represent the relationship between Miles/(US) gallon and horsepower as a scatterplot and line graph. 
+ 
+```{r}
+mt_scatter <- mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_markers() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+
+mt_line <- mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_lines() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+
+# Specify the name of the plots to display together 
+subplot(
+  mt_scatter, 
+  mt_line,
+  # use the nrows argument to arrange the subplots 
+  nrows = 2,
+  # When TRUE, states that both graphs should share X-axis labels
+  shareX = TRUE, 
+  margin = 0.05
+)
+```
+
+Any subsequent plots placed after the above `subplot()` chunk will not be affected by 
+`subplot()`.
+
+- The argument `nrows` allows us to specify the number of rows the plots will be arranged
+accordingly to. If we would like to place the two plots side-by-side instead of stacking them,
+we can specify `nrows = 1` instead.
+- As we have two plots containing the same set of information, the x-axis can be standardized
+and displayed on the bottom graph. We set `shareX = TRUE` for this. 
+You may search `?subplot` in the console for the full documentation guide of arguments. 
+ 
+### Using `subplot()` with `add_trace()`
+ 
+`subplot()` also works with plots with traces created using the `add_trace()`
+function. 
+ 
+```{r}
+plot_1 <- plot_ly() |>
+  add_trace(x = c(1, 2, 3), y = c(5, 10, 3), type = "bar") 
+
+plot_2 <- plot_ly() |>
+  add_trace(x = c(3, 2, 1), y = c(10, 3, 5), type = "bar") 
+
+subplot(
+  plot_1, 
+  plot_2, 
+  nrows = 1,
+  # creates a small margin between the two subplots
+  margin = 0.05
+  ) |> 
+  layout(
+    # this provides the main overarching title shared by the two plots 
+    title = "two example plots", 
+    # this allows us to add a list of annotations,in this case the titles for the subplots 
+    annotations = list(
+      list(x = 0.15 , y = 1, text = "Plot 1", showarrow = F, xref='paper', yref='paper'),
+      list(x = 0.85 , y = 1, text = "Plot 2", showarrow = F, xref='paper', yref='paper')
+      )
+    ) 
+```
+
+One issue to note is that using `subplot()` with subplots that each contain a title
+often results in some of the subplot titles going missing in the final plotting space.
+You can see this issue with the `mtcars` Miles/(US) gallon and horsepower figure we 
+constructed earlier. 
+
+A suggested remedy is included in the above graph.[^12]
+
+It uses the `annotation` argument under `layout()` to manually place annotations using x and y coordinates.
+
+- `xref` and `yref` are crucial arguments that set the container `x` and `y` refer to, where `"container"` spans the entire `width` of the plot. `"paper"` refers to the width of the plotting area only.[^13]
+
+### Creating basic custom-sized subplots 
+
+One powerful feature of `subplot()` is the ability to create custom-sized subplots. 
+This can be useful in informing viewers on which particular subplots act to substantiate 
+more crucial subplots. 
+
+Here is an example below. We want to create 2 smaller stacked subplots of equal combined height to that of a larger subplot on the right. To do this, we create multiple vectors that will contain our subplots.
+
+Here are the subplots we will use:
+
+- The same Miles/(US) gallon and horsepower scatterplot and line graph as the two smaller subplots
+(which we have titled "mt_scatter" and "mt_line" from the `mtcars` dataset).
+- The add_trace plot we created titled "plot_1" as the larger plot on the right. 
+
+
+```{r}
+s1 <- subplot(mt_scatter, mt_line, nrows = 2, shareX = TRUE)
+s2 <- subplot(s1, plot_1, margin = 0.05) |>
+  # remove the title that automatically takes the title from one of the subplots
+  layout(title = NA)
+
+s2
+```
+
+In summary, creating basic custom-sized subplots can be done by placing "smaller" subplots
+within a vector that nests itself within another vector containing the "larger" subplot. 
+
+## 3D plots 
+
+### Scatterplots
+Interactivity comes in really useful when you have more variables to plot. Adding the third axis is very straightforward, you may simply add a `z` attribute to `plot_ly()`. In the plot below, you can clearly see three clusters of iris species. 
+
+```{r}
+p <- iris |>
+  plot_ly(
+    x = ~Sepal.Length,
+    y = ~Petal.Length,
+    z = ~Petal.Width,
+    marker = list(size = 5)
+  ) |>
+  add_markers(color = ~Species)
+
+p
+```
+
+**plotly** enables us to rotate, zoom in/out, and check the coordinates of data points. This is something two dimensional non-interactive plots cannot do, and thus **plotly** stands as one of the best options when it comes to three dimensional plots. 
+
+For other types of 3D plots, you may refer to the **plotly** Graphing library and look for the appropriate trace functions. [^14]
+
+### Axes 
+
+In 3D plots, axes are arguments to `scene`, which is an argument in `layout()`. So directly putting `xaxis = list(title = "x")` in `layout()` does not yield the desired output. Below is an example of how to use `scene`. Note that the title and legend are outside of `scene`.
+
+```{r}
+p |>
+  layout(
+    # main title 
+    title = "Iris Species",
+    # legend 
+    legend = list(
+      title = list(text = "<b> Species <b>"),
+      itemsizing = "constant"
+    ),
+    # add titles for three axes
+    scene = list(
+      xaxis = list(title = "Sepal Length (cm)"),
+      yaxis = list(title = "Petal Length (cm)"),
+      zaxis = list(title = "Petal Width (cm)")
+      )
+  )
+```
+
+## Conclusion
+The package, **plotly** can do many things that enhances the experience of viewing a graph. The main advantage it has over normal plotting packages such as **ggplot2** is its interactive features. Interactivity is useful because it can allow readers to know the exact values of data points by simply hovering over a point. Every plot produced will also have a toolbar at the top allowing you to download the plot as a png, zoom in and out, and many more! This allows for flexible use of the plot, making it easier to view and visualize data. However, it's also important to keep in mind that the functions of **plotly** shines the most when used with rather complex data, when there is not enough space on a plot, making non-interactive plots confusing or too compressed to read. By using interactivity functions, we can make plots look not only visually appealing, but also convey more information with clarity. 
+
+A useful tool to have when using **plotly** is a [cheat sheet](https://images.plot.ly/plotly-documentation/images/r_cheat_sheet.pdf) for their arguments, which includes the basic charts, layout, statistical charts, maps, 3D charts, and figure hierarchy. [^15] 
+
+
+## Bibliography
+
+[^1]: "Ggplotly Function." RDocumentation. Accessed April 7, 2022. <https://www.rdocumentation.org/packages/plotly/versions/4.10.0/topics/ggplotly>.
+[^2]: Sievert, Carson. "2 Overview." Interactive Web-based Data Visualization with R, Plotly, and Shiny. Last modified December 19, 2019. <https://plotly-r.com/overview.html>.
+[^3]: Sievert, Carson. "2.1 Intro to plot_ly()." Interactive Web-based Data Visualization with R, Plotly, and Shiny. Last modified December 19, 2019. <https://plotly-r.com/overview.html#intro-plotly>.
+[^4]: Sievert, Carson. "3 Scattered Foundations." Interactive Web-based Data Visualization with R, Plotly, and Shiny. Last modified December 19, 2019. <https://plotly-r.com/scatter-traces.html#markers>.
+[^5]: "Scatter and Line Plots in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/line-and-scatter/> .
+[^6]: "Bubble Charts in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/bubble-charts/>.
+[^7]: "Bar Charts in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/bar-charts/>.
+[^8]: "Box Plots in R." Plotly: The Front End for ML and Data Science Models. Accessed April 11, 2022. <https://plotly.com/r/box-plots/>.
+[^9]: "Histograms in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/histograms/>.
+[^10]: "Creating and Updating Figures in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/creating-and-updating-figures/#adding-traces>.
+[^11]: "Creating and Updating Figures in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/creating-and-updating-figures/>. 
+[^12]: "Subplots in R." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/subplots/>.
+[^13]: "R Figure Reference: Single Page." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/reference/#Layout_and_layout_style_object>.
+[^14]: "Plotly R Library 3D Charts." Plotly: The Front End for ML and Data Science Models. Accessed April 7, 2022. <https://plotly.com/r/3d-charts/>.
+[^15]: "R Cheat Sheet." Plotly: The Front End for ML and Data Science Models. Accessed April 8, 2022. <https://images.plot.ly/plotly-documentation/images/r_cheat_sheet.pdf>.

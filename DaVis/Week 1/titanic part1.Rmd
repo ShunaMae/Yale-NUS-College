@@ -1,0 +1,101 @@
+---
+title: "titanic"
+author: "shuna"
+date: "1/14/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+## Import the data
+```{r, message = False}
+titanic <- read_csv("titanic.csv")
+```
+
+## how many rows and columns? 
+
+```{r}
+nrow(titanic)
+ncol(titanic)
+dim(titanic) # rows before columns 
+```
+## what are the unique values in the column *class*?
+
+```{r}
+unique(titanic$class)
+```
+## How many people are there in each class?
+
+```{r}
+table(titanic$class)
+```
+
+```{r}
+titanic %>%
+  group_by(class)%>%
+  summarise(people = n())
+```
+
+```{r}
+sec_class <- titanic %>%
+  filter(class == "2nd")
+```
+
+## median 
+```{r}
+median(sec_class$age)
+```
+## 30 year old passengers 
+```{r}
+sec_class %>%
+  filter(age == 30)%>%
+  summarise(number = n())
+```
+
+## 30 years old female 
+```{r}
+sec_class %>%
+  filter(age == 30)%>%
+  filter(gender == "Female")%>%
+  summarise(number = n())
+```
+## price
+```{r}
+sec_class %>%
+  mutate(price = pnd+ (shl/20) + (pnc)/240)
+```
+
+## class and survival 
+```{r}
+titanic %>%
+  group_by(class)%>%
+  summarise(alive = sum(survived == "TRUE"),
+            dead = sum(survived == "FALSE"))
+
+
+```
+```{r}
+survived <- table(titanic$survived, titanic$class)
+survived
+```
+
+## barplot
+```{r}
+
+barplot(survived, 
+        beside = TRUE, 
+        xlab = "Class",
+        main = "People on Titanic", 
+        col = c("lightgreen", "mediumpurple"),
+        las = 1
+        )
+grid(nx = NA, ny = NULL)
+legend("topleft", c("Died","Survived"), fill = c("lightgreen","mediumpurple"))
+
+```
+

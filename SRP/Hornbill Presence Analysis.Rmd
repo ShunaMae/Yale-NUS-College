@@ -1,0 +1,99 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+minyi <- read.csv("hornbill presence.csv")
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+library(vegan)
+library(GGally)
+```
+
+```{r}
+open <- minyi %>%
+  filter(restricted == "open")
+```
+
+```{r}
+p1 <- ggplot(data = open, 
+       aes(x = percent_urban, y = presence_total))+
+  geom_point()
+
+p2 <- ggplot(data = open, 
+       aes(x = percent_vegetation, y = presence_total))+
+  geom_point()
+
+p3 <- ggplot(data = open, 
+       aes(x = percent_waterbody, y = presence_total))+
+  geom_point()
+
+p1+p2+p3
+
+```
+## percent urban 
+```{r}
+model1 <- glm(presence_total ~ percent_urban, data = open, 
+              family = binomial(link = logit))
+summary(model1)
+```
+
+## percent vegetation 
+```{r}
+model2 <- glm(presence_total ~ percent_vegetation, data = open, 
+              family = binomial(link = logit))
+summary(model2)
+```
+
+## percent waterbody 
+
+```{r}
+model3 <- glm(presence_total ~ percent_waterbody, data = open, 
+              family = binomial(link = logit))
+summary(model3)
+```
+
+
+# check the colinearity 
+```{r}
+open %>%
+  select(-ID, -presence_inat, -presence_ebird, -restricted)%>%
+  ggpairs()
+```
+```{r}
+
+data <- open %>%
+  select(-ID, -presence_inat, -presence_ebird, -restricted)
+  
+model4 = lm(presence_total ~ ., data = data)
+summary(model4)
+
+```
+```{r}
+data %>%
+  select(-presence_total)%>%
+  corvif(.)
+
+data %>%
+  select(-presence_total, -percent_urban)%>%
+  corvif(.)
+```
+```{r}
+model5 <- glm(presence_total ~ percent_vegetation * percent_waterbody,
+              data = data, family = binomial (link = logit))
+summary(model5)
+```
+
+```{r}
+ggplot(data = open, 
+       aes(x = percent_waterbody, y = percent_vegetation))+
+  geom_point(aes(colour = presence_total))
+```
+
+

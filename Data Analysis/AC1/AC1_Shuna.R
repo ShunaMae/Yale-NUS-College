@@ -1,0 +1,226 @@
+###########################################################
+#                   Analysis Challenge 1                  #
+###########################################################
+#(1) Submit this file on Canvas.                          #
+#(2) Also submit the Figures file on Canvas.              #
+#(3) There are many ways to get things done in R. The     #
+# answers below are only one way. As long as your way     #
+# works, you will get the marks.                          #
+#(4) You will not be double penalised for a mistake. For  #
+# example, even if you identify the wrong variables in an #
+# earlier question, you will get full marks for the       #
+# following questions if you use the correct analyses for #
+# the variables you identified.                           #
+#(5) Report whatever p-values or statistics you obtain    #
+# using comments to help me better mark your work.        #
+#(6) PLEASE DO THIS ON YOUR OWN WITHOUT DISCUSSION.       #
+###########################################################
+#Total marks = 50 + 3 Bonus Marks                         #
+###########################################################
+
+## Description of the "ProtectedPlots" dataset:
+#<richness> is the number of species at each plot and is the numeric response variable.
+#<site> is the location in which the plots are found: A or B
+#<protected> refers to whether the site is a protected area (True) or not (False)
+#<distance> is the distance of the plot from the nearest human dwelling (in metres)
+#<hum.imp> is a measure of anthropogenic disturbance
+###########################################################
+
+##Questions
+###########################################################
+
+library(tidyverse)
+library(readxl)
+library(GGally)
+library(car)
+##(1) Import the "ProtectedPlots.xlsx" dataset as an object called "plots". [2 marks]
+plots <- read_xlsx("ProtectedPlots.xlsx")
+
+###########################################################
+
+##(2) Inspect the dataset and change any variable types that need to be changed. [2 marks]
+##Note 1: if there are any categorical explanatory variables, make them factors.
+##Note 2: if there are any true or false variables, make them logical variables.
+str(plots)
+## site is a categorical explanatory variable - so change it to a factor 
+## protected is a true or false variable - so change it to a logical variable
+plots <- plots |>
+  mutate(
+    site = as.factor(site),
+    protected = as.logical(protected),
+    richness = as.integer(richness),
+    distance = as.numeric(distance)
+  )
+
+
+###########################################################
+
+
+##(3) Using R, look for any NAs within the dataset and remove any row(s) with NAs (i.e. update the dataset). [2 marks]
+apply(is.na(plots), 2, which)
+# richness -> 46 
+# distance -> 16 
+plots <- plots[-c(16,46),]
+
+###########################################################
+
+##(4) Do a ggpairs plot of the entire dataset and paste it into the "AC1 Figures.docx" file. [2 marks] 
+
+ggpairs(plots)
+###########################################################
+
+##(5) Describe any 3 potential patterns that you observe. (Use comments to write your descriptions.) [3 marks]
+
+### positive correlation between richness and distance: the farther the point is from human dwelling, the more species there are. 
+### negative correlation between hum.imp and richness: the extent of human impact and species richness negatively correlate 
+### negative correlation between distance and hum.imp: the farther the point is from human dwelling, the less disturbed by human the point is. 
+###########################################################
+
+##(6) I would like to use <distance> to explain <richness>. 
+##(a) What kind of analysis would I use? [1 mark]
+
+#### regression if normally distributed, GLM if else. 
+
+##(b) Fit the model you identified. [1 mark]
+
+q6_b <- lm(richness ~ distance, data = plots)
+
+##(c) Check your assumptions using any necessary plots and tests (paste the plots into the "AC1 Figures.docx" file). Describe your conclusions for heteroscedasticity, normality of residuals and presence of outliers. [4 marks]
+par(mfrow = c(2,2))
+plot(q6_b)
+
+shapiro.test(plots$richness) ## p-value = 0.31
+shapiro.test(plots$distance) ## p-value = 0.32
+
+### homoscedasticity
+#### the points look well scattered with no patterns. 
+
+### Normallity 
+#### the Q-Q plot has the line following the diagonal line. 
+#### Shapiro tests support this conclusion, as p-value is big enough to accept null hypothesis 
+
+### Outliers 
+#### From the plot, there are no points outside the 0.5 or 1 dotted line, 
+#### therefore, I conclude there are no outliers.
+
+
+##(d) Now assume there is a problem with heteroscedasticity. Let's try to solve the problem by taking the log of both <distance> and <richness>. Fit the model and recheck your assumptions. Does this model look better? [3 marks]
+q6_d <- lm(log(richness) ~ log(distance), data = plots)
+plot(q6_d)
+## from the residual plot, the points look more scattered. 
+## this model looks better. 
+
+##(e) Compare these two models using AIC. Which would you choose? [2 marks]
+AIC(q6_b) ## 214.41
+AIC(q6_d) ## -57.42
+## the second model is significantly better (too good? I don't know why there is such a big difference) 
+## the huge difference could be due to the log transformation of the response variable 
+
+
+##(f) Using the model you chose above, call a summary (paste the output into the "AC1 Figures.docx" file) and interpret the results. [3 marks]
+summary(q6_d)
+
+## distance has a significant effect on species richness (n = 46, p-value < 0.001)
+## one percent increase in distance increases the richness by 0.90 ± 0.045% (mean ± SE). 
+## Distance account for 90% of the variation in species richness. 
+###########################################################
+
+##(7) Assess whether there would be any problems with multicollinearity if we add both <hum.imp> and <distance> as explanatory variables in the same model. [3 marks]
+q7 <- lm(richness ~ distance * hum.imp, data = plots)
+vif(q7) 
+## distance: 27.06
+## hum.imp: 27.49 
+## as vif > 3, these two variables are highly correlated. We need to remove hum.imp - as it has the higher vif score. 
+###########################################################
+
+##(8) Let's see whether <site> on its own can explain <richness>.
+
+##(a) What kind of analysis would you use? Describe what you would need to check to make your final decision. [3 marks]
+### if the response variable is normally distributed, ANOVA
+### for the normality, each level has to be normally distributed. 
+### if it is not normally distributed, Kruskal-Wallis test. 
+### though there are only two sites, since this is not a controlled experiment, 
+### we are not running a basic test. 
+
+## for ANOVA, we need to check if the variances are equal, if the datapoints are independent, and if there is any outliers. 
+
+##(b) Do the checks you identified above. What analysis have you decided to use? (Hint: this wasn't a controlled experiment.) [3 marks]
+q8_b <- lm(richness ~ site, data = plots)
+shapiro.test(resid(q8_b))
+### p-value of 0.064
+## we fail to reject the null hypothesis and the response variable is normally ditributed
+### hence we proceed with ANOVA
+
+##### I FORGOT TO CHECK FOR THE VARIANCE! 
+#### LEVENES TEST
+##(c) Perform the analysis you identified. [1 mark]
+q8_c <- lm(richness ~ site, data = plots)
+
+##(d) Check the assumptions of your model. [3 marks]
+plot(q8_c)
+## looking at the residual plot, the variance seems equal. 
+## the Q-Q plot seems slightly off, but we already ran shapiro test and failed to reject the null hypothesis. 
+## there are no apparent outliers. 
+
+##(e) Call a summary of the model (paste the output into the "AC1 Figures.docx" file) and interpret the results. [3 marks]
+summary(q8_c)
+### for N = 46 (site A = 23, site B = 23), site has a significant effect on the species richness (p-value = 0.0068).
+### Average richness at site B is significantly lower than at site A by 4.78 ± 1.68 (mean ± SE) species. 
+### site difference explains 13.6% of the variation in species richness. 
+###########################################################
+
+##(9) Finally, let's see whether <distance> and <site> together can explain <richness>.
+##(a) Fit a model using log(<distance>) and <site> (together with their interaction) to predict log(<richness>). [2 marks]
+q9_a <- lm(log(richness) ~ log(distance) * site, data = plots)
+
+##(b) Simplify to obtain the minimum adequate model. [3 marks]
+summary(q9_a)
+## log(distance):siteB and siteB are insignificant. As we remove more complicated variables, I remove log(distance):site
+q9_a.1 <- update(q9_a, ~.-log(distance):site)
+summary(q9_a.1)
+## siteB is still not significant. Remove site. 
+q9_a.2 <- update(q9_a.1, ~.-site)
+summary(q9_a.2)
+### everything is significant
+
+##(c) What variable(s) is/are left in the minimum adequate model? [1 mark]
+### only log(distance)
+###########################################################
+
+##(10) Using ggplot2, do an appropriate plot to show how log(<distance>) and <site> affect log(<richness>). Paste the plot into the "AC1 Figures.docx" file. [3 marks]
+library(scales)
+plots |>
+  ggplot(aes(log(distance), log(richness), color = site)) +
+  geom_point(size = 2) +
+  labs(
+    x = "Distance from human dwelling (m)",
+    y = "Species Richness"
+  ) +
+  scale_x_continuous(
+    breaks = log(pretty(plots$distance)), 
+    labels = pretty(exp(log(plots$distance)))
+  ) + 
+  scale_y_continuous(
+    breaks = log(pretty(plots$richness)), 
+    labels = pretty(exp(log(plots$richness)))
+  )
+
+
+###########################################################
+
+##(Bonus Question) Compare your results from (8) and (9). 
+##(a) What do you find surprising? [1 mark]
+## one surprising finding is that though in question 8 we found site to be significantly associated to the species richness, 
+## in question 8, site was discarded as insignificant variable. 
+
+##(b) Using your plot from (10), try to explain the reason for this difference. [2 marks]
+## it is possible that when we did not use distance as a variable, site explained certain extent of the variation 
+## however, once we include the distance, distance explains the variation that was explained by the site, and more. 
+## that could be the reason why the site was discarded as insignificant 
+## from the plot, we can see that sites are not prominently distinguishing species richness 
+## but instead distance shows a strong correlation with the species richness 
+## supports that the distance is a far better measure of the richness. 
+###########################################################
+
+
+

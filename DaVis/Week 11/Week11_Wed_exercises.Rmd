@@ -1,0 +1,109 @@
+---
+title: "Week11_Wed_exercises"
+author: "shuna"
+date: "3/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+
+```{r}
+sunspots <- read_delim("SN_d_tot_V2.0.csv",
+  delim = ";", 
+  escape_double = FALSE, 
+  col_names = c(
+    "year", 
+    "month", 
+    "day", 
+    "frc_year", 
+    "daily_total",
+    "daily_sd", 
+    "obs", 
+    "definitive"
+  ),
+  trim_ws = TRUE,
+  na = c("-1", "-1.0")
+) |>
+  print()
+```
+
+```{r}
+sunspots <- sunspots |>
+  mutate(date = make_date(year, month, day)) |>
+  print()
+```
+
+```{r}
+q3 <- sunspots |>
+  filter(is.na(daily_total)) |>
+  slice_tail() |>
+  pull(date) 
+
+stamp("Tuesday, 3 December, 2019")(q3)
+```
+```{r}
+sunspots |>
+  mutate(pred_date = lag(date),
+         gap = (date) - ymd(pred_date)) |>
+  print()
+```
+
+```{r}
+q5 <- sunspots |>
+  timetk::summarise_by_time(
+    date,
+    .by = 'month',
+    mean_ss = mean(daily_total, na.rm = TRUE)
+  ) |>
+  mutate(year = year(date)) |>
+  filter(year >= 1975) |>
+  select(-year) |>
+  print()
+
+# filter(date >= ymd("1975-01-01"))
+```
+```{r}
+colnames(solar_cycles)
+```
+
+
+```{r}
+solar_cycles <- read_csv("solar_cycles.csv") |> 
+  mutate(start = ym(`Start (Minimum)`),
+         Maximum = ym(Maximum)) |>
+  select(-`Start (Minimum)`) |>
+  print()
+```
+
+```{r}
+solar_cycles <- solar_cycles |>
+  filter(start >= ymd("1975-01-01")) |>
+  print()
+```
+
+```{r}
+as.Date(lead(solar_cycles$start))
+```
+
+```{r}
+?mean.Date
+```
+
+```{r}
+solar_cycles |>
+  mutate(next_date = lead(start),
+         mid_date = mean.Date(start, next_date))
+```
+
+
+
+
+

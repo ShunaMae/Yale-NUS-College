@@ -1,0 +1,150 @@
+---
+title: "plotly using subplot function"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the pacakges: 
+```{r, message = FALSE}
+library(tidyverse)
+library(plotly)
+```
+
+# Subplots with Plotly 
+
+Using the function `subplot()` allows you to style mutliple plots and display them
+in a singular plotting space. 
+
+`Subplot()` possesses several advantages over the `par(mfrow)` parameter: 
+
+- Setting `par(mfrow)` requires you to reset the parameter again after the desired
+ subplots have been arrange, while `subplpot()`does not.
+- `par(mfrow)` does not allow you to create plots of different sizes, while
+ `subplot()` offers the option for you to create multiple custom-sized subplots.
+ 
+### Creating simple subplots 
+
+Using the `mtcars` dataset again, let's stack two plots on each other. Here, both plots represent the relationship between Miles/(US) gallon and horsepower as a scatterplot and line graph. 
+ 
+```{r}
+mt_scatter <- mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_markers() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+
+mt_line <- mtcars |>
+  plot_ly(x = ~mpg, y = ~hp) |>
+  add_lines() |>
+  layout(title = "Miles/(US) gallon and horsepower")
+
+# Specify the name of the plots to display together 
+subplot(
+  mt_scatter, 
+  mt_line,
+  # use the nrows argument to arrange the subplots 
+  nrows = 2,
+  # When TRUE, states that both graphs should share X-axis labels
+  shareX = TRUE, 
+  margin = 0.05
+)
+```
+
+Any subsequent plots placed after the above `subplot()` chunk will not be affected by 
+`subplot()`.
+
+- The argument `nrows` allows us to specify the number of rows the plots will be arranged
+accordingly to. If we would like to place the two plots side-by-side instead of stacking them,
+we can specify `nrows = 1` instead.
+- As we have two plots containing the same set of information, the x-axis can be standardized
+and displayed on the bottom graph. We set `shareX = TRUE` for this. 
+You may search `?subplot` in the console for the full documentation guide of arguments. 
+ 
+### Using subplot() with add_trace()
+ 
+`Subplot()` also works with plots with traces created using the `add_trace()`
+function. 
+ 
+```{r}
+plot_1 <- plot_ly() |>
+  add_trace(x = c(1, 2, 3), y = c(5, 10, 3), type = "bar") 
+
+plot_2 <- plot_ly() |>
+  add_trace(x = c(3, 2, 1), y = c(10, 3, 5), type = "bar") 
+
+subplot(plot_1, plot_2, 
+  nrows = 1,
+  # creates a small margin between the two subplots
+  margin = 0.05
+) |> 
+   layout(
+     # this provides the main overarching title shared by the two plots 
+     title = "two example plots", 
+     # this allows us to add a list of annotations,in this case the titles for the subplots 
+     annotations = list( 
+    list(x = 0.15 , y = 1, text = "Plot 1", showarrow = F, xref='paper', yref='paper'), 
+    list(x = 0.85 , y = 1, text = "Plot 2", showarrow = F, xref='paper', yref='paper')
+    ) 
+  ) 
+```
+
+One issue to note is that using `subplot()` with subplots that each contain a title
+often results in some of the subplot titles going missing in the final plotting space.
+You can see this issue with the `mtcars` Miles/(US) gallon and horsepower figure we 
+constructed earlier. 
+
+A suggested remedy is included in the above graph.[^1]
+
+[^1]: <https://plotly.com/r/subplots/> Accessed on 7/4/2022
+
+It uses the `annotation` argument under `layout()` to manually place annotations using x and y coordinates.
+
+- `xref` and `yref` are crucial arguments that set the container `x` and `y` refer to, where "container" spans the entire `width` of the plot. "paper" refers to the width of the plotting area only.[^2]
+
+[^2]: <https://plotly.com/r/reference/#Layout_and_layout_style_object> Accessed on 7/4/2022 
+
+### Creating basic custom-sized suplots 
+
+One powerful feature of `subplot()` is the ability to create custom-sized subplots. 
+This can be useful in informing viewers on which particular subplots act to substantiate 
+more crucial subplots. 
+
+Here is an example below. We want to create 2 smaller stacked subplots of equal combined height to that of a larger subplot on the right. To do this, we create multiple vectors that will contain our subplots.
+
+Here are the subplots we will use:
+
+- The same Miles/(US) gallon and horsepower scatterplot and line graph as the two smaller subplots
+(which we have titled "mt_scatter" and "mt_line" from the `mt_cars` dataset).
+- The add_trace plot we created titled "plot_1" as the larger plot on the right. 
+
+
+```{r}
+s1 <- subplot(mt_scatter, mt_line, nrows = 2, shareX = TRUE)
+s2 <- subplot(s1, plot_1, margin = 0.05) |>
+  # remove the title that automatically takes the title from one of the subplots
+  layout(title = NA)
+s2
+```
+
+In summary, creating basic custom-sized subplots can be done by placing "smaller" subplots
+within a vector that nests itself within another vector containing the "larger" subplot. 
+
+
+```{r}
+library(plotly)
+
+data <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/school_earnings.csv")
+
+fig <- plot_ly(data, x = ~Women, y = ~Men, text = ~School, type = 'scatter', mode = 'markers',
+        marker = list(size = ~Gap, opacity = 0.5))
+fig <- fig %>% layout(title = 'Gender Gap in Earnings per University',
+         xaxis = list(showgrid = FALSE),
+         yaxis = list(showgrid = FALSE))
+
+fig
+
+```
+
+ 
